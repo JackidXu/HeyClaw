@@ -145,6 +145,19 @@ export interface CoworkPromptInputRef {
   setValue: (value: string) => void;
   /** 设置图片附件（用于重新编辑消息时还原图片） */
   setImageAttachments: (images: CoworkImageAttachment[]) => void;
+  /** 插入浏览器注释截图和注释文本 */
+  insertBrowserAnnotation: (annotation: {
+    comment: string;
+    imageDataUrl: string;
+    pageUrl: string;
+    pageTitle: string;
+    element: {
+      tagName: string;
+      text: string;
+      width: number;
+      height: number;
+    };
+  }) => void;
   /** 聚焦输入框 */
   focus: () => void;
 }
@@ -244,6 +257,37 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
         dataUrl: `data:${img.mimeType};base64,${img.base64Data}`,
       }));
       dispatch(setDraftAttachments({ draftKey, attachments: newAttachments }));
+    },
+    insertBrowserAnnotation: (annotation) => {
+      const timestamp = Date.now();
+      const imageName = `${i18nService.t('artifactBrowserAnnotationImageName')}-${timestamp}.png`;
+      const elementText = annotation.element.text ? ` "${annotation.element.text}"` : '';
+      const elementSummary = `${annotation.element.tagName} ${annotation.element.width}x${annotation.element.height}${elementText}`;
+      const annotationPrompt = [
+        i18nService.t('artifactBrowserAnnotationPromptTitle'),
+        '',
+        annotation.comment.trim(),
+        '',
+        `${i18nService.t('artifactBrowserAnnotationPromptPage')}: ${annotation.pageTitle || annotation.pageUrl}`,
+        annotation.pageTitle ? annotation.pageUrl : '',
+        `${i18nService.t('artifactBrowserAnnotationPromptElement')}: ${elementSummary}`,
+      ].filter(line => line !== '').join('\n');
+      const nextValue = value.trim() ? `${value.trim()}\n\n${annotationPrompt}` : annotationPrompt;
+      setValue(nextValue);
+      dispatch(setDraftPrompt({ sessionId: draftKey, draft: nextValue }));
+      dispatch(addDraftAttachment({
+        draftKey,
+        attachment: {
+          path: `inline:${imageName}:${timestamp}`,
+          name: imageName,
+          isImage: true,
+          dataUrl: annotation.imageDataUrl,
+        },
+      }));
+      setImageVisionHint(!modelSupportsImage);
+      requestAnimationFrame(() => {
+        textareaRef.current?.focus();
+      });
     },
     focus: () => {
       textareaRef.current?.focus();

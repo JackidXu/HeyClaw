@@ -11,6 +11,7 @@ import { migrateScheduledTaskRunsToOpenclaw, migrateScheduledTasksToOpenclaw } f
 import { AgentId, AgentIpcChannel } from '../shared/agent/constants';
 import { AppUpdateIpc } from '../shared/appUpdate/constants';
 import { ArtifactPreviewIpc } from '../shared/artifactPreview/constants';
+import { ClipboardIpc } from '../shared/clipboard/constants';
 import { COWORK_MESSAGE_PAGE_SIZE, COWORK_SESSION_PAGE_SIZE } from '../shared/cowork/constants';
 import { PlatformRegistry } from '../shared/platform';
 import { ProviderName } from '../shared/providers';
@@ -5422,11 +5423,24 @@ if (!gotTheLock) {
     }
   });
 
-  ipcMain.handle('clipboard:writeImageFromFile', async (_event, filePath: string) => {
+  ipcMain.handle(ClipboardIpc.WriteImageFromFile, async (_event, filePath: string) => {
     try {
       const image = nativeImage.createFromPath(filePath);
       if (image.isEmpty()) {
         return { success: false, error: 'Failed to read image file' };
+      }
+      clipboard.writeImage(image);
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  });
+
+  ipcMain.handle(ClipboardIpc.WriteImageFromDataUrl, async (_event, dataUrl: string) => {
+    try {
+      const image = nativeImage.createFromDataURL(dataUrl);
+      if (image.isEmpty()) {
+        return { success: false, error: 'Failed to read image data' };
       }
       clipboard.writeImage(image);
       return { success: true };
@@ -5921,6 +5935,7 @@ end tell'`, { timeout: 5000 });
         backgroundThrottling: false,
         devTools: isDev,
         spellcheck: false,
+        webviewTag: true,
         enableWebSQL: false,
         autoplayPolicy: 'document-user-activation-required',
         disableDialogs: true,
@@ -5963,6 +5978,26 @@ end tell'`, { timeout: 5000 });
       }
       shell.openExternal(url);
       return { action: 'deny' };
+    });
+
+    mainWindow.webContents.on('will-attach-webview', (event, webPreferences, params) => {
+      webPreferences.nodeIntegration = false;
+      webPreferences.nodeIntegrationInSubFrames = false;
+      webPreferences.contextIsolation = true;
+      webPreferences.sandbox = true;
+      webPreferences.webSecurity = true;
+      webPreferences.plugins = false;
+      webPreferences.devTools = isDev;
+      webPreferences.partition = 'persist:lobster-artifact-browser';
+      delete webPreferences.preload;
+
+      params.partition = 'persist:lobster-artifact-browser';
+      params.allowpopups = 'false';
+
+      const src = params.src ?? '';
+      if (src.startsWith('javascript:')) {
+        event.preventDefault();
+      }
     });
 
     // 监听子窗口创建事件（企微授权弹窗安全限制）

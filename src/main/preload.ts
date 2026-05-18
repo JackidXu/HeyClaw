@@ -4,6 +4,7 @@ import { IpcChannel as ScheduledTaskIpc } from '../scheduledTask/constants';
 import { AgentIpcChannel } from '../shared/agent/constants';
 import { AppUpdateIpc } from '../shared/appUpdate/constants';
 import { ArtifactPreviewIpc } from '../shared/artifactPreview/constants';
+import { ClipboardIpc } from '../shared/clipboard/constants';
 import type { Platform } from '../shared/platform';
 import { NimQrLoginIpc } from './ipcHandlers/nimQrLogin';
 import { OpenClawSessionIpc } from './openclawSession/constants';
@@ -392,7 +393,9 @@ contextBridge.exposeInMainWorld('electron', {
   },
   clipboard: {
     writeImageFromFile: (filePath: string) =>
-      ipcRenderer.invoke('clipboard:writeImageFromFile', filePath),
+      ipcRenderer.invoke(ClipboardIpc.WriteImageFromFile, filePath),
+    writeImageFromDataUrl: (dataUrl: string) =>
+      ipcRenderer.invoke(ClipboardIpc.WriteImageFromDataUrl, dataUrl),
   },
   voice: {
     triggerDictation: () => ipcRenderer.invoke('voice:triggerDictation'),

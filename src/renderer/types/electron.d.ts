@@ -588,6 +588,7 @@ interface IElectronAPI {
   };
   clipboard: {
     writeImageFromFile: (filePath: string) => Promise<{ success: boolean; error?: string }>;
+    writeImageFromDataUrl: (dataUrl: string) => Promise<{ success: boolean; error?: string }>;
   };
   voice: {
     triggerDictation: () => Promise<{ success: boolean; error?: string }>;
