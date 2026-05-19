@@ -7,6 +7,7 @@ import * as path from 'path';
 import type { OpenClawSessionPatch } from '../../../common/openclawSession';
 import type { CoworkExecutionMode, CoworkMessage, CoworkMessageMetadata, CoworkSession, CoworkSessionStatus, CoworkStore } from '../../coworkStore';
 import { t } from '../../i18n';
+import type { SubagentRunStore } from '../../subagentRunStore';
 import { getCommandDangerLevel,isDeleteCommand } from '../commandSafety';
 import { setCoworkProxySessionId } from '../coworkOpenAICompatProxy';
 import { extractOpenClawAssistantStreamText } from '../openclawAssistantText';
@@ -35,6 +36,7 @@ import {
 } from '../openclawHistory';
 import { buildOpenClawLocalTimeContextPrompt } from '../openclawLocalTimeContextPrompt';
 import { AgentLifecyclePhase, type AgentLifecyclePhase as AgentLifecyclePhaseValue } from './constants';
+import { SubagentTracker } from './subagentTracker';
 import type {
   CoworkContextUsage,
   CoworkContinueOptions,
@@ -1039,6 +1041,9 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
   private pendingBackfillToolCallIds: Map<string, Set<string>> = new Map();
   private static readonly INCREMENTAL_BACKFILL_DEBOUNCE_MS = 2000;
 
+  // ── Subagent tracking (delegated) ───────────────────────────────────────
+  private readonly subagentTracker: SubagentTracker;
+
   /**
    * Server-side agent timeout in seconds (mirrors agents.defaults.timeoutSeconds in openclaw config).
    * Used to set a client-side fallback timer that fires slightly after the server timeout,
@@ -1278,11 +1283,18 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     store: CoworkStore,
     engineManager: OpenClawEngineManager,
     options: OpenClawRuntimeAdapterOptions = {},
+    subagentRunStore?: SubagentRunStore,
   ) {
     super();
     this.store = store;
     this.engineManager = engineManager;
     this.options = options;
+    if (subagentRunStore) {
+      this.subagentTracker = new SubagentTracker(subagentRunStore, () => this.gatewayClient);
+    } else {
+      // Fallback: create a no-op tracker (should not happen in production)
+      this.subagentTracker = new SubagentTracker(null as unknown as SubagentRunStore, () => this.gatewayClient);
+    }
   }
 
   private normalizeModelRef(modelRef: string): string {
@@ -2651,6 +2663,9 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
               '[OpenClawRuntime] incremental backfill from chat.history',
               `toolCallId=${msgToolCallId}`, `len=${text.length}`, `prevLen=${existingText.length}`,
             );
+
+            // Extract childSessionKey from backfilled sessions_spawn results
+            this.subagentTracker.onBackfillResult(msgToolCallId, text);
           }
         }
       }
@@ -3254,6 +3269,11 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       this.emitSessionStatus(sessionId, 'running');
     }
     if (phase === AgentLifecyclePhase.End) {
+      // Detect announce completion — mark subagent done and skip parent turn
+      // lifecycle handling (announce is an embedded run, not the parent's end).
+      if (eventRunId && this.subagentTracker.tryMarkDoneFromAnnounceRunId(eventRunId)) {
+        return;
+      }
       const endingTurn = this.activeTurns.get(sessionId);
       const endingRunId = eventRunId
         ?? endingTurn?.runId
@@ -3529,6 +3549,11 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       });
       turn.toolUseMessageIdByToolCallId.set(toolCallId, toolUseMessage.id);
       this.emit('message', sessionId, toolUseMessage);
+
+      // Track sessions_spawn tool calls for subagent visualization
+      if (toolNameRaw.toLowerCase() === 'sessions_spawn') {
+        this.subagentTracker.onToolStart(toolCallId, toToolInputRecord(data.args), sessionId);
+      }
     }
 
     if (phase === 'update') {
@@ -3613,6 +3638,16 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       }
       turn.toolResultTextByToolCallId.set(toolCallId, finalContent);
 
+      // Track subagent session keys from sessions_spawn results
+      if (toolNameRaw.toLowerCase() === 'sessions_spawn' && finalContent) {
+        this.subagentTracker.onSpawnResult(toolCallId, finalContent, toToolInputRecord(data.args));
+      }
+
+      // Mark subagent as done when parent retrieves result via sessions_resume/sessions_read
+      if (toolNameRaw.toLowerCase() === 'sessions_resume' || toolNameRaw.toLowerCase() === 'sessions_read') {
+        this.subagentTracker.onResumeOrReadResult(toToolInputRecord(data.args));
+      }
+
       // Schedule incremental backfill if the result text is empty (gateway stripped it).
       // The authoritative text will be fetched from chat.history after a debounce window.
       if (!finalContent.trim()) {
@@ -3679,6 +3714,10 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
 
     if (state === 'final') {
       this.cancelLifecycleEndFallback(sessionId, turn, 'chat final arrived');
+      // Detect announce chat final — mark subagent done as backup
+      if (runId) {
+        this.subagentTracker.tryMarkDoneFromAnnounceRunId(runId);
+      }
       this.handleChatFinal(sessionId, turn, chatPayload);
       return;
     }
@@ -5674,6 +5713,20 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     }, timeoutMs);
   }
 
+  // ── Subagent public API (delegated to SubagentTracker) ──────────────────
+
+  listSubagentRuns(parentSessionId: string) {
+    return this.subagentTracker.listSubagentRuns(parentSessionId);
+  }
+
+  async getSubTaskHistory(
+    parentSessionId: string,
+    agentId: string,
+    sessionKey?: string,
+  ): Promise<Array<{ role: string; content: string }>> {
+    return this.subagentTracker.getSubTaskHistory(parentSessionId, agentId, sessionKey);
+  }
+
   /**
    * Called when a session is deleted from the store.
    * Purges all in-memory references so that new channel messages
@@ -5721,6 +5774,9 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     if (this.channelSessionSync) {
       this.channelSessionSync.onSessionDeleted(sessionId);
     }
+
+    // Clean up subagent tracking state
+    this.subagentTracker.onSessionDeleted();
   }
 
   /**

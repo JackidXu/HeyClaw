@@ -5,6 +5,8 @@ import { agentService } from '../../services/agent';
 import { coworkService } from '../../services/cowork';
 import { i18nService } from '../../services/i18n';
 import { RootState } from '../../store';
+import { selectCurrentSessionId } from '../../store/selectors/coworkSelectors';
+import type { SubagentSessionSummary } from '../../types/cowork';
 import { isDefaultAgentId } from '../../utils/agentDisplay';
 import AgentCreateModal from '../agent/AgentCreateModal';
 import AgentSettingsPanel from '../agent/AgentSettingsPanel';
@@ -13,6 +15,7 @@ import AgentTreeNode from './AgentTreeNode';
 import MyAgentSidebarHeader from './MyAgentSidebarHeader';
 import type { AgentSidebarAgentNode, AgentSidebarTaskNode } from './types';
 import { useAgentSidebarState } from './useAgentSidebarState';
+import { useSubagentSessions } from './useSubagentSessions';
 
 interface MyAgentSidebarTreeProps {
   isBatchMode: boolean;
@@ -23,6 +26,7 @@ interface MyAgentSidebarTreeProps {
   onToggleSelection: (sessionId: string, agentId: string) => void;
   onEnterBatchMode: (sessionId: string, agentId: string) => void;
   onBatchSelectableIdsChange: (sessionIds: string[]) => void;
+  onSelectSubagent?: (subagent: SubagentSessionSummary) => void;
 }
 
 const MyAgentSidebarTree: React.FC<MyAgentSidebarTreeProps> = ({
@@ -34,10 +38,16 @@ const MyAgentSidebarTree: React.FC<MyAgentSidebarTreeProps> = ({
   onToggleSelection,
   onEnterBatchMode,
   onBatchSelectableIdsChange,
+  onSelectSubagent,
 }) => {
   const currentAgentId = useSelector((state: RootState) => state.agent.currentAgentId);
+  const currentSessionId = useSelector(selectCurrentSessionId);
+  const currentSessionStatus = useSelector(
+    (state: RootState) => state.cowork.currentSession?.status,
+  );
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [settingsAgentId, setSettingsAgentId] = useState<string | null>(null);
+  const { subagentsBySessionId } = useSubagentSessions(currentSessionId, currentSessionStatus);
   const {
     agentNodes,
     patchTaskPreview,
@@ -60,6 +70,8 @@ const MyAgentSidebarTree: React.FC<MyAgentSidebarTreeProps> = ({
       await coworkService.loadSessions(task.agentId);
     }
     onShowCowork();
+    // Clear subagent detail view so the main session detail is shown
+    window.dispatchEvent(new CustomEvent(CoworkUiEvent.SelectSubagent, { detail: null }));
     return coworkService.loadSession(task.id);
   };
 
@@ -147,6 +159,12 @@ const MyAgentSidebarTree: React.FC<MyAgentSidebarTreeProps> = ({
       batchAgentId={batchAgentId}
       selectedIds={selectedIds}
       showBatchOption
+      subagentsBySessionId={subagentsBySessionId}
+      onSelectSubagent={(sub) => {
+        onSelectSubagent?.(sub);
+        onShowCowork();
+        window.dispatchEvent(new CustomEvent(CoworkUiEvent.SelectSubagent, { detail: sub }));
+      }}
       onToggleExpanded={toggleAgentExpanded}
       onEditAgent={(agent) => setSettingsAgentId(agent.id)}
       onCreateTask={(agent) => void handleCreateTask(agent)}

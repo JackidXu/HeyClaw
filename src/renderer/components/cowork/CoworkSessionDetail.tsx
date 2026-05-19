@@ -400,6 +400,8 @@ const getToolDisplayName = (toolName: string | undefined): string => {
       return 'MultiEdit';
     case 'process':
       return 'Process';
+    case 'sessionsspawn':
+      return 'Subagent';
     default:
       return toolName;
   }
@@ -597,6 +599,11 @@ const getToolInputSummary = (
       const sessionId = getToolInputString(input, ['sessionId', 'session_id']);
       if (action && sessionId) return `${action} · ${sessionId}`;
       return action ?? sessionId;
+    }
+    case 'sessionsspawn': {
+      const spawnAgent = getToolInputString(input, ['agentId', 'agent_id']);
+      const spawnTask = getToolInputString(input, ['task']);
+      return [spawnAgent, spawnTask ? truncatePreview(spawnTask) : null].filter(Boolean).join(' · ');
     }
     default:
       return null;

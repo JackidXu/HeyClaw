@@ -209,6 +209,24 @@ export class SqliteStore {
       );
     `);
 
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS subagent_runs (
+        id TEXT PRIMARY KEY,
+        parent_session_id TEXT NOT NULL,
+        session_key TEXT,
+        agent_id TEXT,
+        task TEXT,
+        label TEXT,
+        status TEXT NOT NULL DEFAULT 'running',
+        created_at INTEGER NOT NULL,
+        ended_at INTEGER
+      );
+    `);
+    this.db.exec(`
+      CREATE INDEX IF NOT EXISTS idx_subagent_runs_parent_session_id
+      ON subagent_runs(parent_session_id);
+    `);
+
     // Migration: add config column to user_plugins
     try {
       const pluginCols = this.db.pragma('table_info(user_plugins)') as Array<{ name: string }>;

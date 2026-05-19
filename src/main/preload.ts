@@ -255,6 +255,12 @@ contextBridge.exposeInMainWorld('electron', {
       fileExtension?: string;
     }) => ipcRenderer.invoke('cowork:session:exportText', options),
 
+    // Subagent tracking
+    getSubTaskHistory: (options: { parentSessionId: string; agentId: string; sessionKey?: string }) =>
+      ipcRenderer.invoke('cowork:subTask:history', options),
+    listSubagentSessions: (parentSessionId: string) =>
+      ipcRenderer.invoke('cowork:subagent:list', { parentSessionId }),
+
     // Permission handling
     respondToPermission: (options: { requestId: string; result: any }) =>
       ipcRenderer.invoke('cowork:permission:respond', options),
