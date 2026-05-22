@@ -62,7 +62,7 @@ import {
   shouldUseMaxCompletionTokensForOpenAI,
   shouldUseOpenAIResponsesForProvider,
 } from './settings/modelProviderUtils';
-import ModelSettingsSection from './settings/ModelSettingsSection';
+import ModelSettingsSection, { ModelEditorDialog } from './settings/ModelSettingsSection';
 import EmailSkillConfig from './skills/EmailSkillConfig';
 import ThemedSelect from './ui/ThemedSelect';
 
@@ -3117,21 +3117,6 @@ const Settings: React.FC<SettingsProps> = ({ onClose, initialTab, notice, notice
             setIsTestResultModalOpen={setIsTestResultModalOpen}
             pendingDeleteProvider={pendingDeleteProvider}
             setPendingDeleteProvider={setPendingDeleteProvider}
-            isAddingModel={isAddingModel}
-            isEditingModel={isEditingModel}
-            editingModelId={editingModelId}
-            newModelName={newModelName}
-            setNewModelName={setNewModelName}
-            newModelId={newModelId}
-            setNewModelId={setNewModelId}
-            newModelSupportsImage={newModelSupportsImage}
-            setNewModelSupportsImage={setNewModelSupportsImage}
-            newModelContextWindow={newModelContextWindow}
-            setNewModelContextWindow={setNewModelContextWindow}
-            newModelCustomParams={newModelCustomParams}
-            setNewModelCustomParams={setNewModelCustomParams}
-            modelFormError={modelFormError}
-            setModelFormError={setModelFormError}
             importInputRef={importInputRef}
             handleImportProvidersClick={handleImportProvidersClick}
             handleExportProviders={handleExportProviders}
@@ -3156,9 +3141,6 @@ const Settings: React.FC<SettingsProps> = ({ onClose, initialTab, notice, notice
             handleAddModel={handleAddModel}
             handleEditModel={handleEditModel}
             handleDeleteModel={handleDeleteModel}
-            handleSaveNewModel={handleSaveNewModel}
-            handleCancelModelEdit={handleCancelModelEdit}
-            handleModelDialogKeyDown={handleModelDialogKeyDown}
           />
         );
 
@@ -3447,6 +3429,26 @@ const Settings: React.FC<SettingsProps> = ({ onClose, initialTab, notice, notice
 
         </div>
 
+        <ModelEditorDialog
+          activeProvider={activeProvider}
+          isAddingModel={isAddingModel}
+          isEditingModel={isEditingModel}
+          newModelName={newModelName}
+          setNewModelName={setNewModelName}
+          newModelId={newModelId}
+          setNewModelId={setNewModelId}
+          newModelSupportsImage={newModelSupportsImage}
+          setNewModelSupportsImage={setNewModelSupportsImage}
+          newModelContextWindow={newModelContextWindow}
+          setNewModelContextWindow={setNewModelContextWindow}
+          newModelCustomParams={newModelCustomParams}
+          setNewModelCustomParams={setNewModelCustomParams}
+          modelFormError={modelFormError}
+          setModelFormError={setModelFormError}
+          handleSaveNewModel={handleSaveNewModel}
+          handleCancelModelEdit={handleCancelModelEdit}
+          handleModelDialogKeyDown={handleModelDialogKeyDown}
+        />
 
           {/* Memory Modal */}
           {showMemoryModal && (

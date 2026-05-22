@@ -601,12 +601,13 @@ export class IMGatewayManager extends EventEmitter {
 
       const configured = weixinAccount.configured === true;
       const running = weixinAccount.running === true;
-      const enabled = weixinAccount.enabled !== false;
+      const runtimeEnabled = weixinAccount.enabled !== false;
+      const localEnabled = this.getConfig().weixin?.enabled === true;
       const accountId = readString(weixinAccount.accountId) ?? status.weixin.accountId ?? null;
       status.weixin = {
         ...status.weixin,
         accountId,
-        connected: running || (enabled && configured && status.weixin.connected),
+        connected: Boolean(localEnabled && (running || (runtimeEnabled && configured && status.weixin.connected))),
         startedAt: readNumber(weixinAccount.lastStartAt),
         lastError: readString(weixinAccount.lastError),
         lastInboundAt: readNumber(weixinAccount.lastInboundAt),
