@@ -338,6 +338,7 @@ export interface OpenClawSkillStatusEntry {
   filePath: string;
   baseDir: string;
   skillKey: string;
+  disabled?: boolean;
 }
 
 const SKILLS_DIR_NAME = 'SKILLs';
@@ -1645,8 +1646,9 @@ export class SkillManager {
       filePath: string;
       baseDir: string;
       skillKey: string;
+      disabled?: boolean;
     }>;
-  }): { skills: Array<{ name: string; description: string; skillKey: string; baseDir: string }>; error?: string } {
+  }): { skills: Array<{ name: string; description: string; skillKey: string; baseDir: string; disabled?: boolean }>; error?: string } {
     try {
       const existing = this.listSkills();
       const existingIds = new Set(existing.map(s => s.id));
@@ -1669,6 +1671,7 @@ export class SkillManager {
           description: s.description,
           skillKey: s.skillKey || path.basename(s.baseDir),
           baseDir: s.baseDir,
+          disabled: s.disabled,
         })),
       };
     } catch (error) {
@@ -1685,6 +1688,7 @@ export class SkillManager {
       filePath: string;
       baseDir: string;
       skillKey: string;
+      disabled?: boolean;
     }>;
   }): { synced: string[]; error?: string } {
     try {
@@ -1709,6 +1713,12 @@ export class SkillManager {
           meta.openclawSourceDir = srcDir;
           fs.writeFileSync(metaPath, JSON.stringify(meta, null, 2) + '\n', 'utf8');
         } catch { /* best-effort */ }
+        // Respect disabled state from OpenClaw
+        if (entry.disabled) {
+          const state = this.loadSkillStateMap();
+          state[entry.skillKey] = { enabled: false };
+          this.saveSkillStateMap(state);
+        }
         synced.push(entry.skillKey);
       }
 
