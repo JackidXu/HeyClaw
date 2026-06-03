@@ -4,6 +4,7 @@ import { IpcChannel as ScheduledTaskIpc } from '../scheduledTask/constants';
 import { AgentIpcChannel } from '../shared/agent/constants';
 import { AppUpdateIpc } from '../shared/appUpdate/constants';
 import { ArtifactPreviewIpc } from '../shared/artifactPreview/constants';
+import { AuthIpcChannel } from '../shared/auth/constants';
 import { BrowserIpc, type BrowserRuntimeProfile } from '../shared/browserWebAccess/constants';
 import { ClipboardIpc } from '../shared/clipboard/constants';
 import { CoworkIpcChannel } from '../shared/cowork/constants';
@@ -882,11 +883,11 @@ contextBridge.exposeInMainWorld('electron', {
     getAccessToken: () => ipcRenderer.invoke('auth:getAccessToken'),
     getModels: () => ipcRenderer.invoke('auth:getModels'),
     getProfileSummary: () => ipcRenderer.invoke('auth:getProfileSummary'),
-    getPendingCallback: () => ipcRenderer.invoke('auth:getPendingCallback'),
+    getPendingCallback: () => ipcRenderer.invoke(AuthIpcChannel.GetPendingCallback),
     onCallback: (callback: (data: { code: string }) => void) => {
       const handler = (_event: any, data: { code: string }) => callback(data);
-      ipcRenderer.on('auth:callback', handler);
-      return () => ipcRenderer.removeListener('auth:callback', handler);
+      ipcRenderer.on(AuthIpcChannel.Callback, handler);
+      return () => ipcRenderer.removeListener(AuthIpcChannel.Callback, handler);
     },
     onQuotaChanged: (callback: () => void) => {
       const handler = () => callback();

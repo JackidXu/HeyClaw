@@ -34,6 +34,7 @@ import {
 import { AgentId, AgentIpcChannel } from '../shared/agent/constants';
 import { AppUpdateIpc } from '../shared/appUpdate/constants';
 import { ArtifactBrowserPartition, ArtifactPreviewIpc, ArtifactPreviewProtocol } from '../shared/artifactPreview/constants';
+import { AuthIpcChannel } from '../shared/auth/constants';
 import {
   type BrowserDiagnosticResultStep,
   BrowserDiagnosticStatus,
@@ -129,6 +130,7 @@ import {
   type PermissionResult,
 } from './libs/agentEngine';
 import { AppUpdateCoordinator, INSTALLATION_UUID_KEY } from './libs/appUpdateCoordinator';
+import { AuthCallbackRouter } from './libs/authCallbackRouter';
 import {
   clearServerModelMetadata,
   getAllServerModelMetadata,
@@ -2762,29 +2764,21 @@ if (!gotTheLock) {
     app.setAsDefaultProtocolClient('lobsterai');
   }
 
-  // Buffer for deep link auth code received before renderer is ready
-  let pendingAuthCode: string | null = null;
-  let authCallbackListenerReady = false;
+  const authCallbackRouter = new AuthCallbackRouter({
+    getTarget: () => {
+      if (!mainWindow || mainWindow.isDestroyed()) return null;
+      return mainWindow.webContents;
+    },
+    onParseError: error => {
+      console.error('[Main] Failed to parse deep link:', error);
+    },
+  });
 
   /**
    * Parse a lobsterai:// deep link and send (or buffer) the auth code.
    */
   const handleDeepLink = (url: string) => {
-    try {
-      const parsed = new URL(url);
-      if (parsed.hostname === 'auth' && parsed.pathname === '/callback') {
-        const code = parsed.searchParams.get('code');
-        if (code) {
-          if (authCallbackListenerReady && mainWindow && !mainWindow.isDestroyed()) {
-            mainWindow.webContents.send('auth:callback', { code });
-          } else {
-            pendingAuthCode = code;
-          }
-        }
-      }
-    } catch (e) {
-      console.error('[Main] Failed to parse deep link:', e);
-    }
+    authCallbackRouter.handleDeepLink(url);
   };
 
   ipcMain.on('log:fromRenderer', (_event, level: string, tag: string, message: string) => {
@@ -2793,12 +2787,8 @@ if (!gotTheLock) {
   });
 
   // Allow renderer to retrieve a buffered auth code on init
-  ipcMain.handle('auth:getPendingCallback', () => {
-    authCallbackListenerReady = true;
-    const code = pendingAuthCode;
-    pendingAuthCode = null;
-    return code;
-  });
+  ipcMain.handle(AuthIpcChannel.GetPendingCallback, () =>
+    authCallbackRouter.markListenerReadyAndConsumePending());
 
   // macOS: handle open-url event for deep links
   app.on('open-url', (event, url) => {
@@ -8741,6 +8731,7 @@ end tell'`,
 
     // 处理渲染进程崩溃或退出
     mainWindow.webContents.on('render-process-gone', (_event, details) => {
+      authCallbackRouter.markRendererUnavailable();
       console.error('Window render process gone:', details);
       scheduleReload('webContents-crashed');
     });
@@ -8790,14 +8781,14 @@ end tell'`,
         }
       },
     );
-    mainWindow.webContents.on('did-start-loading', () => {
-      authCallbackListenerReady = false;
+    mainWindow.webContents.on('did-start-navigation', (_event, _url, isInPlace, isMainFrame) => {
+      authCallbackRouter.handleNavigationStarted({ isMainFrame, isInPlace });
     });
 
     // 当窗口关闭时，清除引用
     mainWindow.on('closed', () => {
       windowStatePersist.cleanup();
-      authCallbackListenerReady = false;
+      authCallbackRouter.markRendererUnavailable();
       mainWindow = null;
     });
 
@@ -9387,21 +9378,11 @@ end tell'`,
 
     console.log(profiler.summary());
 
-    // Windows/Linux cold start: parse deep link from process.argv
-    // Always buffer since renderer is not ready yet after createWindow()
+    // Windows/Linux cold start: parse deep link from process.argv.
+    // The router buffers it because the renderer is not ready yet after createWindow().
     const coldStartDeepLink = process.argv.find(arg => arg.startsWith('lobsterai://'));
     if (coldStartDeepLink) {
-      try {
-        const parsed = new URL(coldStartDeepLink);
-        if (parsed.hostname === 'auth' && parsed.pathname === '/callback') {
-          const code = parsed.searchParams.get('code');
-          if (code) {
-            pendingAuthCode = code;
-          }
-        }
-      } catch (e) {
-        console.error('[Main] Failed to parse cold-start deep link:', e);
-      }
+      handleDeepLink(coldStartDeepLink);
     }
 
     // Auto-reconnect IM bots that were enabled before restart
