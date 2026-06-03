@@ -185,6 +185,25 @@ export class McpRuntime {
     const npmBinDir = app.isPackaged
       ? path.join(process.resourcesPath, 'app.asar.unpacked', 'node_modules', 'npm', 'bin')
       : '';
+    const buildShimEnv = (): Record<string, string> => {
+      const shimEnv: Record<string, string> = {
+        LOBSTERAI_ELECTRON_PATH: electronPath,
+      };
+      if (npmBinDir) {
+        shimEnv.LOBSTERAI_NPM_BIN_DIR = npmBinDir;
+      }
+      return shimEnv;
+    };
+    const pushRawStdioServer = async (server: typeof enabledServers[number]): Promise<void> => {
+      const r = await resolveStdioCommand(server);
+      resolved.push({
+        name: server.name,
+        transportType: 'stdio',
+        command: r.command,
+        args: r.args,
+        env: { ...buildShimEnv(), ...(r.env || {}) },
+      });
+    };
 
     for (const server of enabledServers) {
       if (server.transportType === 'stdio') {
@@ -213,22 +232,17 @@ export class McpRuntime {
           const status = server.launchResolution?.sourceFingerprint === fingerprint
             ? server.launchResolution.status
             : McpLaunchResolutionStatus.Pending;
-          if (status === McpLaunchResolutionStatus.Unsupported) {
+          if (
+            status === McpLaunchResolutionStatus.Unsupported
+            || status === McpLaunchResolutionStatus.Failed
+          ) {
             rawCount++;
-            const r = await resolveStdioCommand(server);
-            const shimEnv: Record<string, string> = {
-              LOBSTERAI_ELECTRON_PATH: electronPath,
-            };
-            if (npmBinDir) {
-              shimEnv.LOBSTERAI_NPM_BIN_DIR = npmBinDir;
+            if (status === McpLaunchResolutionStatus.Failed) {
+              console.warn(
+                `[MCP] using raw stdio command for server "${server.name}" because managed launch resolution failed`,
+              );
             }
-            resolved.push({
-              name: server.name,
-              transportType: 'stdio',
-              command: r.command,
-              args: r.args,
-              env: { ...shimEnv, ...(r.env || {}) },
-            });
+            await pushRawStdioServer(server);
             continue;
           }
 
@@ -243,20 +257,7 @@ export class McpRuntime {
         }
 
         rawCount++;
-        const r = await resolveStdioCommand(server);
-        const shimEnv: Record<string, string> = {
-          LOBSTERAI_ELECTRON_PATH: electronPath,
-        };
-        if (npmBinDir) {
-          shimEnv.LOBSTERAI_NPM_BIN_DIR = npmBinDir;
-        }
-        resolved.push({
-          name: server.name,
-          transportType: 'stdio',
-          command: r.command,
-          args: r.args,
-          env: { ...shimEnv, ...(r.env || {}) },
-        });
+        await pushRawStdioServer(server);
       } else {
         resolved.push({
           name: server.name,
