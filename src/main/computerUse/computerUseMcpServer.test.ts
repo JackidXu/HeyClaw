@@ -118,7 +118,7 @@ describe('resolveComputerUseRuntimePaths', () => {
     expect(config.strings?.escToCancel).toBe('按 Esc 取消');
   });
 
-  test('renews the helper turn only after Escape cancellation', () => {
+  test('reports Escape cancellation before renewing the helper turn', () => {
     const scriptPath = ensureComputerUseMcpServerScript();
     const script = fs.readFileSync(scriptPath, 'utf8');
 
@@ -130,12 +130,15 @@ describe('resolveComputerUseRuntimePaths', () => {
     expect(script).not.toContain('x-oai-cua-approved-app');
     expect(script).toContain("const APPROVED_APP_META_KEY = 'x-lobsterai-computer-use-approved-app'");
     expect(script).toContain('computerUseHome: helperStateHome');
-    expect(script).toContain('function renewHelperTurn()');
     expect(script).toContain('function hasHelperInterruptMarker()');
-    expect(script).toContain('function ensureFreshHelperTurn()');
-    expect(script).toContain('ensureFreshHelperTurn();');
+    expect(script).toContain('function assertHelperTurnActive()');
+    expect(script).toContain('assertHelperTurnActive();');
+    expect(script).toContain('function renewHelperTurn()');
+    expect(script).toContain('renewHelperTurn();');
+    expect(script).not.toContain('function ensureFreshHelperTurn()');
     expect(script).toContain('function isComputerUseStoppedError(error)');
     expect(script).toContain("error.message.includes('physical Escape key')");
+    expect(script).toContain('STOPPED_BY_USER_MESSAGE');
     expect(script).not.toContain('turn_id: String(Date.now())');
     expect(script).not.toContain("client.transport?.request?.('end_turn'");
   });

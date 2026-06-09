@@ -5,14 +5,14 @@ import path from 'path';
 import type { ResolvedMcpServer } from '../libs/openclawConfigSync';
 import { findSystemNodePath } from '../libs/resolveStdioCommand';
 import {
+  ensureComputerUseLogDir,
+  getComputerUseLogRetentionDays,
+} from './computerUseLogs';
+import {
   type ComputerUseRuntimePaths,
   ensureComputerUseHelperStateHome,
   inspectComputerUseRuntime,
 } from './computerUseRuntime';
-import {
-  ensureComputerUseLogDir,
-  getComputerUseLogRetentionDays,
-} from './computerUseLogs';
 
 export const ComputerUseMcpServerName = {
   BuiltIn: 'computer-use',
@@ -298,6 +298,8 @@ const client = new WindowsComputerUseClient({
   timeoutMs: 30000,
 });
 
+const STOPPED_BY_USER_MESSAGE = 'Computer Use was stopped by the user with the physical Escape key. Stop your work, do not call further Computer Use tools in this turn, and send a final message noting that the user stopped Computer Use.';
+
 function isComputerUseStoppedError(error) {
   return error instanceof Error && error.message.includes('physical Escape key');
 }
@@ -322,9 +324,9 @@ function hasHelperInterruptMarker() {
   return existsSync(markerPath);
 }
 
-function ensureFreshHelperTurn() {
+function assertHelperTurnActive() {
   if (hasHelperInterruptMarker()) {
-    renewHelperTurn();
+    throw new Error(STOPPED_BY_USER_MESSAGE);
   }
 }
 
@@ -403,16 +405,17 @@ function stateToContent(state) {
 function registerTool(name, description, inputSchema, handler) {
   server.registerTool(name, { description, inputSchema }, async (args) => {
     try {
-      ensureFreshHelperTurn();
+      assertHelperTurnActive();
       return await handler(args || {});
     } catch (error) {
-      if (isComputerUseStoppedError(error)) {
-        renewHelperTurn();
-      }
-      return {
+      const result = {
         content: textContent(error instanceof Error ? error.message : String(error)),
         isError: true,
       };
+      if (isComputerUseStoppedError(error)) {
+        renewHelperTurn();
+      }
+      return result;
     }
   });
 }
