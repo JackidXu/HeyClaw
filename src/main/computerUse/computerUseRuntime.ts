@@ -8,13 +8,13 @@ import { pipeline } from 'stream/promises';
 
 export const ComputerUseRuntime = {
   Id: 'computer-use',
-  Version: '1.0.5',
+  Version: '1.0.6',
   Platform: 'win32',
   Arch: 'x64',
-  ArchiveName: 'lobsterai-computer-use-runtime-win-x64-1.0.5.zip',
-  DownloadUrl: 'https://ydhardwarebusiness.nosdn.127.net/99adf2510ca3adca73b8e8f72c625fa3.zip',
-  Sha256: '7922e2b74c5d2cdcc124ee1bcab0727a6aae6887fe23a789474ee94218c58537',
-  SizeBytes: 534618,
+  ArchiveName: 'lobsterai-computer-use-runtime-win-x64-1.0.6.zip',
+  DownloadUrl: 'https://ydhardwarebusiness.nosdn.127.net/fe1780e7d3ee0fb8c02dbd9e973e32a5.zip',
+  Sha256: 'b8e1d5fcd5f83a76855ccb20c53b31f33e8da7a32bf92df585a0eeafe55641a9',
+  SizeBytes: 534016,
 } as const;
 export type ComputerUseRuntime =
   typeof ComputerUseRuntime[keyof typeof ComputerUseRuntime];
