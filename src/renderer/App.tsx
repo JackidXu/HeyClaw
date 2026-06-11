@@ -405,6 +405,11 @@ const App: React.FC = () => {
         if (mounted) {
           setAppUpdateState(state);
           previousUpdateStatusRef.current = state.status;
+          // A previous install attempt quit the app without completing
+          // (e.g. the installer never launched) — re-prompt the user.
+          if (state.status === AppUpdateStatus.Ready && state.installIncomplete) {
+            setShowUpdateModal(true);
+          }
         }
       } catch (error) {
         console.error('[App] failed to load initial app update state:', error);
@@ -818,6 +823,16 @@ const App: React.FC = () => {
     });
     return unsubscribe;
   }, [handleNewChat]);
+
+  useEffect(() => {
+    const unsubscribe = window.electron.cowork.onOpenSessionFromNotification?.(({ sessionId }) => {
+      setShowSettings(false);
+      setMainView('cowork');
+      void coworkService.loadSession(sessionId);
+    });
+    void window.electron.cowork.notifyOpenSessionFromNotificationReady?.();
+    return unsubscribe;
+  }, []);
 
   useEffect(() => {
     if (!isInitialized) return;
