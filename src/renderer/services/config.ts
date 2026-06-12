@@ -6,9 +6,11 @@ import {
   AppConfig,
   CONFIG_KEYS,
   defaultConfig,
+  defaultVoiceInputConfig,
   isCustomProvider,
   ShortcutAction,
   type ShortcutConfig,
+  VoiceInputRecognitionMode,
 } from '../config';
 import { localStore } from './store';
 
@@ -147,6 +149,17 @@ const normalizeShortcutsConfig = (storedShortcuts?: AppConfig['shortcuts']): Sho
   });
 
   return shortcuts;
+};
+
+const normalizeVoiceInputConfig = (storedVoiceInput?: AppConfig['voiceInput']): AppConfig['voiceInput'] => {
+  const recognitionMode = storedVoiceInput?.recognitionMode === VoiceInputRecognitionMode.Short
+    ? VoiceInputRecognitionMode.Short
+    : VoiceInputRecognitionMode.Realtime;
+  return {
+    ...defaultVoiceInputConfig,
+    ...(storedVoiceInput ?? {}),
+    recognitionMode,
+  };
 };
 
 const LEGACY_PROVIDER_API_FORMAT_DEFAULTS: Record<string, {
@@ -501,6 +514,7 @@ const hydrateStoredConfig = (storedConfig: AppConfig): AppConfig => {
     providerModelMigrationVersions,
     browserWebAccess: normalizeBrowserWebAccessConfig(storedConfig.browserWebAccess),
     notificationSettings: normalizeNotificationSettings(storedConfig.notificationSettings),
+    voiceInput: normalizeVoiceInputConfig(storedConfig.voiceInput),
   });
 };
 
@@ -562,6 +576,7 @@ class ConfigService {
       notificationSettings: normalizeNotificationSettings(
         newConfig.notificationSettings ?? base.notificationSettings,
       ),
+      voiceInput: normalizeVoiceInputConfig(newConfig.voiceInput ?? base.voiceInput),
     };
     await localStore.setItem(CONFIG_KEYS.APP_CONFIG, this.config);
     window.dispatchEvent(new CustomEvent('config-updated'));

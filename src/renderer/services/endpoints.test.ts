@@ -22,23 +22,23 @@ afterEach(() => {
 test('portal account urls use production base when test mode is disabled', () => {
   mockTestMode(false);
 
-  expect(getPortalProfileUrl()).toBe('https://c.youdao.com/dict/hardware/octopus/lobsterai-portal.html#/profile');
-  expect(getPortalRechargeUrl()).toBe('https://c.youdao.com/dict/hardware/octopus/lobsterai-portal.html#/');
-  expect(getPortalInvitationUrl()).toBe('https://c.youdao.com/dict/hardware/octopus/lobsterai-portal.html#/invitation');
+  expect(getPortalProfileUrl()).toBe('https://lobsterai.youdao.com/portal#/profile');
+  expect(getPortalRechargeUrl()).toBe('https://lobsterai.youdao.com/portal#/');
+  expect(getPortalInvitationUrl()).toBe('https://lobsterai.youdao.com/portal#/invitation');
 });
 
 test('portal account urls use test base when test mode is enabled', () => {
   mockTestMode(true);
 
-  expect(getPortalProfileUrl()).toBe('https://c.youdao.com/dict/hardware/cowork/lobsterai-portal.html#/profile');
-  expect(getPortalRechargeUrl()).toBe('https://c.youdao.com/dict/hardware/cowork/lobsterai-portal.html#/');
-  expect(getPortalInvitationUrl()).toBe('https://c.youdao.com/dict/hardware/cowork/lobsterai-portal.html#/invitation');
+  expect(getPortalProfileUrl()).toBe('https://lobsterai.inner.youdao.com/portal#/profile');
+  expect(getPortalRechargeUrl()).toBe('https://lobsterai.inner.youdao.com/portal#/');
+  expect(getPortalInvitationUrl()).toBe('https://lobsterai.inner.youdao.com/portal#/invitation');
 });
 
 test('portal pricing url can include html share keyfrom', () => {
   mockTestMode(false);
 
   expect(getPortalPricingUrl(PortalPricingKeyfrom.HtmlShare)).toBe(
-    'https://c.youdao.com/dict/hardware/octopus/lobsterai-portal.html#/pricing?keyfrom=html_share',
+    'https://lobsterai.youdao.com/portal#/pricing?keyfrom=html_share',
   );
 });

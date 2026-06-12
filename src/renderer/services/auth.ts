@@ -307,9 +307,12 @@ class AuthService {
           restrictionHint: m.restrictionHint ?? undefined,
         }));
         store.dispatch(setServerModels(serverModels));
+        console.debug(`[Auth] loaded ${serverModels.length} server model(s) into renderer state`);
+      } else {
+        console.debug('[Auth] server model load returned no models');
       }
-    } catch {
-      // ignore — server models are optional
+    } catch (error) {
+      console.warn('[Auth] failed to load server models:', error);
     }
   }
 

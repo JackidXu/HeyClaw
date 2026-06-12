@@ -49,7 +49,12 @@ import SkillIcon from '../icons/SkillIcon';
 import TaskPauseIcon from '../icons/TaskPauseIcon';
 import XMarkIcon from '../icons/XMarkIcon';
 import { ActiveKitBadge, KitsButton } from '../kits';
-import ModelSelector, { ModelAccessPromptKind, ModelAccessPromptModal } from '../ModelSelector';
+import ModelSelector, {
+  ModelAccessPromptKind,
+  ModelAccessPromptModal,
+  type ModelSelectorChangeMeta,
+  ModelSelectorGroup,
+} from '../ModelSelector';
 import { ActiveSkillBadge, SkillsPopover } from '../skills';
 import { resolveAgentModelSelection, resolveEffectiveModel, useAgentSelectedModel } from './agentModelSelection';
 import AttachmentCard from './AttachmentCard';
@@ -73,6 +78,18 @@ import { usePersistAgentModelSelection } from './usePersistAgentModelSelection';
 import { useCoworkVoiceInput } from './voiceInput/useCoworkVoiceInput';
 import VoiceInputButton from './voiceInput/VoiceInputButton';
 import VoiceInputRecordingStatus from './voiceInput/VoiceInputRecordingStatus';
+
+const logPromptModelSelection = (
+  level: 'debug' | 'warn',
+  message: string,
+): void => {
+  if (level === 'warn') {
+    console.warn(`[CoworkPromptInput] ${message}`);
+  } else {
+    console.debug(`[CoworkPromptInput] ${message}`);
+  }
+  window.electron?.log?.fromRenderer?.(level, 'CoworkPromptInput', message);
+};
 
 // CoworkAttachment is aliased from the Redux-persisted DraftAttachment type
 // so that attachment state survives view switches (cowork ↔ skills, etc.)
@@ -1377,11 +1394,18 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
         disabled={isPatchingModel || isPersistingAgentModel}
         value={agentModelIsInvalid && currentSession?.modelOverride
           ? { id: '__invalid__', name: currentSession.modelOverride.split('/').pop() || currentSession.modelOverride } as Model
-          : agentSelectedModel}
-        onChange={async (nextModel) => {
+          : effectiveSelectedModel}
+        onChange={async (nextModel, meta: ModelSelectorChangeMeta) => {
           if (isPatchingModel || isPersistingAgentModel) return;
           if (!nextModel) return;
-          const modelRef = toOpenClawModelRef(nextModel);
+          const selectedModel = meta.group === ModelSelectorGroup.Server
+            ? availableModels.find(model => (
+              model.isServerModel
+              && model.id === nextModel.id
+              && model.accessible !== false
+            )) ?? nextModel
+            : nextModel;
+          const modelRef = toOpenClawModelRef(selectedModel);
           if (sessionId) {
             const requestId = modelPatchRequestIdRef.current + 1;
             modelPatchRequestIdRef.current = requestId;
@@ -1390,6 +1414,10 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
               : '';
 
             setIsPatchingModel(true);
+            logPromptModelSelection(
+              'debug',
+              `switching session ${sessionId} to ${modelRef}; selector group is ${meta.group}; server model is ${selectedModel.isServerModel === true}`,
+            );
             dispatch(updateCurrentSessionModelOverride({ sessionId, modelOverride: modelRef }));
 
             try {
@@ -1401,22 +1429,26 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
                   sessionId,
                   modelOverride: previousModelOverride,
                 }));
+                logPromptModelSelection('warn', `model switch for session ${sessionId} returned no session`);
                 window.dispatchEvent(new CustomEvent('app:showToast', {
                   detail: i18nService.t('coworkModelSwitchFailed'),
                 }));
                 return;
               }
 
+              logPromptModelSelection('debug', `switched session ${sessionId} to ${patchedSession.modelOverride || modelRef}`);
               if (currentAgent && agentModelIsInvalid) {
                 void agentService.updateAgent(currentAgent.id, { model: modelRef });
               }
               void coworkService.refreshContextUsage(sessionId, { notifyCompaction: false });
-            } catch {
+            } catch (error) {
               if (requestId === modelPatchRequestIdRef.current) {
                 dispatch(updateCurrentSessionModelOverride({
                   sessionId,
                   modelOverride: previousModelOverride,
                 }));
+                console.warn(`[CoworkPromptInput] model switch for session ${sessionId} failed:`, error);
+                window.electron?.log?.fromRenderer?.('warn', 'CoworkPromptInput', `model switch for session ${sessionId} failed`);
                 window.dispatchEvent(new CustomEvent('app:showToast', {
                   detail: i18nService.t('coworkModelSwitchFailed'),
                 }));
@@ -1428,7 +1460,11 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
             }
             return;
           }
-          await persistAgentModelSelection(nextModel);
+          logPromptModelSelection(
+            'debug',
+            `persisting agent ${currentAgentId} model ${modelRef}; selector group is ${meta.group}; server model is ${selectedModel.isServerModel === true}`,
+          );
+          await persistAgentModelSelection(selectedModel);
         }}
       />
       {agentModelIsInvalid && (

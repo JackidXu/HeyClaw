@@ -291,7 +291,7 @@ lobsterai://auth/callback?code=<authCode>
 客户端当前打开的生产登录地址为：
 
 ```text
-https://c.youdao.com/dict/hardware/octopus/lobsterai-portal.html#/login?source=electron
+https://lobsterai.youdao.com/portal#/login?source=electron
 ```
 
 网页端登录主入口为：

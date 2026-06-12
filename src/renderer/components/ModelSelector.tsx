@@ -20,7 +20,7 @@ interface ModelSelectorProps {
    */
   value?: Model | null;
   /** Controlled mode callback. `null` means the user picked "default". */
-  onChange?: (model: Model | null) => void;
+  onChange?: (model: Model | null, meta: ModelSelectorChangeMeta) => void;
   /** Show a "default" option at the top of the dropdown (controlled mode only). */
   defaultLabel?: string;
   /** Disable interaction while the selected model is being persisted. */
@@ -43,11 +43,16 @@ const HOVER_CARD_WIDTH = 220;
 const HOVER_CARD_GAP = 8;
 const HOVER_CARD_VIEWPORT_MARGIN = 8;
 const MODEL_ICON_CLASS_NAME = 'h-[18px] w-[18px]';
-const ModelSelectorGroup = {
+export const ModelSelectorGroup = {
   Server: 'server',
   User: 'user',
 } as const;
 type ModelSelectorGroup = typeof ModelSelectorGroup[keyof typeof ModelSelectorGroup];
+
+export interface ModelSelectorChangeMeta {
+  group: ModelSelectorGroup;
+}
+
 export const ModelAccessPromptKind = {
   Login: 'login',
   Subscribe: 'subscribe',
@@ -333,7 +338,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
       return;
     }
     if (controlled) {
-      onChange(model);
+      onChange(model, { group: getModelGroup(model) ?? visibleGroup });
     } else if (model) {
       dispatch(setSelectedModel({ agentId: currentAgentId, model }));
     }

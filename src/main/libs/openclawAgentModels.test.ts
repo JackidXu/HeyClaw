@@ -67,6 +67,35 @@ describe('buildAgentEntry', () => {
     });
   });
 
+  test('keeps explicit server model.primary when a custom provider has the same model id', () => {
+    const result = buildAgentEntry({
+      id: 'main',
+      name: 'main',
+      description: '',
+      systemPrompt: '',
+      identity: '',
+      model: 'lobsterai-server/kimi-k2.6',
+      workingDirectory: '',
+      icon: '',
+      skillIds: [],
+      enabled: true,
+      isDefault: true,
+      source: 'custom',
+      presetId: '',
+      createdAt: 0,
+      updatedAt: 0,
+    }, 'deepseek/deepseek-v4-flash', {
+      availableProviders: {
+        moonshot: { models: [{ id: 'kimi-k2.6' }] },
+      },
+    });
+
+    expect(result).toMatchObject({
+      id: 'main',
+      model: { primary: 'lobsterai-server/kimi-k2.6' },
+    });
+  });
+
   test('falls back to the default model when agent model is an ambiguous bare id', () => {
     const result = buildAgentEntry({
       id: 'main',
@@ -343,6 +372,18 @@ describe('resolveQualifiedAgentModelRef', () => {
     })).toEqual({
       status: 'qualified',
       primaryModel: 'openai-codex/gpt-5.3-codex',
+    });
+  });
+
+  test('keeps explicit server refs when a custom provider has the same model id', () => {
+    expect(resolveQualifiedAgentModelRef({
+      agentModel: 'lobsterai-server/kimi-k2.6',
+      availableProviders: {
+        moonshot: { models: [{ id: 'kimi-k2.6' }] },
+      },
+    })).toEqual({
+      status: 'qualified',
+      primaryModel: 'lobsterai-server/kimi-k2.6',
     });
   });
 });

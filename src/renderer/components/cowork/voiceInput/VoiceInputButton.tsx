@@ -47,6 +47,7 @@ const VoiceInputButton: React.FC<VoiceInputButtonProps> = ({
     <button
       type="button"
       onClick={onClick}
+      disabled={unavailable || isRecognizing}
       aria-disabled={unavailable || isRecognizing}
       aria-label={title}
       title={title}

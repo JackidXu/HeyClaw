@@ -17,6 +17,7 @@ import {
   CoworkSystemMessageKind,
 } from '../../../common/coworkSystemMessages';
 import { CoworkSelectedTextSource } from '../../../shared/cowork/selectedText';
+import { ContinuityCapsuleSource } from './coworkContinuityCapsule';
 import {
   buildOpenClawChatSendPayloadTooLargeError,
   estimateOpenClawChatSendFrameBytes,
@@ -159,6 +160,301 @@ test('outbound prompt includes selected assistant text as quoted reference data'
   );
 });
 
+test('outbound prompt injects continuity capsule bridge before the current request', async () => {
+  const adapter = new OpenClawRuntimeAdapter({
+    getSession: () => null,
+    getAgent: () => null,
+    getContinuityCapsule: () => ({
+      version: 1,
+      sessionId: 'session-1',
+      revision: 2,
+      updatedAt: 100,
+      lastSource: ContinuityCapsuleSource.PostCompaction,
+      lastCompactedAt: 100,
+      currentObjective: 'Improve compaction continuity.',
+      userConstraints: ['Do not change the user model.'],
+      decisions: ['Use a session capsule row.'],
+      completedFacts: [],
+      recentActions: [],
+      touchedFiles: [{ path: 'src/main/libs/agentEngine/openclawRuntimeAdapter.ts' }],
+      keySymbols: [],
+      verification: ['npm test -- openclawRuntimeAdapter passed'],
+      nextSteps: ['Inject capsule bridge.'],
+      recentFailures: [],
+      activeCapabilities: [],
+      openQuestions: [],
+    }),
+  } as never, {} as never);
+  const internal = adapter as unknown as {
+    bridgedSessions: Set<string>;
+    buildOutboundPrompt: (
+      sessionId: string,
+      prompt: string,
+      systemPrompt?: string,
+      agentId?: string,
+    ) => Promise<string>;
+  };
+  internal.bridgedSessions.add('session-1');
+
+  const prompt = await internal.buildOutboundPrompt('session-1', '继续');
+
+  expect(prompt).toContain('[LobsterAI continuity context after context compaction]');
+  expect(prompt).toContain('Improve compaction continuity.');
+  expect(prompt).toContain('src/main/libs/agentEngine/openclawRuntimeAdapter.ts');
+  expect(prompt.indexOf('[LobsterAI continuity context after context compaction]')).toBeLessThan(
+    prompt.indexOf('[Current user request]'),
+  );
+});
+
+test('outbound prompt injects full capsule first and mini capsule on later turns', async () => {
+  const adapter = new OpenClawRuntimeAdapter({
+    getSession: () => null,
+    getAgent: () => null,
+    getContinuityCapsule: () => ({
+      version: 1,
+      sessionId: 'session-1',
+      revision: 2,
+      updatedAt: 100,
+      lastSource: ContinuityCapsuleSource.PostCompaction,
+      lastCompactedAt: 100,
+      currentObjective: 'Improve compaction continuity.',
+      recentUserRequests: ['继续优化压缩后的代码现场'],
+      userConstraints: ['Do not change the user model.'],
+      decisions: ['Use a session capsule row.'],
+      completedFacts: ['Capsule bridge has been injected after compaction.'],
+      recentActions: [],
+      touchedFiles: [{ path: 'src/main/libs/agentEngine/openclawRuntimeAdapter.ts' }],
+      keySymbols: [],
+      verification: ['npm test -- openclawRuntimeAdapter passed'],
+      nextSteps: ['Inject capsule bridge.'],
+      recentFailures: [],
+      activeCapabilities: [],
+      openQuestions: ['Should the bridge stay small?'],
+    }),
+  } as never, {} as never);
+  const internal = adapter as unknown as {
+    bridgedSessions: Set<string>;
+    buildOutboundPrompt: (
+      sessionId: string,
+      prompt: string,
+      systemPrompt?: string,
+      agentId?: string,
+    ) => Promise<string>;
+  };
+  internal.bridgedSessions.add('session-1');
+
+  const firstPrompt = await internal.buildOutboundPrompt('session-1', '继续');
+  const secondPrompt = await internal.buildOutboundPrompt('session-1', '再继续');
+
+  expect(firstPrompt).toContain('[LobsterAI continuity context after context compaction]');
+  expect(firstPrompt).toContain('Touched files:');
+  expect(firstPrompt).toContain('src/main/libs/agentEngine/openclawRuntimeAdapter.ts');
+  expect(secondPrompt).toContain('[LobsterAI brief continuity context after context compaction]');
+  expect(secondPrompt).toContain('Improve compaction continuity.');
+  expect(secondPrompt).toContain('Inject capsule bridge.');
+  expect(secondPrompt).not.toContain('Touched files:');
+  expect(secondPrompt).not.toContain('src/main/libs/agentEngine/openclawRuntimeAdapter.ts');
+});
+
+test('outbound prompt injects workspace rehydration bridge before the current request', async () => {
+  const adapter = new OpenClawRuntimeAdapter({
+    getSession: () => ({
+      cwd: path.dirname(path.dirname(path.dirname(path.dirname(__dirname)))),
+      messages: [],
+    }),
+    getAgent: () => null,
+    getContinuityCapsule: () => ({
+      version: 1,
+      sessionId: 'session-1',
+      revision: 2,
+      updatedAt: 100,
+      lastSource: ContinuityCapsuleSource.PostCompaction,
+      lastCompactedAt: 100,
+      currentObjective: 'Improve compaction continuity.',
+      recentUserRequests: ['继续优化压缩后的代码现场'],
+      userConstraints: [],
+      decisions: [],
+      completedFacts: [],
+      recentActions: [],
+      touchedFiles: [{ path: 'src/main/libs/agentEngine/coworkWorkspaceRehydration.ts' }],
+      keySymbols: [],
+      verification: ['npm test -- coworkWorkspaceRehydration passed'],
+      nextSteps: ['Keep the workspace snapshot lightweight.'],
+      recentFailures: [],
+      activeCapabilities: [],
+      openQuestions: [],
+    }),
+  } as never, {} as never);
+  const internal = adapter as unknown as {
+    bridgedSessions: Set<string>;
+    buildOutboundPrompt: (
+      sessionId: string,
+      prompt: string,
+      systemPrompt?: string,
+      agentId?: string,
+    ) => Promise<string>;
+  };
+  internal.bridgedSessions.add('session-1');
+
+  const prompt = await internal.buildOutboundPrompt('session-1', '继续');
+
+  expect(prompt).toContain('[LobsterAI workspace state after context compaction]');
+  expect(prompt).toContain('src/main/libs/agentEngine/coworkWorkspaceRehydration.ts');
+  expect(prompt.indexOf('[LobsterAI workspace state after context compaction]')).toBeLessThan(
+    prompt.indexOf('[Current user request]'),
+  );
+});
+
+test('outbound prompt injects workspace rehydration bridge once per compaction', async () => {
+  const adapter = new OpenClawRuntimeAdapter({
+    getSession: () => ({
+      cwd: path.dirname(path.dirname(path.dirname(path.dirname(__dirname)))),
+      messages: [],
+    }),
+    getAgent: () => null,
+    getContinuityCapsule: () => ({
+      version: 1,
+      sessionId: 'session-1',
+      revision: 2,
+      updatedAt: 100,
+      lastSource: ContinuityCapsuleSource.PostCompaction,
+      lastCompactedAt: 100,
+      currentObjective: 'Improve compaction continuity.',
+      recentUserRequests: [],
+      userConstraints: [],
+      decisions: [],
+      completedFacts: [],
+      recentActions: [],
+      touchedFiles: [{ path: 'src/main/libs/agentEngine/coworkWorkspaceRehydration.ts' }],
+      keySymbols: [],
+      verification: [],
+      nextSteps: [],
+      recentFailures: [],
+      activeCapabilities: [],
+      openQuestions: [],
+    }),
+  } as never, {} as never);
+  const internal = adapter as unknown as {
+    bridgedSessions: Set<string>;
+    buildOutboundPrompt: (
+      sessionId: string,
+      prompt: string,
+      systemPrompt?: string,
+      agentId?: string,
+    ) => Promise<string>;
+  };
+  internal.bridgedSessions.add('session-1');
+
+  const firstPrompt = await internal.buildOutboundPrompt('session-1', '继续');
+  const secondPrompt = await internal.buildOutboundPrompt('session-1', '再继续');
+
+  expect(firstPrompt).toContain('[LobsterAI workspace state after context compaction]');
+  expect(secondPrompt).not.toContain('[LobsterAI workspace state after context compaction]');
+});
+
+test('outbound prompt injects top-k evidence bridge before the current request', async () => {
+  const adapter = new OpenClawRuntimeAdapter({
+    getSession: () => ({
+      cwd: '',
+      messages: [
+        {
+          id: 'user-1',
+          type: 'user',
+          content: '用户要求麦田烘焙页面支持中日双语切换。',
+          timestamp: 1,
+        },
+        {
+          id: 'tool-1',
+          type: 'tool_result',
+          content: 'npm test failed in src/pages/Bakery.tsx: expected ja copy to be visible.',
+          timestamp: 2,
+          metadata: { toolName: 'shell' },
+        },
+      ],
+    }),
+    getAgent: () => null,
+    getContinuityCapsule: () => ({
+      version: 1,
+      sessionId: 'session-1',
+      revision: 2,
+      updatedAt: 100,
+      lastSource: ContinuityCapsuleSource.PostCompaction,
+      lastCompactedAt: 100,
+      currentObjective: 'Fix the failing bakery page test.',
+      recentUserRequests: ['继续处理测试失败'],
+      userConstraints: [],
+      decisions: [],
+      completedFacts: [],
+      recentActions: [],
+      touchedFiles: [{ path: 'src/pages/Bakery.tsx' }],
+      keySymbols: [],
+      verification: [],
+      nextSteps: ['Investigate npm test failure.'],
+      recentFailures: [],
+      activeCapabilities: [],
+      openQuestions: [],
+    }),
+  } as never, {} as never);
+  const internal = adapter as unknown as {
+    bridgedSessions: Set<string>;
+    buildOutboundPrompt: (
+      sessionId: string,
+      prompt: string,
+      systemPrompt?: string,
+      agentId?: string,
+    ) => Promise<string>;
+  };
+  internal.bridgedSessions.add('session-1');
+
+  const prompt = await internal.buildOutboundPrompt('session-1', '继续处理 src/pages/Bakery.tsx 的 npm test failed');
+
+  expect(prompt).toContain('[LobsterAI retrieved evidence after context compaction]');
+  expect(prompt).toContain('npm test failed in src/pages/Bakery.tsx');
+  expect(prompt.indexOf('[LobsterAI retrieved evidence after context compaction]')).toBeLessThan(
+    prompt.indexOf('[Current user request]'),
+  );
+});
+
+test('outbound prompt skips continuity capsule bridge before compaction', async () => {
+  const adapter = new OpenClawRuntimeAdapter({
+    getSession: () => null,
+    getAgent: () => null,
+    getContinuityCapsule: () => ({
+      version: 1,
+      sessionId: 'session-1',
+      revision: 1,
+      updatedAt: 100,
+      lastSource: ContinuityCapsuleSource.PostRun,
+      currentObjective: 'Normal turn.',
+      userConstraints: [],
+      decisions: [],
+      completedFacts: [],
+      recentActions: [],
+      touchedFiles: [],
+      keySymbols: [],
+      verification: [],
+      nextSteps: [],
+      recentFailures: [],
+      activeCapabilities: [],
+      openQuestions: [],
+    }),
+  } as never, {} as never);
+  const internal = adapter as unknown as {
+    bridgedSessions: Set<string>;
+    buildOutboundPrompt: (
+      sessionId: string,
+      prompt: string,
+      systemPrompt?: string,
+      agentId?: string,
+    ) => Promise<string>;
+  };
+  internal.bridgedSessions.add('session-1');
+
+  const prompt = await internal.buildOutboundPrompt('session-1', 'hello');
+
+  expect(prompt).not.toContain('[LobsterAI continuity context after context compaction]');
+});
+
 test('context usage ignores non-checkpoint compactionCount', () => {
   const adapter = new OpenClawRuntimeAdapter({} as never, {} as never);
   const usage = (adapter as unknown as {
@@ -277,6 +573,215 @@ test('fork compaction lookup selects the latest checkpoint before the fork point
     createdAt: 1000,
     summary: 'Older summary before the selected fork point.',
   });
+});
+
+test('fork compaction lookup prefers an available summary over a newer empty checkpoint', async () => {
+  const session = {
+    id: 'fork-checkpoint-summary',
+    agentId: 'main',
+  };
+  const adapter = new OpenClawRuntimeAdapter({
+    getSession: (sessionId: string) => (sessionId === session.id ? session : null),
+  } as never, {} as never);
+  adapter.gatewayClient = {
+    request: async () => ({
+      checkpoints: [
+        {
+          checkpointId: 'checkpoint-empty',
+          createdAt: 3000,
+        },
+        {
+          checkpointId: 'checkpoint-summary',
+          createdAt: 1000,
+          summary: 'Usable summary before the empty checkpoint.',
+        },
+      ],
+    }),
+  } as never;
+
+  const summary = await adapter.getForkCompactionSummary(session.id, 4000);
+
+  expect(summary).toMatchObject({
+    checkpointId: 'checkpoint-summary',
+    createdAt: 1000,
+    summary: 'Usable summary before the empty checkpoint.',
+  });
+});
+
+test('context compaction diagnostic logs safe checkpoint metadata without summary text', async () => {
+  const sessionKey = 'agent:main:lobsterai:diag-safe';
+  const adapter = new OpenClawRuntimeAdapter({} as never, {} as never);
+  adapter.gatewayClient = {
+    request: async () => ({
+      checkpoints: [{
+        checkpointId: 'checkpoint-safe',
+        createdAt: 10,
+        reason: 'manual',
+        tokensBefore: 12_000,
+        tokensAfter: 120,
+        summary: 'secret summary text that must not be logged',
+      }],
+    }),
+  } as never;
+  const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+  let message = '';
+
+  try {
+    await (adapter as unknown as {
+      logContextCompactionDiagnostic: (input: {
+        sessionId: string;
+        sessionKey: string;
+        mode: 'manual';
+        compacted: boolean;
+      }) => Promise<void>;
+    }).logContextCompactionDiagnostic({
+      sessionId: 'diag-safe',
+      sessionKey,
+      mode: 'manual',
+      compacted: true,
+    });
+    message = logSpy.mock.calls.map((call) => call.join(' ')).join('\n');
+  } finally {
+    logSpy.mockRestore();
+  }
+
+  expect(message).toContain('summary length 43 characters');
+  expect(message).toContain('tokens 12000 to 120');
+  expect(message).not.toContain('secret summary text');
+});
+
+test('context compaction diagnostic does not reuse checkpoint metadata for no-op compaction', async () => {
+  const sessionKey = 'agent:main:lobsterai:diag-noop';
+  const requests: string[] = [];
+  const adapter = new OpenClawRuntimeAdapter({} as never, {} as never);
+  adapter.gatewayClient = {
+    request: async (method: string) => {
+      requests.push(method);
+      return {
+        checkpoints: [{
+          checkpointId: 'stale-checkpoint',
+          createdAt: 10,
+          tokensBefore: 12_000,
+          tokensAfter: 120,
+          summary: 'stale summary text',
+        }],
+      };
+    },
+  } as never;
+  const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+  let message = '';
+
+  try {
+    await (adapter as unknown as {
+      logContextCompactionDiagnostic: (input: {
+        sessionId: string;
+        sessionKey: string;
+        mode: 'manual';
+        reason: string;
+        compacted: boolean;
+      }) => Promise<void>;
+    }).logContextCompactionDiagnostic({
+      sessionId: 'diag-noop',
+      sessionKey,
+      mode: 'manual',
+      reason: 'no real conversation messages',
+      compacted: false,
+    });
+    message = logSpy.mock.calls.map((call) => call.join(' ')).join('\n');
+  } finally {
+    logSpy.mockRestore();
+  }
+
+  expect(requests).toEqual([]);
+  expect(message).toContain('compacted false');
+  expect(message).toContain('reason no real conversation messages');
+  expect(message).toContain('checkpoint none');
+  expect(message).toContain('tokens unknown to unknown');
+  expect(message).not.toContain('stale-checkpoint');
+  expect(message).not.toContain('stale summary text');
+});
+
+test('context compaction diagnostic fetches checkpoint details when list omits summary', async () => {
+  const sessionKey = 'agent:main:lobsterai:diag-get';
+  const requests: Array<{ method: string; params: unknown }> = [];
+  const adapter = new OpenClawRuntimeAdapter({} as never, {} as never);
+  adapter.gatewayClient = {
+    request: async (method: string, params?: unknown) => {
+      requests.push({ method, params });
+      if (method === 'sessions.compaction.get') {
+        return {
+          checkpointId: 'checkpoint-get',
+          createdAt: 20,
+          tokensBefore: 9_000,
+          tokensAfter: 90,
+          summary: 'loaded details',
+        };
+      }
+      return {
+        checkpoints: [{
+          checkpointId: 'checkpoint-get',
+          createdAt: 20,
+        }],
+      };
+    },
+  } as never;
+  const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+  try {
+    await (adapter as unknown as {
+      logContextCompactionDiagnostic: (input: {
+        sessionId: string;
+        sessionKey: string;
+        mode: 'auto';
+        compacted: boolean;
+      }) => Promise<void>;
+    }).logContextCompactionDiagnostic({
+      sessionId: 'diag-get',
+      sessionKey,
+      mode: 'auto',
+      compacted: true,
+    });
+  } finally {
+    logSpy.mockRestore();
+  }
+
+  expect(requests.map((request) => request.method)).toEqual([
+    'sessions.compaction.list',
+    'sessions.compaction.get',
+  ]);
+});
+
+test('context compaction diagnostic lookup failure warns without throwing', async () => {
+  const sessionKey = 'agent:main:lobsterai:diag-failure';
+  const error = new Error('gateway unavailable');
+  const adapter = new OpenClawRuntimeAdapter({} as never, {} as never);
+  adapter.gatewayClient = {
+    request: async () => {
+      throw error;
+    },
+  } as never;
+  const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+  let warnCalls: unknown[][] = [];
+
+  try {
+    await expect((adapter as unknown as {
+      logContextCompactionDiagnostic: (input: {
+        sessionId: string;
+        sessionKey: string;
+        mode: 'manual';
+      }) => Promise<void>;
+    }).logContextCompactionDiagnostic({
+      sessionId: 'diag-failure',
+      sessionKey,
+      mode: 'manual',
+    })).resolves.toBeUndefined();
+    warnCalls = warnSpy.mock.calls;
+  } finally {
+    warnSpy.mockRestore();
+  }
+
+  expect(warnCalls).toHaveLength(1);
+  expect(warnCalls[0]?.[1]).toBe(error);
 });
 
 test('context usage resolves historical sessions with targeted lookup', async () => {
@@ -653,7 +1158,11 @@ function createRunTurnAdapter(options: {
   const firstModelPatchBlocked = new Promise<void>((resolve) => {
     firstModelPatchRelease = resolve;
   });
-  const requests: Array<{ method: string; params: Record<string, unknown> }> = [];
+  const requests: Array<{
+    method: string;
+    params: Record<string, unknown>;
+    options?: { timeoutMs?: number };
+  }> = [];
   const store = {
     getSession: (sessionId: string) => (sessionId === session.id ? session : null),
     updateSession: (sessionId: string, patch: Record<string, unknown>) => {
@@ -701,9 +1210,9 @@ function createRunTurnAdapter(options: {
   adapter.gatewayClient = {
     start: () => {},
     stop: () => {},
-    request: async (method: string, params?: unknown) => {
+    request: async (method: string, params?: unknown, requestOptions?: { timeoutMs?: number }) => {
       const requestParams = (params ?? {}) as Record<string, unknown>;
-      requests.push({ method, params: requestParams });
+      requests.push({ method, params: requestParams, options: requestOptions });
       if (method === 'sessions.patch') {
         modelPatchCount++;
         if (options.holdFirstModelPatch && modelPatchCount === 1) {
@@ -849,6 +1358,29 @@ test('continueSession waits for an in-flight model patch before chat.send', asyn
   ]);
 });
 
+test('continueSession stopped before active turn creation does not send chat', async () => {
+  const {
+    adapter,
+    requests,
+    firstModelPatchStarted,
+    releaseFirstModelPatch,
+  } = createRunTurnAdapter({
+    holdFirstModelPatch: true,
+  });
+
+  const continuePromise = adapter.continueSession('session-1', 'hello');
+  await firstModelPatchStarted;
+
+  adapter.stopSession('session-1');
+  releaseFirstModelPatch();
+  await continuePromise;
+
+  expect(requests.map((request) => request.method)).toEqual(['sessions.patch']);
+  expect(adapter.isSessionActive('session-1')).toBe(false);
+  expect((adapter as unknown as { stoppedSessions: Map<string, number> }).stoppedSessions.has('session-1')).toBe(false);
+  expect((adapter as unknown as { manuallyStoppedSessions: Set<string> }).manuallyStoppedSessions.has('session-1')).toBe(false);
+});
+
 test('continueSession sends the session cwd to OpenClaw chat.send', async () => {
   const { adapter, requests } = createRunTurnAdapter({
     sessionCwd: '/tmp/lobsterai-selected-project',
@@ -875,6 +1407,72 @@ test('continueSession clears the pending turn when chat.send fails immediately',
     pendingTurns: Map<string, unknown>;
   }).pendingTurns;
   expect(pendingTurns.has('session-1')).toBe(false);
+});
+
+test('pre-send model patch uses the extended send timeout while patchSession keeps the default', async () => {
+  const model = 'lobsterai-server/qwen3.6-plus-YoudaoInner';
+  const { adapter, requests } = createRunTurnAdapter({
+    sessionModelOverride: model,
+  });
+
+  await adapter.continueSession('session-1', 'hello');
+  await adapter.patchSession('session-1', { model });
+
+  const patchRequests = requests.filter((request) => request.method === 'sessions.patch');
+  expect(patchRequests).toHaveLength(2);
+  expect(patchRequests[0].options?.timeoutMs).toBe(90_000);
+  expect(patchRequests[1].options?.timeoutMs).toBe(30_000);
+});
+
+test('continueSession sends after a slow pre-send model patch eventually succeeds', async () => {
+  const model = 'lobsterai-server/qwen3.6-plus-YoudaoInner';
+  const {
+    adapter,
+    requests,
+    firstModelPatchStarted,
+    releaseFirstModelPatch,
+  } = createRunTurnAdapter({
+    sessionModelOverride: model,
+    holdFirstModelPatch: true,
+  });
+  const errors: unknown[] = [];
+  adapter.on('error', (...args: unknown[]) => errors.push(args));
+
+  const continuePromise = adapter.continueSession('session-1', 'hello');
+  await firstModelPatchStarted;
+  releaseFirstModelPatch();
+  await continuePromise;
+
+  expect(requests.map((request) => request.method).slice(0, 3)).toEqual([
+    'sessions.patch',
+    'chat.history',
+    'chat.send',
+  ]);
+  expect(errors).toEqual([]);
+});
+
+test('continueSession aborts silently when the session is stopped during the model patch wait', async () => {
+  const model = 'lobsterai-server/qwen3.6-plus-YoudaoInner';
+  const {
+    adapter,
+    requests,
+    firstModelPatchStarted,
+    releaseFirstModelPatch,
+  } = createRunTurnAdapter({
+    sessionModelOverride: model,
+    holdFirstModelPatch: true,
+  });
+  const errors: unknown[] = [];
+  adapter.on('error', (...args: unknown[]) => errors.push(args));
+
+  const continuePromise = adapter.continueSession('session-1', 'hello');
+  await firstModelPatchStarted;
+  adapter.stopSession('session-1');
+  releaseFirstModelPatch();
+  await continuePromise;
+
+  expect(requests.map((request) => request.method)).toEqual(['sessions.patch']);
+  expect(errors).toEqual([]);
 });
 
 // ==================== Reconcile tests ====================
@@ -954,6 +1552,7 @@ function createActiveTurn(sessionId: string, sessionKey: string, runId: string) 
     sessionId,
     sessionKey,
     runId,
+    model: '',
     turnToken: 1,
     startedAtMs: 1,
     knownRunIds: new Set([runId]),
@@ -962,6 +1561,7 @@ function createActiveTurn(sessionId: string, sessionKey: string, runId: string) 
     currentAssistantSegmentText: '',
     currentText: '',
     agentAssistantTextLength: 0,
+    hasSeenAgentAssistantStream: false,
     currentContentText: '',
     currentContentBlocks: [],
     sawNonTextContentBlocks: false,
@@ -979,6 +1579,64 @@ function createActiveTurn(sessionId: string, sessionKey: string, runId: string) 
     bufferedAgentPayloads: [],
   };
 }
+
+test('stopSession finalizes streamed assistant metadata with the active model', () => {
+  const model = 'lobsterai-server/qwen3.6-plus';
+  const { session, store } = createReconcileStore([
+    { id: 'msg-1', type: 'user', content: 'hello', timestamp: 1, metadata: {} },
+    {
+      id: 'msg-2',
+      type: 'assistant',
+      content: 'partial',
+      timestamp: 2,
+      metadata: { isStreaming: true, isFinal: false },
+    },
+  ]);
+  session.modelOverride = model;
+  session.status = 'running';
+
+  const adapter = new OpenClawRuntimeAdapter(store, {});
+  const abortSpy = vi.fn(async () => ({}));
+  const messageUpdateSpy = vi.fn();
+  adapter.gatewayClient = {
+    start: () => {},
+    stop: () => {},
+    request: abortSpy,
+  };
+  adapter.on('messageUpdate', messageUpdateSpy);
+
+  const sessionKey = `agent:main:lobsterai:${session.id}`;
+  const turn = createActiveTurn(session.id, sessionKey, 'run-stop');
+  turn.model = model;
+  turn.assistantMessageId = 'msg-2';
+  turn.currentAssistantSegmentText = 'partial answer';
+  adapter.activeTurns.set(session.id, turn);
+
+  adapter.stopSession(session.id);
+
+  const assistantMessage = session.messages.find((message) => message.id === 'msg-2');
+  expect(assistantMessage?.content).toBe('partial answer');
+  expect(assistantMessage?.metadata).toMatchObject({
+    isStreaming: false,
+    isFinal: true,
+    model,
+  });
+  expect(messageUpdateSpy).toHaveBeenCalledWith(
+    session.id,
+    'msg-2',
+    'partial answer',
+    expect.objectContaining({
+      isStreaming: false,
+      isFinal: true,
+      model,
+    }),
+  );
+  expect(abortSpy).toHaveBeenCalledWith('chat.abort', {
+    sessionKey,
+    runId: 'run-stop',
+  });
+  expect(session.status).toBe('idle');
+});
 
 test('reconcileWithHistory: already in sync — skips replace', async () => {
   const { session, store, getReplaceCallCount } = createReconcileStore([

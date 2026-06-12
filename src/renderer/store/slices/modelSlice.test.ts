@@ -16,6 +16,8 @@ const modelB: Model = { id: 'glm-5.1', name: 'GLM 5.1', providerKey: 'zhipu' };
 const modelC: Model = { id: 'claude-3-sonnet', name: 'Claude 3 Sonnet', providerKey: 'anthropic' };
 const serverModel: Model = { id: 'server-model', name: 'Server Model', providerKey: 'lobsterai-server', isServerModel: true };
 const lockedServerModel: Model = { ...serverModel, accessible: false };
+const customKimiModel: Model = { id: 'kimi-k2.6', name: 'Kimi K2.6', providerKey: 'moonshot' };
+const serverKimiModel: Model = { id: 'kimi-k2.6', name: 'Kimi K2.6', providerKey: 'lobsterai-server', isServerModel: true };
 
 function makeState(overrides?: Partial<ReturnType<typeof modelReducer>>) {
   const base = modelReducer(undefined, { type: 'init' });
@@ -149,6 +151,32 @@ describe('setServerModels / clearServerModels', () => {
     expect(state.selectedModelByAgent['agent-1'].supportsImage).toBe(true);
   });
 
+  test('setServerModels does not replace a same-id custom model selection', () => {
+    let state = makeState({
+      availableModels: [customKimiModel],
+      defaultSelectedModel: customKimiModel,
+      selectedModelByAgent: { 'agent-1': customKimiModel },
+    });
+
+    state = modelReducer(state, setServerModels([serverKimiModel]));
+
+    expect(state.defaultSelectedModel).toEqual(customKimiModel);
+    expect(state.selectedModelByAgent['agent-1']).toEqual(customKimiModel);
+  });
+
+  test('setAvailableModels does not replace a same-id server model selection', () => {
+    let state = makeState({
+      availableModels: [serverKimiModel],
+      defaultSelectedModel: serverKimiModel,
+      selectedModelByAgent: { 'agent-1': serverKimiModel },
+    });
+
+    state = modelReducer(state, setAvailableModels([customKimiModel]));
+
+    expect(state.defaultSelectedModel).toEqual(serverKimiModel);
+    expect(state.selectedModelByAgent['agent-1']).toEqual(serverKimiModel);
+  });
+
   test('clearServerModels removes server model entries from per-agent map', () => {
     let state = modelReducer(undefined, setSelectedModel({ agentId: 'agent-1', model: serverModel }));
     // Ensure there's at least one non-server model available
@@ -182,6 +210,30 @@ describe('selectAgentSelectedModel', () => {
 
     const result = selectAgentSelectedModel(state, 'agent-1', 'openai/gpt-4o');
     expect(result.id).toBe('gpt-4o');
+  });
+
+  test('uses explicit server agent model ref over a same-id custom override', () => {
+    const state = makeState({
+      selectedModelByAgent: { 'agent-1': customKimiModel },
+      availableModels: [serverKimiModel, customKimiModel],
+      defaultSelectedModel: customKimiModel,
+    });
+
+    const result = selectAgentSelectedModel(state, 'agent-1', 'lobsterai-server/kimi-k2.6');
+
+    expect(result).toEqual(serverKimiModel);
+  });
+
+  test('uses explicit custom agent model ref over a same-id server override', () => {
+    const state = makeState({
+      selectedModelByAgent: { 'agent-1': serverKimiModel },
+      availableModels: [serverKimiModel, customKimiModel],
+      defaultSelectedModel: serverKimiModel,
+    });
+
+    const result = selectAgentSelectedModel(state, 'agent-1', 'moonshot/kimi-k2.6');
+
+    expect(result).toEqual(customKimiModel);
   });
 
   test('ignores explicit agent model refs that resolve to locked server models', () => {

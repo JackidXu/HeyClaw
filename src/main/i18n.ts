@@ -56,14 +56,14 @@ const translations: Record<LanguageType, Record<string, string>> = {
     // Cowork error messages (shared with renderer via classifyErrorKey)
     coworkErrorAuthInvalid: 'API 密钥无效或已过期，请检查配置。',
     coworkErrorFreeQuotaExhausted:
-      '当前模型的免费额度已用完，升级套餐后可继续使用。\n\n[立即升级](https://c.youdao.com/dict/hardware/octopus/lobsterai-portal.html)',
+      '当前模型的免费额度已用完，升级套餐后可继续使用。\n\n[立即升级](https://lobsterai.youdao.com/portal)',
     coworkErrorInsufficientBalance: 'API 余额不足，请充值后重试。',
     coworkErrorInputTooLong: '输入内容过长，超出模型上下文限制。',
     coworkErrorMessageTooLarge:
       '本次消息过大，请减少附件、压缩图片或拆分提交。（单次整体需小于 30MB）',
     coworkErrorCouldNotProcessPdf: '无法处理 PDF 文件。',
     coworkErrorModelNotFound: '请求的模型不存在或不可用。',
-    coworkGatewaySessionSyncTimeout: 'OpenClaw 会话同步超时，消息尚未发送。请稍后重试或重启 OpenClaw Runtime。',
+    coworkGatewaySessionSyncTimeout: 'OpenClaw 引擎响应缓慢，消息尚未发送。请等待 1~2 分钟后重新发送；若频繁出现，请检查系统内存与磁盘占用，并将 LobsterAI 加入杀毒软件白名单。',
     coworkErrorGatewayDisconnected: 'AI 引擎连接中断，请重试。',
     coworkErrorServiceRestart: 'AI 引擎正在重启，请稍后重试。',
     coworkErrorGatewayDraining: 'AI 引擎正在重启中，请稍等片刻后重试。',
@@ -337,14 +337,14 @@ const translations: Record<LanguageType, Record<string, string>> = {
     // Cowork error messages
     coworkErrorAuthInvalid: 'Invalid or expired API key. Please check your configuration.',
     coworkErrorFreeQuotaExhausted:
-      'The current model\'s free quota has been used up. Upgrade your plan to continue.\n\n[Upgrade now](https://c.youdao.com/dict/hardware/octopus/lobsterai-portal.html)',
+      'The current model\'s free quota has been used up. Upgrade your plan to continue.\n\n[Upgrade now](https://lobsterai.youdao.com/portal)',
     coworkErrorInsufficientBalance: 'Insufficient API balance. Please top up and try again.',
     coworkErrorInputTooLong: 'Input too long, exceeding model context limit.',
     coworkErrorMessageTooLarge:
       'This message is too large. Reduce attachments, compress images, or split it up. (Keep each message under about 30 MB.)',
     coworkErrorCouldNotProcessPdf: 'Unable to process the PDF file.',
     coworkErrorModelNotFound: 'The requested model does not exist or is unavailable.',
-    coworkGatewaySessionSyncTimeout: 'OpenClaw session sync timed out, and the message was not sent. Please retry later or restart OpenClaw Runtime.',
+    coworkGatewaySessionSyncTimeout: 'The OpenClaw engine is responding slowly and your message has not been sent. Please wait a minute or two and resend. If this happens frequently, check system memory and disk usage, and add LobsterAI to your antivirus allowlist.',
     coworkErrorGatewayDisconnected: 'AI engine connection lost. Please retry.',
     coworkErrorServiceRestart: 'AI engine is restarting. Please try again later.',
     coworkErrorGatewayDraining: 'AI engine is restarting. Please wait a moment and try again.',

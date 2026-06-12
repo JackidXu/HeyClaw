@@ -1,6 +1,8 @@
 import type { OpenClawSessionPatch } from '../../common/openclawSession';
 import type { AppUpdateCheckResult, AppUpdateRuntimeState } from '../../shared/appUpdate/constants';
 import type {
+  AsrRealtimeSessionRequest,
+  AsrRealtimeSessionResult,
   AsrRecognizeRequest,
   AsrRecognizeResult,
 } from '../../shared/asr/constants';
@@ -20,6 +22,7 @@ import type {
 import type {
   HtmlShareAccessMode,
   HtmlShareConfigurableStatus,
+  HtmlShareSourceType,
   HtmlShareStatus,
 } from '../../shared/htmlShare/constants';
 import type {
@@ -892,6 +895,7 @@ interface IElectronAPI {
       artifactId: string;
       filePath: string;
       title: string;
+      accessMode?: HtmlShareAccessMode;
     }) => Promise<HtmlShareResult>;
     updateFromHtmlFile: (options: {
       shareId: string;
@@ -900,19 +904,55 @@ interface IElectronAPI {
       filePath: string;
       title: string;
       currentStatus?: HtmlShareStatus;
+      accessMode?: HtmlShareAccessMode;
     }) => Promise<HtmlShareResult>;
     getByHtmlFile: (options: {
       filePath: string;
     }) => Promise<{ success: boolean; share?: HtmlShareResult | null; error?: string; code?: number }>;
+    createFromArtifactFile: (options: {
+      sourceType: HtmlShareSourceType;
+      sessionId: string;
+      artifactId: string;
+      title: string;
+      accessMode?: HtmlShareAccessMode;
+      fileName?: string;
+      filePath?: string;
+      content?: string;
+      remoteUrl?: string;
+    }) => Promise<HtmlShareResult>;
+    updateFromArtifactFile: (options: {
+      sourceType: HtmlShareSourceType;
+      shareId: string;
+      sessionId: string;
+      artifactId: string;
+      title: string;
+      accessMode?: HtmlShareAccessMode;
+      fileName?: string;
+      filePath?: string;
+      content?: string;
+      remoteUrl?: string;
+      currentStatus?: HtmlShareStatus;
+    }) => Promise<HtmlShareResult>;
+    getByArtifactFile: (options: {
+      sourceType: HtmlShareSourceType;
+      sessionId?: string;
+      artifactId?: string;
+      filePath?: string;
+    }) => Promise<{ success: boolean; share?: HtmlShareResult | null; error?: string; code?: number }>;
     updateStatus: (options: {
       shareId: string;
       status: HtmlShareConfigurableStatus;
+    }) => Promise<HtmlShareResult>;
+    updateAccessMode: (options: {
+      shareId: string;
+      accessMode: HtmlShareAccessMode;
     }) => Promise<HtmlShareResult>;
     disable: (shareId: string) => Promise<HtmlShareResult>;
     get: (shareId: string) => Promise<{ success: boolean; share?: unknown; error?: string }>;
   };
   asr: {
     recognize: (options: AsrRecognizeRequest) => Promise<AsrRecognizeResult>;
+    createRealtimeSession: (options: AsrRealtimeSessionRequest) => Promise<AsrRealtimeSessionResult>;
   };
   artifact: {
     watchFile: (filePath: string) => Promise<void>;

@@ -1,6 +1,7 @@
 import path from 'node:path';
 
 import { isDesignedAgentAvatarIcon } from '../../shared/agent/avatar';
+import { OpenClawProviderId } from '../../shared/providers/constants';
 import type { Agent } from '../coworkStore';
 
 type BuildManagedAgentEntriesInput = {
@@ -22,6 +23,10 @@ export type QualifiedAgentModelRefResolution =
   | { status: 'qualified'; primaryModel: string }
   | { status: 'ambiguous'; modelId: string; providerIds: string[] }
   | { status: 'unresolved'; modelId: string };
+
+const LegacyQualifiedProviderMigration: Record<string, readonly string[]> = {
+  [OpenClawProviderId.OpenAI]: [OpenClawProviderId.OpenAICodex],
+};
 
 export function parsePrimaryModelRef(primaryModel: string): ManagedSessionModelTarget | null {
   const normalized = primaryModel.trim();
@@ -129,8 +134,12 @@ export function resolveQualifiedAgentModelRef(options: {
       };
     }
 
+    const migrationProviders = LegacyQualifiedProviderMigration[explicitTarget.providerId] ?? [];
     const matchingProviders = Object.entries(options.availableProviders)
-      .filter(([, config]) => config.models.some((model) => model.id === explicitTarget.modelId))
+      .filter(([providerId, config]) => (
+        migrationProviders.includes(providerId)
+        && config.models.some((model) => model.id === explicitTarget.modelId)
+      ))
       .map(([providerId]) => providerId);
 
     if (matchingProviders.length === 1) {

@@ -38,6 +38,11 @@ import CoworkSessionDetail from './CoworkSessionDetail';
 import { buildCoworkContinuationSystemPrompt, buildCoworkSystemPrompt } from './skillSystemPrompt';
 import SubagentSessionDetail from './SubagentSessionDetail';
 
+const logCoworkViewModel = (message: string): void => {
+  console.debug(`[CoworkView] ${message}`);
+  window.electron?.log?.fromRenderer?.('debug', 'CoworkView', message);
+};
+
 export interface CoworkViewProps {
   onRequestAppSettings?: (options?: SettingsOpenOptions) => void;
   onShowSkills?: () => void;
@@ -359,7 +364,9 @@ const CoworkView: React.FC<CoworkViewProps> = ({ onRequestAppSettings, onShowSki
 
       // Start the actual session immediately with fallback title
       const sessionModelOverride = currentAgentSelectedModel ? toOpenClawModelRef(currentAgentSelectedModel) : '';
-      console.log('[CoworkView] creating session:', { modelId: currentAgentSelectedModel?.id, providerKey: currentAgentSelectedModel?.providerKey, isServerModel: currentAgentSelectedModel?.isServerModel, sessionModelOverride, agentModel: currentAgent?.model });
+      logCoworkViewModel(
+        `creating session with model ${sessionModelOverride || 'default'}; agent model is ${currentAgent?.model || 'empty'}; server model is ${currentAgentSelectedModel?.isServerModel === true}`,
+      );
       const { session: startedSession, error: startError } = await coworkService.startSession({
         prompt,
         title: fallbackTitle,

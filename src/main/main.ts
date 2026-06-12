@@ -70,6 +70,7 @@ import {
 import { DialogIpc } from '../shared/dialog/constants';
 import {
   HtmlShareAccessMode,
+  type HtmlShareAccessMode as HtmlShareAccessModeValue,
   type HtmlShareConfigurableStatus,
   HtmlShareErrorCode,
   HtmlShareIpc,
@@ -93,13 +94,14 @@ import {
   OpenClawGatewayRepairErrorCode,
 } from '../shared/openclawEngine/constants';
 import { PlatformRegistry } from '../shared/platform';
-import { ProviderName } from '../shared/providers';
+import { OpenClawProviderId, ProviderName } from '../shared/providers';
 import type { ShellOpenFailureReason as ShellOpenFailureReasonType } from '../shared/shell/constants';
 import { ShellOpenFailureReason } from '../shared/shell/constants';
 import { AgentManager } from './agentManager';
 import { APP_NAME, APP_USER_MODEL_ID, DB_FILENAME } from './appConstants';
 import { authQuotaGateStateFromQuota, AuthSubscriptionStatus, createDefaultAuthQuotaGateState, normalizeAuthQuota } from './authQuota';
 import { getAutoLaunchEnabled, isAutoLaunched, setAutoLaunchEnabled } from './autoLaunchManager';
+import { getRecentComputerUseLogEntries } from './computerUse/computerUseLogs';
 import { type CoworkForkContextMessage, type CoworkMessage, CoworkStore } from './coworkStore';
 import { setLanguage, t } from './i18n';
 import { IMGatewayConfig, IMGatewayManager } from './im';
@@ -208,8 +210,13 @@ import {
   stopHtmlPreviewServer,
 } from './libs/htmlPreviewServer';
 import {
+  type ArtifactFileShareSourceType,
+  packageArtifactFile,
+} from './libs/htmlShare/artifactFileSharePackager';
+import {
   getHtmlShareBySource,
   updateHtmlShare,
+  updateHtmlShareAccessMode,
   updateHtmlShareStatus,
   uploadHtmlShare,
 } from './libs/htmlShare/htmlShareClient';
@@ -342,6 +349,7 @@ const IPC_MAX_DEPTH = 5;
 const IPC_MAX_KEYS = 80;
 const IPC_MAX_ITEMS = 40;
 const MAX_INLINE_ATTACHMENT_BYTES = 25 * 1024 * 1024;
+const MAX_ARTIFACT_SHARE_CONTENT_CHARS = 30 * 1024 * 1024;
 const ENGINE_NOT_READY_CODE = 'ENGINE_NOT_READY';
 const LOCAL_WEB_SERVICE_PROBE_TIMEOUT_MS = 700;
 const LOCAL_WEB_SERVICE_TITLE_MAX_LENGTH = 80;
@@ -373,6 +381,7 @@ interface HtmlShareCreateFromHtmlFileInput {
   artifactId: string;
   filePath: string;
   title: string;
+  accessMode?: HtmlShareAccessModeValue;
 }
 
 interface HtmlShareUpdateFromHtmlFileInput extends HtmlShareCreateFromHtmlFileInput {
@@ -384,9 +393,38 @@ interface HtmlShareGetByHtmlFileInput {
   filePath: string;
 }
 
+interface HtmlShareCreateFromArtifactFileInput {
+  sourceType: ArtifactFileShareSourceType;
+  sessionId: string;
+  artifactId: string;
+  title: string;
+  accessMode?: HtmlShareAccessModeValue;
+  fileName?: string;
+  filePath?: string;
+  content?: string;
+  remoteUrl?: string;
+}
+
+interface HtmlShareUpdateFromArtifactFileInput extends HtmlShareCreateFromArtifactFileInput {
+  shareId: string;
+  currentStatus?: HtmlShareStatusValue;
+}
+
+interface HtmlShareGetByArtifactFileInput {
+  sourceType: ArtifactFileShareSourceType;
+  sessionId?: string;
+  artifactId?: string;
+  filePath?: string;
+}
+
 interface HtmlShareUpdateStatusInput {
   shareId: string;
   status: HtmlShareConfigurableStatus;
+}
+
+interface HtmlShareUpdateAccessModeInput {
+  shareId: string;
+  accessMode: HtmlShareAccessModeValue;
 }
 
 function sanitizeHtmlShareString(
@@ -407,16 +445,40 @@ function sanitizeHtmlShareString(
   return trimmed;
 }
 
+function sanitizeOptionalHtmlShareString(
+  value: unknown,
+  fieldName: string,
+  maxLength = IPC_STRING_MAX_CHARS,
+): string | undefined {
+  if (value === undefined || value === null) return undefined;
+  return sanitizeHtmlShareString(value, fieldName, maxLength);
+}
+
 function sanitizeHtmlShareTitle(value: unknown): string {
   return sanitizeHtmlShareString(value, 'title', 255);
 }
 
-function validateHtmlShareAccessMode(value: unknown): void {
-  if (value === undefined) return;
-  const accessMode = sanitizeHtmlShareString(value, 'accessMode', 32);
-  if (accessMode !== HtmlShareAccessMode.Code) {
-    throw new Error('accessMode must be code.');
+function sanitizeArtifactFileShareSourceType(value: unknown): ArtifactFileShareSourceType {
+  const sourceType = sanitizeHtmlShareString(value, 'sourceType', 32);
+  if (
+    sourceType !== HtmlShareSourceType.ImageFile &&
+    sourceType !== HtmlShareSourceType.SvgFile
+  ) {
+    throw new Error('sourceType must be image_file or svg_file.');
   }
+  return sourceType;
+}
+
+function sanitizeHtmlShareAccessMode(
+  value: unknown,
+  defaultValue?: HtmlShareAccessModeValue,
+): HtmlShareAccessModeValue | undefined {
+  if (value === undefined) return defaultValue;
+  const accessMode = sanitizeHtmlShareString(value, 'accessMode', 32);
+  if (accessMode !== HtmlShareAccessMode.Code && accessMode !== HtmlShareAccessMode.Public) {
+    throw new Error('accessMode must be code or public.');
+  }
+  return accessMode;
 }
 
 function sanitizeHtmlShareConfigurableStatus(
@@ -448,12 +510,12 @@ function sanitizeCreateFromHtmlFileInput(input: unknown): HtmlShareCreateFromHtm
     throw new Error('Invalid HTML share request.');
   }
   const source = input as Record<string, unknown>;
-  validateHtmlShareAccessMode(source.accessMode);
   return {
     sessionId: sanitizeHtmlShareString(source.sessionId, 'sessionId', 128),
     artifactId: sanitizeHtmlShareString(source.artifactId, 'artifactId', 128),
     filePath: sanitizeHtmlShareString(source.filePath, 'filePath', 4096),
     title: sanitizeHtmlShareTitle(source.title),
+    accessMode: sanitizeHtmlShareAccessMode(source.accessMode, HtmlShareAccessMode.Code),
   };
 }
 
@@ -464,6 +526,7 @@ function sanitizeUpdateFromHtmlFileInput(input: unknown): HtmlShareUpdateFromHtm
     ...source,
     shareId: sanitizeHtmlShareString(record.shareId, 'shareId', 64),
     currentStatus: sanitizeHtmlShareStatus(record.currentStatus),
+    accessMode: sanitizeHtmlShareAccessMode(record.accessMode),
   };
 }
 
@@ -475,6 +538,62 @@ function sanitizeGetByHtmlFileInput(input: unknown): HtmlShareGetByHtmlFileInput
   return {
     filePath: sanitizeHtmlShareString(source.filePath, 'filePath', 4096),
   };
+}
+
+function sanitizeCreateFromArtifactFileInput(input: unknown): HtmlShareCreateFromArtifactFileInput {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) {
+    throw new Error('Invalid artifact share request.');
+  }
+  const source = input as Record<string, unknown>;
+  const options: HtmlShareCreateFromArtifactFileInput = {
+    sourceType: sanitizeArtifactFileShareSourceType(source.sourceType),
+    sessionId: sanitizeHtmlShareString(source.sessionId, 'sessionId', 128),
+    artifactId: sanitizeHtmlShareString(source.artifactId, 'artifactId', 128),
+    title: sanitizeHtmlShareTitle(source.title),
+    accessMode: sanitizeHtmlShareAccessMode(source.accessMode, HtmlShareAccessMode.Code),
+    fileName: sanitizeOptionalHtmlShareString(source.fileName, 'fileName', 255),
+    filePath: sanitizeOptionalHtmlShareString(source.filePath, 'filePath', 4096),
+    content: sanitizeOptionalHtmlShareString(
+      source.content,
+      'content',
+      MAX_ARTIFACT_SHARE_CONTENT_CHARS,
+    ),
+    remoteUrl: sanitizeOptionalHtmlShareString(source.remoteUrl, 'remoteUrl', 4096),
+  };
+  if (!options.filePath && !options.content && !options.remoteUrl) {
+    throw new Error('Artifact share source is required.');
+  }
+  return options;
+}
+
+function sanitizeUpdateFromArtifactFileInput(
+  input: unknown,
+): HtmlShareUpdateFromArtifactFileInput {
+  const source = sanitizeCreateFromArtifactFileInput(input);
+  const record = input as Record<string, unknown>;
+  return {
+    ...source,
+    shareId: sanitizeHtmlShareString(record.shareId, 'shareId', 64),
+    currentStatus: sanitizeHtmlShareStatus(record.currentStatus),
+    accessMode: sanitizeHtmlShareAccessMode(record.accessMode),
+  };
+}
+
+function sanitizeGetByArtifactFileInput(input: unknown): HtmlShareGetByArtifactFileInput {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) {
+    throw new Error('Invalid artifact share lookup request.');
+  }
+  const source = input as Record<string, unknown>;
+  const options: HtmlShareGetByArtifactFileInput = {
+    sourceType: sanitizeArtifactFileShareSourceType(source.sourceType),
+    sessionId: sanitizeOptionalHtmlShareString(source.sessionId, 'sessionId', 128),
+    artifactId: sanitizeOptionalHtmlShareString(source.artifactId, 'artifactId', 128),
+    filePath: sanitizeOptionalHtmlShareString(source.filePath, 'filePath', 4096),
+  };
+  if (!options.filePath && (!options.sessionId || !options.artifactId)) {
+    throw new Error('Artifact share lookup source is required.');
+  }
+  return options;
 }
 
 function sanitizeUpdateHtmlShareStatusInput(input: unknown): HtmlShareUpdateStatusInput {
@@ -489,6 +608,21 @@ function sanitizeUpdateHtmlShareStatusInput(input: unknown): HtmlShareUpdateStat
   return {
     shareId: sanitizeHtmlShareString(source.shareId, 'shareId', 64),
     status,
+  };
+}
+
+function sanitizeUpdateHtmlShareAccessModeInput(input: unknown): HtmlShareUpdateAccessModeInput {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) {
+    throw new Error('Invalid HTML share access mode request.');
+  }
+  const source = input as Record<string, unknown>;
+  const accessMode = sanitizeHtmlShareAccessMode(source.accessMode);
+  if (!accessMode) {
+    throw new Error('accessMode is required.');
+  }
+  return {
+    shareId: sanitizeHtmlShareString(source.shareId, 'shareId', 64),
+    accessMode,
   };
 }
 
@@ -509,6 +643,23 @@ function buildHtmlShareClientSourceKey(filePath: string): string {
   return crypto
     .createHash('sha256')
     .update(`${HtmlShareSourceType.HtmlFile}:${normalizedPath}`)
+    .digest('hex');
+}
+
+function buildArtifactShareClientSourceKey(options: HtmlShareGetByArtifactFileInput): string {
+  if (options.filePath) {
+    const normalizedPath = normalizeHtmlShareSourceFilePath(options.filePath);
+    return crypto
+      .createHash('sha256')
+      .update(`${options.sourceType}:file:${normalizedPath}`)
+      .digest('hex');
+  }
+  if (!options.sessionId || !options.artifactId) {
+    throw new Error('Artifact share source key is missing.');
+  }
+  return crypto
+    .createHash('sha256')
+    .update(`${options.sourceType}:artifact:${options.sessionId}:${options.artifactId}`)
     .digest('hex');
 }
 
@@ -812,6 +963,32 @@ const buildAvailableOpenClawProviders = (): Record<string, { models: Array<{ id:
   }
 
   return providerMap;
+};
+
+const openClawConfigHasServerModels = (modelIds: string[]): boolean => {
+  const normalizedModelIds = modelIds.map(modelId => modelId.trim()).filter(Boolean);
+  if (normalizedModelIds.length === 0) return true;
+
+  try {
+    const configPath = getOpenClawEngineManager().getConfigPath();
+    const parsed = JSON.parse(fs.readFileSync(configPath, 'utf8')) as {
+      models?: {
+        providers?: Record<string, { models?: Array<{ id?: string }> }>;
+      };
+    };
+    const serverProviderModels = parsed.models?.providers?.[OpenClawProviderId.LobsteraiServer]?.models;
+    if (!Array.isArray(serverProviderModels)) return false;
+
+    const configuredModelIds = new Set(
+      serverProviderModels
+        .map(model => (typeof model.id === 'string' ? model.id.trim() : ''))
+        .filter(Boolean),
+    );
+    return normalizedModelIds.every(modelId => configuredModelIds.has(modelId));
+  } catch (error) {
+    console.debug('[Auth:getModels] OpenClaw config inspection failed; scheduling model sync.', error);
+    return false;
+  }
 };
 
 const normalizeOpenClawModelRef = (modelRef: string): string => {
@@ -3008,7 +3185,10 @@ if (!gotTheLock) {
   };
 
   ipcMain.on('log:fromRenderer', (_event, level: string, tag: string, message: string) => {
-    const fn = level === 'error' ? console.error : level === 'warn' ? console.warn : console.log;
+    const fn = level === 'error' ? console.error
+      : level === 'warn' ? console.warn
+        : level === 'debug' ? console.debug
+          : console.log;
     fn(`[Renderer][${tag}] ${message}`);
   });
 
@@ -3157,6 +3337,7 @@ if (!gotTheLock) {
         entries: [
           ...getRecentMainLogEntries(),
           { archiveName: 'cowork.log', filePath: getCoworkLogPath() },
+          ...getRecentComputerUseLogEntries(),
           ...manager.getRecentGatewayLogEntries(),
           ...getRecentOpenClawDailyLogEntries(manager.getOpenClawDailyLogDir()),
           ...(process.platform === 'win32'
@@ -4281,8 +4462,12 @@ if (!gotTheLock) {
 
   const syncOpenClawConfigIfAuthQuotaGateChanged = (previous: ReturnType<typeof getAuthQuotaGateState>) => {
     if (hasAuthQuotaGateStateChanged(previous)) {
-      syncOpenClawConfig({ reason: MEDIA_ENTITLEMENT_SYNC_REASON, restartGatewayIfRunning: true }).catch(() => {});
+      syncOpenClawConfig({ reason: MEDIA_ENTITLEMENT_SYNC_REASON, restartGatewayIfRunning: true }).catch((error) => {
+        console.warn('[Auth] failed to sync OpenClaw config after quota gate changed:', error);
+      });
+      return true;
     }
+    return false;
   };
 
   const resetAuthQuotaGateState = () => {
@@ -4484,15 +4669,33 @@ if (!gotTheLock) {
       clearServerModelMetadata();
       const previousQuotaGateState = getAuthQuotaGateState();
       resetAuthQuotaGateState();
-      syncOpenClawConfigIfAuthQuotaGateChanged(previousQuotaGateState);
+      const quotaGateSyncScheduled = syncOpenClawConfigIfAuthQuotaGateChanged(previousQuotaGateState);
+      if (!quotaGateSyncScheduled) {
+        syncOpenClawConfig({
+          reason: 'auth-logout-server-models-cleared',
+          restartGatewayIfRunning: false,
+        }).catch((error) => {
+          console.warn('[Auth] failed to sync OpenClaw config after logout:', error);
+        });
+      }
+      console.log('[Auth] cleared login state and scheduled server model config refresh');
       return { success: true };
-    } catch {
+    } catch (error) {
+      console.warn('[Auth] logout cleanup encountered an error; clearing local state anyway:', error);
       const previousQuotaGateState = getAuthQuotaGateState();
       clearAuthTokens();
       clearAuthUser();
       clearServerModelMetadata();
       resetAuthQuotaGateState();
-      syncOpenClawConfigIfAuthQuotaGateChanged(previousQuotaGateState);
+      const quotaGateSyncScheduled = syncOpenClawConfigIfAuthQuotaGateChanged(previousQuotaGateState);
+      if (!quotaGateSyncScheduled) {
+        syncOpenClawConfig({
+          reason: 'auth-logout-server-models-cleared',
+          restartGatewayIfRunning: false,
+        }).catch((syncError) => {
+          console.warn('[Auth] failed to sync OpenClaw config after logout cleanup:', syncError);
+        });
+      }
       return { success: true };
     }
   });
@@ -4586,14 +4789,21 @@ if (!gotTheLock) {
       if (data.code !== 0) return { success: false };
       // Cache server model metadata for use in OpenClaw config sync (supportsImage, etc.)
       const serverModelsChanged = updateServerModelMetadata(data.data);
+      const serverModelIds = data.data.map(model => model.modelId);
+      const serverModelsMissingFromConfig = !openClawConfigHasServerModels(serverModelIds);
       // Re-sync so the gateway picks up the correct supportsImage values for server models.
       // This IPC can run after normal chat completion when the renderer refreshes quota/model
       // state, so server model updates must not force a hard gateway restart.
-      if (serverModelsChanged) {
+      if (serverModelsChanged || serverModelsMissingFromConfig) {
+        console.log(
+          `[Auth:getModels] scheduling OpenClaw config sync for ${serverModelIds.length} server model(s); metadataChanged=${serverModelsChanged} missingFromConfig=${serverModelsMissingFromConfig}`,
+        );
         syncOpenClawConfig({
-          reason: 'server-models-updated',
+          reason: serverModelsChanged ? 'server-models-updated' : 'server-models-restored',
           restartGatewayIfRunning: false,
-        }).catch(() => {});
+        }).catch((error) => {
+          console.warn('[Auth:getModels] failed to sync OpenClaw config after loading server models:', error);
+        });
       } else {
         console.debug('[Auth:getModels] server model metadata unchanged, skipping config sync');
       }
@@ -4612,7 +4822,7 @@ if (!gotTheLock) {
         `[HtmlShare] received HTML file share request for session ${options.sessionId} and artifact ${options.artifactId}`,
       );
       console.debug(
-        `[HtmlShare] HTML file share uses share-code access and source file ${options.filePath}`,
+        `[HtmlShare] HTML file share uses access mode ${options.accessMode ?? 'server-default'} and source file ${options.filePath}`,
       );
       const clientSourceKey = buildHtmlShareClientSourceKey(options.filePath);
       const packaged = await packageHtmlFile(options.filePath);
@@ -4632,6 +4842,7 @@ if (!gotTheLock) {
           artifactId: options.artifactId,
           title: options.title,
           entryFile: packaged.entryFile,
+          accessMode: options.accessMode,
           sourceSha256: packaged.sourceSha256,
         },
       );
@@ -4704,12 +4915,147 @@ if (!gotTheLock) {
           artifactId: options.artifactId,
           title: options.title,
           entryFile: packaged.entryFile,
+          accessMode: options.accessMode,
           sourceSha256: packaged.sourceSha256,
         },
       );
       return { ...result, warnings: packaged.warnings };
     } catch (error) {
       console.error('[HtmlShare] failed to update share from HTML file:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to update share',
+      };
+    } finally {
+      if (archivePath) {
+        const archiveDir = path.dirname(archivePath);
+        fs.promises
+          .rm(archiveDir, { recursive: true, force: true })
+          .then(() => {
+            console.debug(`[HtmlShare] cleaned temporary archive directory ${archiveDir}`);
+          })
+          .catch((cleanupError): undefined => {
+            console.warn('[HtmlShare] temporary archive cleanup failed:', cleanupError);
+            return undefined;
+          });
+      }
+    }
+  });
+
+  ipcMain.handle(HtmlShareIpc.CreateFromArtifactFile, async (_event, input: unknown) => {
+    let archivePath: string | undefined;
+    try {
+      const options = sanitizeCreateFromArtifactFileInput(input);
+      console.debug(
+        `[HtmlShare] received ${options.sourceType} share request for session ${options.sessionId} and artifact ${options.artifactId}`,
+      );
+      const clientSourceKey = buildArtifactShareClientSourceKey(options);
+      const packaged = await packageArtifactFile({
+        sourceType: options.sourceType,
+        fileName: options.fileName,
+        filePath: options.filePath,
+        content: options.content,
+        remoteUrl: options.remoteUrl,
+      });
+      archivePath = packaged.archivePath;
+      console.debug(
+        `[HtmlShare] packaged ${options.sourceType} share with ${packaged.totalBytes} bytes and entry ${packaged.entryFile}`,
+      );
+      const result = await uploadHtmlShare(
+        getServerApiBaseUrl(),
+        getHtmlSharePublicBaseUrl(),
+        fetchWithAuth,
+        {
+          archivePath: packaged.archivePath,
+          sourceType: options.sourceType,
+          clientSourceKey,
+          sessionId: options.sessionId,
+          artifactId: options.artifactId,
+          title: options.title,
+          entryFile: packaged.entryFile,
+          accessMode: options.accessMode,
+          sourceSha256: packaged.sourceSha256,
+        },
+      );
+      return { ...result, warnings: packaged.warnings };
+    } catch (error) {
+      console.error('[HtmlShare] failed to create share from artifact file:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to create share',
+      };
+    } finally {
+      if (archivePath) {
+        const archiveDir = path.dirname(archivePath);
+        fs.promises
+          .rm(archiveDir, { recursive: true, force: true })
+          .then(() => {
+            console.debug(`[HtmlShare] cleaned temporary archive directory ${archiveDir}`);
+          })
+          .catch((cleanupError): undefined => {
+            console.warn('[HtmlShare] temporary archive cleanup failed:', cleanupError);
+            return undefined;
+          });
+      }
+    }
+  });
+
+  ipcMain.handle(HtmlShareIpc.GetByArtifactFile, async (_event, input: unknown) => {
+    try {
+      const options = sanitizeGetByArtifactFileInput(input);
+      const clientSourceKey = buildArtifactShareClientSourceKey(options);
+      return await getHtmlShareBySource(
+        getServerApiBaseUrl(),
+        getHtmlSharePublicBaseUrl(),
+        fetchWithAuth,
+        options.sourceType,
+        clientSourceKey,
+      );
+    } catch (error) {
+      console.error('[HtmlShare] failed to look up share from artifact file:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to load share',
+      };
+    }
+  });
+
+  ipcMain.handle(HtmlShareIpc.UpdateFromArtifactFile, async (_event, input: unknown) => {
+    let archivePath: string | undefined;
+    try {
+      const options = sanitizeUpdateFromArtifactFileInput(input);
+      if (options.currentStatus === HtmlShareStatus.Disabled) {
+        return { success: false, code: HtmlShareErrorCode.DisabledCannotUpdate };
+      }
+      const clientSourceKey = buildArtifactShareClientSourceKey(options);
+      const packaged = await packageArtifactFile({
+        sourceType: options.sourceType,
+        fileName: options.fileName,
+        filePath: options.filePath,
+        content: options.content,
+        remoteUrl: options.remoteUrl,
+      });
+      archivePath = packaged.archivePath;
+      const result = await updateHtmlShare(
+        getServerApiBaseUrl(),
+        getHtmlSharePublicBaseUrl(),
+        fetchWithAuth,
+        options.shareId,
+        {
+          archivePath: packaged.archivePath,
+          sourceType: options.sourceType,
+          clientSourceKey,
+          sessionId: options.sessionId,
+          artifactId: options.artifactId,
+          title: options.title,
+          entryFile: packaged.entryFile,
+          accessMode: options.accessMode,
+          sourceSha256: packaged.sourceSha256,
+        },
+      );
+      return { ...result, warnings: packaged.warnings };
+    } catch (error) {
+      console.error('[HtmlShare] failed to update share from artifact file:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to update share',
@@ -4745,6 +5091,25 @@ if (!gotTheLock) {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to update share status',
+      };
+    }
+  });
+
+  ipcMain.handle(HtmlShareIpc.UpdateAccessMode, async (_event, input: unknown) => {
+    try {
+      const options = sanitizeUpdateHtmlShareAccessModeInput(input);
+      return await updateHtmlShareAccessMode(
+        getServerApiBaseUrl(),
+        getHtmlSharePublicBaseUrl(),
+        fetchWithAuth,
+        options.shareId,
+        options.accessMode,
+      );
+    } catch (error) {
+      console.error('[HtmlShare] failed to update share access mode:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to update share access mode',
       };
     }
   });
@@ -4853,6 +5218,7 @@ if (!gotTheLock) {
     getStore,
     getKitStoreUrl,
     getSkillManager,
+    syncOpenClawConfig,
   });
 
   ipcMain.handle(OpenClawEngineIpc.GetStatus, async () => {
