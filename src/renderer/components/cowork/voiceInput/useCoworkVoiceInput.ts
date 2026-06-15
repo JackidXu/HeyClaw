@@ -1,12 +1,19 @@
 import { type Dispatch, type RefObject, type SetStateAction, useCallback, useEffect, useRef, useState } from 'react';
 import { useDispatch } from 'react-redux';
 
+import { AsrApiCode } from '../../../../shared/asr/constants';
 import {
+  AsrClientError,
   getAsrErrorMessage,
   type RealtimeVoiceInputSession,
   startRealtimeVoiceInput,
   VOICE_INPUT_MAX_RECORDING_MS,
 } from '../../../services/voiceInput';
+import {
+  getLocalAsrQuotaDayKey,
+  markAsrQuotaExhausted,
+  updateAsrQuotaFromSession,
+} from '../../../store/slices/asrQuotaSlice';
 import { setDraftPrompt } from '../../../store/slices/coworkSlice';
 
 const VoiceInputState = {
@@ -29,7 +36,7 @@ interface UseCoworkVoiceInputOptions {
   maxHeight: number;
   isLoggedIn: boolean;
   disabled: boolean;
-  isStreaming: boolean;
+  onQuotaExhausted?: () => void;
 }
 
 const showToast = (message: string): void => {
@@ -54,7 +61,7 @@ export const useCoworkVoiceInput = ({
   maxHeight,
   isLoggedIn,
   disabled,
-  isStreaming,
+  onQuotaExhausted,
 }: UseCoworkVoiceInputOptions) => {
   const dispatch = useDispatch();
   const [voiceInputState, setVoiceInputState] = useState<VoiceInputState>(VoiceInputState.Idle);
@@ -90,12 +97,25 @@ export const useCoworkVoiceInput = ({
     });
   }, [dispatch, maxHeight, minHeight, setValue, textareaRef]);
 
-  const replaceRealtimeRecognizedVoiceText = useCallback((targetDraftKey: string, recognizedText: string) => {
+  const markQuotaExhaustedIfNeeded = useCallback((error: unknown) => {
+    if (!(error instanceof AsrClientError)) return false;
+    if (error.code !== AsrApiCode.DailyLimitExceeded) return false;
+    dispatch(markAsrQuotaExhausted({
+      dayKey: getLocalAsrQuotaDayKey(),
+      errorCode: error.code,
+    }));
+    onQuotaExhausted?.();
+    return true;
+  }, [dispatch, onQuotaExhausted]);
+
+  const replaceRealtimeRecognizedVoiceText = useCallback((targetDraftKey: string, recognizedText: string): string | null => {
     const text = recognizedText.trim();
-    if (!text) return;
+    if (!text) return null;
     const baseValue = realtimeVoiceBaseValueRef.current ?? valueRef.current;
     const separator = baseValue.trim() ? (baseValue.endsWith('\n') ? '' : '\n') : '';
-    setPromptValue(targetDraftKey, `${baseValue}${separator}${text}`);
+    const nextValue = `${baseValue}${separator}${text}`;
+    setPromptValue(targetDraftKey, nextValue);
+    return nextValue;
   }, [setPromptValue]);
 
   const clearVoiceAutoStopTimer = useCallback(() => {
@@ -125,13 +145,13 @@ export const useCoworkVoiceInput = ({
     }
   }, [clearVoiceAutoStopTimer]);
 
-  const stopVoiceRecordingAndRecognize = useCallback(async () => {
+  const stopVoiceRecordingAndRecognize = useCallback(async (): Promise<string | null> => {
     const activeRecording = voiceRecordingRef.current;
-    if (!activeRecording) return;
+    if (!activeRecording) return valueRef.current;
     const targetDraftKey = activeVoiceDraftKeyRef.current;
     if (!targetDraftKey || targetDraftKey !== latestDraftKeyRef.current) {
       cancelActiveVoiceInput('the active draft changed before stop');
-      return;
+      return null;
     }
     const generation = voiceInputGenerationRef.current;
     logVoiceInputDiagnostic('info', `voice input stop requested for draft ${targetDraftKey} in ${VOICE_INPUT_MODE_LABEL} mode.`);
@@ -145,15 +165,20 @@ export const useCoworkVoiceInput = ({
     setRecordingElapsedSeconds(0);
     try {
       const text = await activeRecording.stop();
-      if (generation !== voiceInputGenerationRef.current) return;
-      replaceRealtimeRecognizedVoiceText(targetDraftKey, text);
+      if (generation !== voiceInputGenerationRef.current) return null;
+      const nextValue = replaceRealtimeRecognizedVoiceText(targetDraftKey, text);
       logVoiceInputDiagnostic('debug', `realtime voice input was finalized for draft ${targetDraftKey}.`);
       realtimeVoiceBaseValueRef.current = null;
+      return nextValue ?? valueRef.current;
     } catch (error) {
-      if (generation !== voiceInputGenerationRef.current) return;
+      if (generation !== voiceInputGenerationRef.current) return null;
       console.warn('[VoiceInput] voice input recognition failed:', error);
       window.electron?.log?.fromRenderer?.('warn', 'VoiceInput', `voice input recognition failed for draft ${targetDraftKey}.`);
-      showToast(getAsrErrorMessage(error));
+      const quotaExhausted = markQuotaExhaustedIfNeeded(error);
+      if (!quotaExhausted) {
+        showToast(getAsrErrorMessage(error));
+      }
+      return null;
     } finally {
       if (generation === voiceInputGenerationRef.current) {
         realtimeVoiceBaseValueRef.current = null;
@@ -163,6 +188,7 @@ export const useCoworkVoiceInput = ({
   }, [
     cancelActiveVoiceInput,
     clearVoiceAutoStopTimer,
+    markQuotaExhaustedIfNeeded,
     replaceRealtimeRecognizedVoiceText,
   ]);
 
@@ -172,7 +198,7 @@ export const useCoworkVoiceInput = ({
       await stopVoiceRecordingAndRecognize();
       return;
     }
-    if (!isLoggedIn || disabled || isStreaming) return;
+    if (!isLoggedIn || disabled) return;
     if (voiceInputState === VoiceInputState.Recognizing) return;
 
     const generation = voiceInputGenerationRef.current + 1;
@@ -196,6 +222,7 @@ export const useCoworkVoiceInput = ({
           if (!voiceRecordingRef.current) return;
           console.warn('[VoiceInput] realtime voice input session reported an error:', error);
           window.electron?.log?.fromRenderer?.('warn', 'VoiceInput', `realtime voice input session reported an error for draft ${draftKey}.`);
+          const quotaExhausted = markQuotaExhaustedIfNeeded(error);
           voiceInputStartingRef.current = false;
           clearVoiceAutoStopTimer();
           voiceRecordingRef.current = null;
@@ -205,13 +232,19 @@ export const useCoworkVoiceInput = ({
           activeVoiceDraftKeyRef.current = null;
           setVoiceInputState(VoiceInputState.Idle);
           setRecordingElapsedSeconds(0);
-          showToast(getAsrErrorMessage(error));
+          if (!quotaExhausted) {
+            showToast(getAsrErrorMessage(error));
+          }
         },
       });
       if (generation !== voiceInputGenerationRef.current || activeVoiceDraftKeyRef.current !== latestDraftKeyRef.current) {
         realtimeSession.cancel();
         return;
       }
+      dispatch(updateAsrQuotaFromSession({
+        dayKey: getLocalAsrQuotaDayKey(),
+        data: realtimeSession.quota,
+      }));
       voiceRecordingRef.current = realtimeSession;
       voiceRecordingMaxMsRef.current = Math.max(1, realtimeSession.maxSessionSeconds) * 1000;
       voiceRecordingStartedAtRef.current = Date.now();
@@ -226,6 +259,7 @@ export const useCoworkVoiceInput = ({
       if (generation !== voiceInputGenerationRef.current) return;
       console.warn('[VoiceInput] failed to start voice input:', error);
       window.electron?.log?.fromRenderer?.('warn', 'VoiceInput', `failed to start voice input for draft ${draftKey}.`);
+      const quotaExhausted = markQuotaExhaustedIfNeeded(error);
       voiceInputStartingRef.current = false;
       voiceRecordingRef.current?.cancel();
       voiceRecordingRef.current = null;
@@ -236,14 +270,17 @@ export const useCoworkVoiceInput = ({
       clearVoiceAutoStopTimer();
       setVoiceInputState(VoiceInputState.Idle);
       setRecordingElapsedSeconds(0);
-      showToast(getAsrErrorMessage(error));
+      if (!quotaExhausted) {
+        showToast(getAsrErrorMessage(error));
+      }
     }
   }, [
     clearVoiceAutoStopTimer,
     disabled,
+    dispatch,
     draftKey,
     isLoggedIn,
-    isStreaming,
+    markQuotaExhaustedIfNeeded,
     stopVoiceRecordingAndRecognize,
     textareaRef,
     replaceRealtimeRecognizedVoiceText,
@@ -285,6 +322,7 @@ export const useCoworkVoiceInput = ({
 
   return {
     handleVoiceInput,
+    stopVoiceRecordingAndRecognize,
     isVoiceRecording: voiceInputState === VoiceInputState.Recording,
     isVoiceRecognizing: voiceInputState === VoiceInputState.Recognizing,
     recordingElapsedSeconds,

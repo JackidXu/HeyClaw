@@ -597,6 +597,22 @@ select::-ms-expand {
   100% { left: 100%; }
 }
 
+.voice-input-wave-bar {
+  height: 7px;
+  animation: voice-input-wave 850ms ease-in-out infinite;
+}
+
+@keyframes voice-input-wave {
+  0%, 100% {
+    height: 5px;
+    opacity: 0.65;
+  }
+  50% {
+    height: 17px;
+    opacity: 1;
+  }
+}
+
 /* Respect reduced-motion preference */
 @media (prefers-reduced-motion: reduce) {
   *,
