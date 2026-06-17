@@ -813,6 +813,7 @@ const Settings: React.FC<SettingsProps> = ({
   const [newModelName, setNewModelName] = useState('');
   const [newModelId, setNewModelId] = useState('');
   const [newModelSupportsImage, setNewModelSupportsImage] = useState(false);
+  const [newModelSupportsThinking, setNewModelSupportsThinking] = useState(false);
   const [newModelContextWindow, setNewModelContextWindow] = useState<number | undefined>(undefined);
   const [newModelCustomParams, setNewModelCustomParams] = useState<string>('');
   const [modelFormError, setModelFormError] = useState<string | null>(null);
@@ -2523,18 +2524,20 @@ const Settings: React.FC<SettingsProps> = ({
     setNewModelName('');
     setNewModelId('');
     setNewModelSupportsImage(false);
+    setNewModelSupportsThinking(false);
     setNewModelContextWindow(undefined);
     setNewModelCustomParams('');
     setModelFormError(null);
   };
 
-  const handleEditModel = (modelId: string, modelName: string, supportsImage?: boolean, contextWindow?: number, customParams?: Record<string, unknown>) => {
+  const handleEditModel = (modelId: string, modelName: string, supportsImage?: boolean, supportsThinking?: boolean, contextWindow?: number, customParams?: Record<string, unknown>) => {
     setIsAddingModel(false);
     setIsEditingModel(true);
     setEditingModelId(modelId);
     setNewModelName(modelName);
     setNewModelId(modelId);
     setNewModelSupportsImage(!!supportsImage);
+    setNewModelSupportsThinking(!!supportsThinking);
     setNewModelContextWindow(contextWindow);
     setNewModelCustomParams(
       customParams && Object.keys(customParams).length > 0
@@ -2615,6 +2618,11 @@ const Settings: React.FC<SettingsProps> = ({
         modelId,
         newModelSupportsImage,
       ),
+      ...(ProviderRegistry.resolveModelSupportsThinking(
+        activeProvider,
+        modelId,
+        newModelSupportsThinking,
+      ) ? { supportsThinking: true } : {}),
       ...(newModelContextWindow !== undefined ? { contextWindow: newModelContextWindow } : {}),
       ...(parsedCustomParams && Object.keys(parsedCustomParams).length > 0
         ? { customParams: parsedCustomParams }
@@ -2638,6 +2646,7 @@ const Settings: React.FC<SettingsProps> = ({
     setNewModelName('');
     setNewModelId('');
     setNewModelSupportsImage(false);
+    setNewModelSupportsThinking(false);
     setNewModelCustomParams('');
     setModelFormError(null);
   };
@@ -2649,6 +2658,7 @@ const Settings: React.FC<SettingsProps> = ({
     setNewModelName('');
     setNewModelId('');
     setNewModelSupportsImage(false);
+    setNewModelSupportsThinking(false);
     setNewModelContextWindow(undefined);
     setNewModelCustomParams('');
     setModelFormError(null);
@@ -4289,6 +4299,8 @@ const Settings: React.FC<SettingsProps> = ({
           setNewModelId={setNewModelId}
           newModelSupportsImage={newModelSupportsImage}
           setNewModelSupportsImage={setNewModelSupportsImage}
+          newModelSupportsThinking={newModelSupportsThinking}
+          setNewModelSupportsThinking={setNewModelSupportsThinking}
           newModelContextWindow={newModelContextWindow}
           setNewModelContextWindow={setNewModelContextWindow}
           newModelCustomParams={newModelCustomParams}

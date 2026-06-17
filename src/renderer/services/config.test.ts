@@ -308,6 +308,47 @@ describe('configService provider migrations', () => {
     expect(savedConfig.providers?.[ProviderName.Volcengine].models?.find(model => model.id === 'ark-code-latest')?.supportsThinking).toBe(true);
   });
 
+  test('preserves custom model thinking metadata and custom params', async () => {
+    const storedConfig: AppConfig = {
+      ...defaultConfig,
+      providers: {
+        ...defaultConfig.providers,
+        custom_0: {
+          enabled: true,
+          apiKey: 'sk-custom',
+          baseUrl: 'https://custom.example.com/v1',
+          apiFormat: 'openai',
+          models: [
+            {
+              id: 'qwen3.6-plus',
+              name: 'Qwen3.6 Plus',
+              supportsImage: true,
+              supportsThinking: true,
+              customParams: { enable_thinking: true },
+            },
+          ],
+        },
+      },
+    };
+    const { configService, storeData } = await loadConfigServiceWithStoredConfig(storedConfig);
+
+    await configService.updateConfig({
+      model: {
+        ...storedConfig.model,
+        defaultModel: 'qwen3.6-plus',
+        defaultModelProvider: 'custom_0',
+      },
+    });
+
+    const savedConfig = storeData[CONFIG_KEYS.APP_CONFIG] as AppConfig;
+    expect(savedConfig.providers?.custom_0.models?.[0]).toMatchObject({
+      id: 'qwen3.6-plus',
+      supportsImage: true,
+      supportsThinking: true,
+      customParams: { enable_thinking: true },
+    });
+  });
+
   test.each(addedProviderMigrationCases)(
     'does not re-inject a deleted $providerName model after migration is applied',
     async ({ providerName, deletedModelId }) => {

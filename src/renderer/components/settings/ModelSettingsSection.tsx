@@ -151,7 +151,7 @@ export interface ModelSettingsSectionProps {
   handleCopilotCancelAuth: () => void;
   handleTestConnection: () => void;
   handleAddModel: () => void;
-  handleEditModel: (modelId: string, modelName: string, supportsImage?: boolean, contextWindow?: number, customParams?: Record<string, unknown>) => void;
+  handleEditModel: (modelId: string, modelName: string, supportsImage?: boolean, supportsThinking?: boolean, contextWindow?: number, customParams?: Record<string, unknown>) => void;
   handleDeleteModel: (modelId: string) => void;
 }
 
@@ -165,6 +165,8 @@ export interface ModelEditorDialogProps {
   setNewModelId: (v: string) => void;
   newModelSupportsImage: boolean;
   setNewModelSupportsImage: (v: boolean) => void;
+  newModelSupportsThinking: boolean;
+  setNewModelSupportsThinking: (v: boolean) => void;
   newModelContextWindow: number | undefined;
   setNewModelContextWindow: (v: number | undefined) => void;
   newModelCustomParams: string;
@@ -186,6 +188,8 @@ export const ModelEditorDialog: React.FC<ModelEditorDialogProps> = ({
   setNewModelId,
   newModelSupportsImage,
   setNewModelSupportsImage,
+  newModelSupportsThinking,
+  setNewModelSupportsThinking,
   newModelContextWindow,
   setNewModelContextWindow,
   newModelCustomParams,
@@ -352,6 +356,26 @@ export const ModelEditorDialog: React.FC<ModelEditorDialogProps> = ({
               />
               <p className="mt-1 text-[11px] text-muted">
                 {i18nService.t('supportsImageInputHint')}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-start gap-3">
+            <label
+              htmlFor={`${activeProvider}-supportsThinking`}
+              className="w-24 shrink-0 text-xs font-medium text-secondary pt-0.5 text-right"
+            >
+              {i18nService.t('supportsThinkingOutput')}
+            </label>
+            <div className="flex-1 min-w-0">
+              <input
+                id={`${activeProvider}-supportsThinking`}
+                type="checkbox"
+                checked={newModelSupportsThinking}
+                onChange={(e) => setNewModelSupportsThinking(e.target.checked)}
+                className="h-3.5 w-3.5 text-primary focus:ring-primary bg-surface border-border rounded"
+              />
+              <p className="mt-1 text-[11px] text-muted">
+                {i18nService.t('supportsThinkingOutputHint')}
               </p>
             </div>
           </div>
@@ -1649,9 +1673,14 @@ const ModelSettingsSection: React.FC<ModelSettingsSectionProps> = ({
                               {i18nService.t('imageInput')}
                             </span>
                           )}
+                          {model.supportsThinking && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-primary-muted text-primary">
+                              {i18nService.t('thinkingOutput')}
+                            </span>
+                          )}
                           <button
                             type="button"
-                            onClick={() => handleEditModel(model.id, model.name, model.supportsImage, model.contextWindow, model.customParams)}
+                            onClick={() => handleEditModel(model.id, model.name, model.supportsImage, model.supportsThinking, model.contextWindow, model.customParams)}
                             className="p-0.5 text-secondary hover:text-primary opacity-0 group-hover:opacity-100 transition-opacity"
                           >
                             <EditIcon className="h-3.5 w-3.5" />
