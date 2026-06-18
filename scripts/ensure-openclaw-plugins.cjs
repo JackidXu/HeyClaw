@@ -605,19 +605,51 @@ function main() {
   // cannot discover the plugin for web.login.start/web.login.wait RPC calls
   // (used by our embedded web UI — the standard CLI login path uses
   // plugin.auth.login instead and does not need this).
-  const weixinChannelPath = path.join(runtimeExtensionsDir, 'openclaw-weixin', 'src', 'channel.ts');
-  if (fs.existsSync(weixinChannelPath)) {
-    let src = fs.readFileSync(weixinChannelPath, 'utf8');
+  const patchWeixinGatewayMethods = (channelPath, label) => {
+    if (!fs.existsSync(channelPath)) {
+      return;
+    }
+
+    let src = fs.readFileSync(channelPath, 'utf8');
     if (!src.includes('gatewayMethods')) {
       const marker = 'configSchema: {';
       const idx = src.indexOf(marker);
       if (idx !== -1) {
         src = src.slice(0, idx) + 'gatewayMethods: ["web.login.start", "web.login.wait"],\n  ' + src.slice(idx);
-        fs.writeFileSync(weixinChannelPath, src);
-        log('Patched openclaw-weixin/src/channel.ts: added gatewayMethods declaration');
+        fs.writeFileSync(channelPath, src);
+        log(`Patched ${label}: added gatewayMethods declaration`);
       }
     } else {
-      log('openclaw-weixin/src/channel.ts already has gatewayMethods, skipping patch');
+      log(`${label} already has gatewayMethods, skipping patch`);
+    }
+  };
+
+  patchWeixinGatewayMethods(
+    path.join(runtimeExtensionsDir, 'openclaw-weixin', 'src', 'channel.ts'),
+    'openclaw-weixin/src/channel.ts'
+  );
+  patchWeixinGatewayMethods(
+    path.join(runtimeExtensionsDir, 'openclaw-weixin', 'dist', 'src', 'channel.js'),
+    'openclaw-weixin/dist/src/channel.js'
+  );
+
+  // OpenClaw 6.1 only loads external channel plugins at gateway startup when a
+  // channel is configured/enabled or the manifest explicitly requests startup
+  // activation. LobsterAI keeps channels.openclaw-weixin.enabled=false before
+  // QR login, so the plugin must be startup-activated for web.login.start/wait
+  // provider discovery while the channel account itself remains disabled.
+  const weixinManifestPath = path.join(runtimeExtensionsDir, 'openclaw-weixin', 'openclaw.plugin.json');
+  if (fs.existsSync(weixinManifestPath)) {
+    const manifest = JSON.parse(fs.readFileSync(weixinManifestPath, 'utf8'));
+    if (manifest?.activation?.onStartup !== true) {
+      manifest.activation = {
+        ...(manifest.activation && typeof manifest.activation === 'object' ? manifest.activation : {}),
+        onStartup: true,
+      };
+      fs.writeFileSync(weixinManifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+      log('Patched openclaw-weixin/openclaw.plugin.json: enabled startup activation for QR login discovery');
+    } else {
+      log('openclaw-weixin/openclaw.plugin.json already has startup activation, skipping patch');
     }
   }
 
