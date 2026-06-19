@@ -1,4 +1,4 @@
-import { type ProviderConfig,ProviderRegistry } from '@shared/providers';
+import { type ProviderConfig, ProviderRegistry, ProviderName } from '@shared/providers';
 
 import {
   type BrowserWebAccessConfig,
@@ -105,7 +105,7 @@ const buildDefaultProviders = (): AppConfig['providers'] => {
   for (const id of ProviderRegistry.providerIds) {
     const def = ProviderRegistry.get(id)!;
     providers[id] = {
-      enabled: false,
+      enabled: id === ProviderName.Oneapi,
       apiKey: '',
       baseUrl: def.defaultBaseUrl,
       apiFormat: def.defaultApiFormat,
@@ -121,14 +121,14 @@ const buildDefaultProviders = (): AppConfig['providers'] => {
 export const defaultConfig: AppConfig = {
   api: {
     key: '',
-    baseUrl: 'https://api.deepseek.com',
+    baseUrl: 'http://101.96.234.167:3000/v1',
   },
   model: {
     availableModels: [
-      { id: 'deepseek-reasoner', name: 'DeepSeek Reasoner', supportsImage: false },
+      { id: 'doubao-pro', name: 'Doubao Pro', supportsImage: true },
     ],
-    defaultModel: 'deepseek-reasoner',
-    defaultModelProvider: 'deepseek',
+    defaultModel: 'doubao-pro',
+    defaultModelProvider: 'oneapi',
   },
   providers: buildDefaultProviders(),
   theme: 'system',
