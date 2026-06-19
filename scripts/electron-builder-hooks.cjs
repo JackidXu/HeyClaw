@@ -575,6 +575,22 @@ async function beforePack(context) {
 
 }
 
+function performAdhocSign(appPath) {
+  console.log('[electron-builder-hooks] Codesign is skipped, applying deep ad-hoc signature to prevent dynamic library loading crashes...');
+  const result = spawnSync('codesign', [
+    '--force',
+    '--sign', '-',
+    '--deep',
+    appPath
+  ], { encoding: 'utf-8' });
+  
+  if (result.status === 0) {
+    console.log('[electron-builder-hooks] ✓ Deep ad-hoc signature applied successfully.');
+  } else {
+    console.warn('[electron-builder-hooks] ⚠️ Failed to apply deep ad-hoc signature:', result.stderr);
+  }
+}
+
 async function afterPack(context) {
   if (isMacTarget(context)) {
     const appName = context.packager.appInfo.productFilename;
@@ -584,6 +600,11 @@ async function afterPack(context) {
       // Remove all .bin directories (symlinks) before signing to prevent codesign failures
       removeAllBinDirsInCfmind(appPath);
       applyMacIconFix(appPath);
+      
+      // 只有在未配置正式证书 (CSC_LINK 不存在) 时，才执行 deep 自签名，保证所有动态链接库的签名一致性
+      if (!process.env.CSC_LINK) {
+        performAdhocSign(appPath);
+      }
     } else {
       console.warn(`[electron-builder-hooks] App not found at ${appPath}, skipping icon fix`);
     }
