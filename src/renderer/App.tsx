@@ -529,7 +529,7 @@ const App: React.FC = () => {
   const handlePrivacyAccept = useCallback(async () => {
     await window.electron.store.set('privacy_agreed', true);
     setPrivacyAgreed(true);
-    setShowWelcome(true);
+    setShowWelcome(false);
   }, []);
 
   const handlePrivacyReject = useCallback(() => {
@@ -1000,7 +1000,7 @@ const App: React.FC = () => {
           isCollapsed={isSidebarCollapsed}
           onToggleCollapse={handleToggleSidebar}
           updateBadge={!isSidebarCollapsed ? updateBadge : null}
-          hideLogin={enterpriseConfig?.ui?.login === 'hide'}
+          hideLogin={true}
         />
         <div className={`flex-1 min-w-0 transition-[padding] duration-200 ease-out ${isSidebarCollapsed ? 'pl-1.5' : ''}`}>
           <div className="relative h-full min-h-0 rounded-xl border border-border bg-background overflow-hidden">
@@ -1082,13 +1082,7 @@ const App: React.FC = () => {
           onReject={handlePrivacyReject}
         />
       )}
-      {showWelcome && (
-        <WelcomeDialog
-          onLogin={handleWelcomeLogin}
-          onCustomModel={handleWelcomeCustomModel}
-          onClose={handleWelcomeClose}
-        />
-      )}
+
     </div>
   );
 };

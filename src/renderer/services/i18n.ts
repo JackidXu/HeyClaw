@@ -285,7 +285,7 @@ const translations: Record<LanguageType, Record<string, string>> = {
     authLoginRequired: '请先登录后再开始对话。',
     authLoginRequiredBtn: '登录',
     authQuotaExhausted:
-      '今日免费额度已用完。您可以登录 LobsterAI Portal 购买套餐或积分包继续使用，或在设置中配置自己的 API Key。',
+      '大模型额度已耗尽。请联系管理员进行手动充值，或在设置中配置您的自定义 API Key。',
     authTopUpLink: '充值',
     authSettingsLink: '设置',
     authLoginToChat: '登录后即可开始聊天',
@@ -1289,8 +1289,8 @@ const translations: Record<LanguageType, Record<string, string>> = {
     // Cowork 错误消息
     coworkErrorAuthInvalid: 'API 密钥无效或已过期，请在设置中检查并更新您的 API 密钥。',
     coworkErrorFreeQuotaExhausted:
-      '当前模型的免费额度已用完，升级套餐后可继续使用。\n\n[立即升级](https://lobsterai.youdao.com/portal)',
-    coworkErrorInsufficientBalance: 'API 余额不足，请充值后重试。',
+      '大模型额度已耗尽，请联系管理员进行手动充值，或在设置中配置您的自定义 API Key。',
+    coworkErrorInsufficientBalance: 'API 余额不足，请联系管理员进行手动充值，或在设置中配置您的自定义 API Key。',
     coworkErrorInputTooLong: '输入内容过长，超出模型上下文限制，请缩短对话内容后重试。',
     coworkErrorMessageTooLarge:
       '本次消息过大，请减少附件、压缩图片或拆分提交。（单次整体需小于 30MB）',
@@ -2811,7 +2811,7 @@ const translations: Record<LanguageType, Record<string, string>> = {
     authLoginRequired: 'Please log in to start a conversation.',
     authLoginRequiredBtn: 'Log In',
     authQuotaExhausted:
-      'Daily free quota exhausted. Visit LobsterAI Portal to purchase a plan or credits, or configure your own API Key in Settings.',
+      'The quota has been used up. Please contact your administrator for manual recharge, or configure your own API Key in Settings.',
     authTopUpLink: 'Top Up',
     authSettingsLink: 'Settings',
     authLoginToChat: 'Log in to start chatting',
@@ -3859,8 +3859,8 @@ const translations: Record<LanguageType, Record<string, string>> = {
     coworkErrorAuthInvalid:
       'Invalid or expired API key. Please check and update your API key in settings.',
     coworkErrorFreeQuotaExhausted:
-      'The current model\'s free quota has been used up. Upgrade your plan to continue.\n\n[Upgrade now](https://lobsterai.youdao.com/portal)',
-    coworkErrorInsufficientBalance: 'Insufficient API balance. Please top up and try again.',
+      'The quota has been used up. Please contact your administrator for manual recharge, or configure your own API Key in Settings.',
+    coworkErrorInsufficientBalance: 'Insufficient API balance. Please contact your administrator for manual recharge, or configure your own API Key in Settings.',
     coworkErrorInputTooLong:
       'Input too long, exceeding model context limit. Please shorten the conversation and try again.',
     coworkErrorMessageTooLarge:
