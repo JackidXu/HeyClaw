@@ -107,6 +107,10 @@ function verifyPreinstalledPlugins(runtimeRoot, buildHint) {
 
   for (const plugin of plugins) {
     if (!plugin.id) continue;
+    // 如果插件是可选的 (optional: true)，即使缺失也不作为阻止打包的硬性错误
+    if (plugin.optional === true) {
+      continue;
+    }
     const pluginDir = path.join(extensionsDir, plugin.id);
     if (!existsSync(pluginDir)) {
       missing.push(plugin.id);
