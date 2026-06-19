@@ -101,8 +101,8 @@ const EngineStartupOverlay: React.FC = () => {
         <div className="relative mb-5">
           <div className="absolute -inset-2 rounded-3xl bg-primary/20 blur-xl animate-pulse" aria-hidden="true" />
           <img
-            src="logo.png"
-            alt="LobsterAI"
+            src="logo.png?v=heyclaw"
+            alt="HeyClaw"
             width={72}
             height={72}
             className="relative rounded-2xl select-none"
