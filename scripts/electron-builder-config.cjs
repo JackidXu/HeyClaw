@@ -85,4 +85,12 @@ config.nsis = {
 
 console.log(`[Keyfrom] configured artifact keyfrom as ${keyfrom}`);
 
+if (!process.env.CSC_LINK) {
+  console.log('[Codesign] CSC_LINK is not set, disabling Mac code signing identity to prevent signature conflicts');
+  if (!config.mac) {
+    config.mac = {};
+  }
+  config.mac.identity = null;
+}
+
 module.exports = config;
