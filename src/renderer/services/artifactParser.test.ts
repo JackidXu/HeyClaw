@@ -402,10 +402,10 @@ describe('parseMediaTokensFromText', () => {
   });
 
   test('parses macOS path with spaces (Application Support)', () => {
-    const content = 'MEDIA: /Users/test/Library/Application Support/com.lobsterai/images/output.png';
+    const content = 'MEDIA: /Users/test/Library/Application Support/com.heyclaw/images/output.png';
     const artifacts = parseMediaTokensFromText(content, 'msg1', 'sess1');
     expect(artifacts).toHaveLength(1);
-    expect(artifacts[0].filePath).toBe('/Users/test/Library/Application Support/com.lobsterai/images/output.png');
+    expect(artifacts[0].filePath).toBe('/Users/test/Library/Application Support/com.heyclaw/images/output.png');
     expect(artifacts[0].type).toBe('image');
   });
 
@@ -494,13 +494,13 @@ describe('shouldParseFilePathsFromToolResult', () => {
     expect(shouldParseFilePathsFromToolResult('image_generate')).toBe(true);
   });
 
-  test('returns true for lobsterai_image_generate tool', () => {
-    expect(shouldParseFilePathsFromToolResult('lobsterai_image_generate')).toBe(true);
+  test('returns true for heyclaw_image_generate tool', () => {
+    expect(shouldParseFilePathsFromToolResult('heyclaw_image_generate')).toBe(true);
   });
 
   test('is case-insensitive', () => {
     expect(shouldParseFilePathsFromToolResult('Image_Generate')).toBe(true);
-    expect(shouldParseFilePathsFromToolResult('LOBSTERAI_IMAGE_GENERATE')).toBe(true);
+    expect(shouldParseFilePathsFromToolResult('HEYCLAW_IMAGE_GENERATE')).toBe(true);
   });
 
   test('returns false for Bash tool (find/ls output should not become artifacts)', () => {
