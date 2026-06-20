@@ -1296,9 +1296,9 @@ const buildMediaGenerationTurnInstruction = (selection?: CoworkMediaSelection, h
   if (!selection || selection.mode === 'none') {
     if (hasMediaSkillActive) {
       return [
-        '[LobsterAI media generation tools — NOT AVAILABLE]',
-        'The lobsterai_image_generate and lobsterai_video_generate tools are NOT available for this turn.',
-        'Do NOT call lobsterai_image_generate or lobsterai_video_generate.',
+        '[HeyClaw media generation tools — NOT AVAILABLE]',
+        'The heyclaw_image_generate and heyclaw_video_generate tools are NOT available for this turn.',
+        'Do NOT call heyclaw_image_generate or heyclaw_video_generate.',
         'However, a media generation skill (e.g. seedream, seedance) is provided in the system prompt. You may use it to fulfill image or video generation requests.',
       ].join('\n');
     }
@@ -1306,15 +1306,15 @@ const buildMediaGenerationTurnInstruction = (selection?: CoworkMediaSelection, h
   }
 
   const lines = [
-    '[LobsterAI media generation turn instruction]',
-    'The user selected a LobsterAI media generation model for this turn.',
+    '[HeyClaw media generation turn instruction]',
+    'The user selected a HeyClaw media generation model for this turn.',
     'IMPORTANT: Do NOT read or use the "seedance" or "seedream" skills for this request.',
-    'The LobsterAI media generation tools (lobsterai_image_generate / lobsterai_video_generate) replace those skills when a media model is selected.',
-    'Do not run any skill scripts for image or video generation. Use only the lobsterai_* tools specified below.',
+    'The HeyClaw media generation tools (heyclaw_image_generate / heyclaw_video_generate) replace those skills when a media model is selected.',
+    'Do not run any skill scripts for image or video generation. Use only the heyclaw_* tools specified below.',
   ];
 
   if (selection.mode === 'image') {
-    lines.push('If the current user request asks to create, generate, draw, render, or make an image/photo/picture, you must call the lobsterai_image_generate tool exactly once with action="generate".');
+    lines.push('If the current user request asks to create, generate, draw, render, or make an image/photo/picture, you must call the heyclaw_image_generate tool exactly once with action="generate".');
     lines.push('Use the current user request and relevant prior conversation as the image prompt.');
     lines.push('Do not answer with only a text prompt when the user asked for an image.');
     const imageModel = selection.imageModelId?.trim() || selection.modelId?.trim();
@@ -1322,7 +1322,7 @@ const buildMediaGenerationTurnInstruction = (selection?: CoworkMediaSelection, h
       lines.push(`You MUST use model "${imageModel}" for image generation. Do NOT use any other model for the generate action, even if other models appear in the available model list.`);
     }
   } else if (selection.mode === 'video') {
-    lines.push('If the current user request asks to create, generate, render, or make a video, you must call the lobsterai_video_generate tool exactly once with action="generate".');
+    lines.push('If the current user request asks to create, generate, render, or make a video, you must call the heyclaw_video_generate tool exactly once with action="generate".');
     lines.push('Use the current user request and relevant prior conversation as the video prompt.');
     lines.push('Do not answer with only a text prompt when the user asked for a video.');
     const videoModel = selection.videoModelId?.trim() || selection.modelId?.trim();
@@ -1330,8 +1330,8 @@ const buildMediaGenerationTurnInstruction = (selection?: CoworkMediaSelection, h
       lines.push(`You MUST use model "${videoModel}" for video generation. Do NOT use any other model for the generate action, even if other models appear in the available model list.`);
     }
   } else {
-    lines.push('If the current user request asks for image generation, call lobsterai_image_generate with action="generate".');
-    lines.push('If the current user request asks for video generation, call lobsterai_video_generate with action="generate".');
+    lines.push('If the current user request asks for image generation, call heyclaw_image_generate with action="generate".');
+    lines.push('If the current user request asks for video generation, call heyclaw_video_generate with action="generate".');
     lines.push('Use the current user request and relevant prior conversation as the media prompt.');
     if (selection.imageModelId?.trim()) {
       lines.push(`For image generation, you MUST use model "${selection.imageModelId.trim()}". Do NOT use a different model.`);
@@ -1342,7 +1342,7 @@ const buildMediaGenerationTurnInstruction = (selection?: CoworkMediaSelection, h
   }
 
   if (!selection.imageModelId && !selection.videoModelId && selection.modelId?.trim()) {
-    lines.push(`You MUST use model "${selection.modelId.trim()}" for media generation. Do NOT use a different model unless the user explicitly requests a different LobsterAI media model by name.`);
+    lines.push(`You MUST use model "${selection.modelId.trim()}" for media generation. Do NOT use a different model unless the user explicitly requests a different HeyClaw media model by name.`);
   }
 
   return lines.join('\n');
@@ -1363,10 +1363,10 @@ const buildMediaReferencePromptSection = (mediaReferences?: CoworkMediaAttachmen
   if (refs.length === 0) return '';
 
   const lines = [
-    '[LobsterAI media reference mapping]',
+    '[HeyClaw media reference mapping]',
     'The current user request contains explicit @ media tokens. Treat these mappings as authoritative and do not guess which uploaded attachment a token means.',
-    'When calling lobsterai_image_generate or lobsterai_video_generate, pass mapped file paths or URLs as tool arguments. Do not pass @ media tokens as image, images, firstFrame, lastFrame, referenceImages, media.url, video, or videos values.',
-    'For lobsterai_image_generate, prefer image with the mapped path for one referenced image and images for multiple referenced images.',
+    'When calling heyclaw_image_generate or heyclaw_video_generate, pass mapped file paths or URLs as tool arguments. Do not pass @ media tokens as image, images, firstFrame, lastFrame, referenceImages, media.url, video, or videos values.',
+    'For heyclaw_image_generate, prefer image with the mapped path for one referenced image and images for multiple referenced images.',
   ];
 
   for (const ref of refs) {
@@ -1378,7 +1378,7 @@ const buildMediaReferencePromptSection = (mediaReferences?: CoworkMediaAttachmen
     const locations = [
       ref.localPath ? `localPath "${sanitizeMediaReferenceText(ref.localPath)}"` : '',
       ref.remoteUrl ? `remoteUrl "${sanitizeMediaReferenceText(ref.remoteUrl)}"` : '',
-      !ref.localPath && !ref.remoteUrl && ref.dataUrl ? 'dataUrl fallback available through LobsterAI host' : '',
+      !ref.localPath && !ref.remoteUrl && ref.dataUrl ? 'dataUrl fallback available through HeyClaw host' : '',
     ].filter(Boolean);
     const locationText = locations.length > 0 ? `, ${locations.join(', ')}` : '';
     lines.push(`- ${ref.token}: ${mediaType} attachment #${ref.index}, file "${sanitizeMediaReferenceText(ref.fileName)}", MIME ${sanitizeMediaReferenceText(ref.mimeType)}${locationText}.`);
@@ -3732,9 +3732,9 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
 
   private buildSystemPromptPrefix(systemPrompt: string): string {
     return [
-      '[LobsterAI system instructions]',
+      '[HeyClaw system instructions]',
       'Apply the instructions below as the highest-priority guidance for this session.',
-      'If earlier LobsterAI system instructions exist, replace them with this version.',
+      'If earlier HeyClaw system instructions exist, replace them with this version.',
       systemPrompt,
     ].join('\n');
   }
@@ -3779,7 +3779,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     }
 
     const sections = [
-      '[Context bridge from previous LobsterAI conversation]',
+      '[Context bridge from previous HeyClaw conversation]',
       'Use this prior context for continuity. Focus your final answer on the current request.',
     ];
 
@@ -3890,7 +3890,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     const client = new GatewayClient({
       url: connection.url,
       token: connection.token,
-      clientDisplayName: 'LobsterAI',
+      clientDisplayName: 'HeyClaw',
       clientVersion: app.getVersion(),
       mode: 'backend',
       caps: [OPENCLAW_GATEWAY_TOOL_EVENTS_CAP],

@@ -209,8 +209,8 @@ const VideoGenerateSchema = Type.Object({
 
 const plugin = {
   id: 'lobster-media-generation',
-  name: 'LobsterMediaGeneration',
-  description: 'Image and video generation tools powered by LobsterAI server.',
+  name: 'HeyClawMediaGeneration',
+  description: 'Image and video generation tools powered by HeyClaw server.',
   configSchema: {
     parse(value: unknown): PluginConfig {
       return parsePluginConfig(value);
@@ -230,12 +230,12 @@ const plugin = {
       }
 
       return {
-        name: 'lobsterai_image_generate',
+        name: 'heyclaw_image_generate',
         label: 'Image Generation',
         description: [
-          'Generate images using LobsterAI server.',
+          'Generate images using HeyClaw server.',
           'Supports text-to-image and image-to-image generation.',
-          'If the system prompt includes a LobsterAI media reference mapping, use mapped file paths or URLs in image/images arguments and never pass @ media tokens as tool argument values.',
+          'If the system prompt includes a HeyClaw media reference mapping, use mapped file paths or URLs in image/images arguments and never pass @ media tokens as tool argument values.',
           'Use action="list" to see available models and their capabilities.',
           'Use action="status" with taskId to check async task progress.',
           'Requires an active subscription with available image generation quota.',
@@ -269,13 +269,13 @@ const plugin = {
       }
 
       return {
-        name: 'lobsterai_video_generate',
+        name: 'heyclaw_video_generate',
         label: 'Video Generation',
         description: [
-          'Generate videos using LobsterAI server.',
+          'Generate videos using HeyClaw server.',
           'Supports text-to-video, image-to-video, and video editing.',
           'IMPORTANT: Different models have different valid parameters and value ranges.',
-          'If the system prompt includes a LobsterAI media reference mapping, use mapped file paths or URLs in image/images/firstFrame/referenceImages/video/videos/media arguments and never pass @ media tokens as tool argument values.',
+          'If the system prompt includes a HeyClaw media reference mapping, use mapped file paths or URLs in image/images/firstFrame/referenceImages/video/videos/media arguments and never pass @ media tokens as tool argument values.',
           'WORKFLOW: You MUST follow this three-step process:',
           'Step 1: Call with action="list" to see available models, their capabilities and supported parameters.',
           'Step 2: Call with action="generate" with chosen model and parameters. Returns a taskId.',
@@ -405,7 +405,7 @@ const plugin = {
       };
     });
 
-    api.logger.info('[lobster-media-generation] registered lobsterai_image_generate and lobsterai_video_generate tools.');
+    api.logger.info('[lobster-media-generation] registered heyclaw_image_generate and heyclaw_video_generate tools.');
   },
 };
 
