@@ -13,10 +13,10 @@ import { APP_NAME, DB_FILENAME } from '../../appConstants';
 import { SQLITE_BACKUP_DIR_NAME } from '../sqliteBackup/constants';
 
 const CURRENT_ARCHIVE_ROOT = APP_NAME;
-const MANIFEST_FILE_NAME = '.lobsterai-migration.json';
-const PENDING_RESTORE_FILE_NAME = '.lobsterai-data-migration-restore-pending.json';
-const LAST_RESTORE_RESULT_FILE_NAME = '.lobsterai-data-migration-restore-result.json';
-const ARCHIVE_FORMAT = 'lobsterai-data-migration';
+const MANIFEST_FILE_NAME = '.heyclaw-migration.json';
+const PENDING_RESTORE_FILE_NAME = '.heyclaw-data-migration-restore-pending.json';
+const LAST_RESTORE_RESULT_FILE_NAME = '.heyclaw-data-migration-restore-result.json';
+const ARCHIVE_FORMAT = 'heyclaw-data-migration';
 const ARCHIVE_FORMAT_VERSION = 1;
 const SQLITE_BACKUP_TOP_LEVEL_DIR_NAME = SQLITE_BACKUP_DIR_NAME.split('/')[0] || 'backups';
 const SQLITE_RESTORE_FILE_NAMES = [
@@ -274,10 +274,10 @@ export const formatDataMigrationTimestamp = (date = new Date()): string => (
 );
 
 export const buildDataMigrationBackupFileName = (date = new Date()): string =>
-  `lobsterai-backup-${formatDataMigrationTimestamp(date)}.tar.gz`;
+  `heyclaw-backup-${formatDataMigrationTimestamp(date)}.tar.gz`;
 
 export const buildDataMigrationRollbackFileName = (date = new Date()): string =>
-  `lobsterai-rollback-${formatDataMigrationTimestamp(date)}.tar.gz`;
+  `heyclaw-rollback-${formatDataMigrationTimestamp(date)}.tar.gz`;
 
 export const ensureTarGzFileName = (filePath: string): string => {
   const trimmed = filePath.trim();
