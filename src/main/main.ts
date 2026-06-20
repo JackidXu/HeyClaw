@@ -1243,7 +1243,9 @@ const savePngWithDialog = async (
 
 const configureUserDataPath = (): void => {
   const appDataPath = app.getPath('appData');
-  const preferredUserDataPath = path.join(appDataPath, APP_NAME);
+  // 如果是本地开发环境，使用 HeyClawDev 作为数据目录，防止与打包后的正式版冲突
+  const appFolderName = app.isPackaged ? APP_NAME : `${APP_NAME}Dev`;
+  const preferredUserDataPath = path.join(appDataPath, appFolderName);
   const currentUserDataPath = app.getPath('userData');
 
   if (currentUserDataPath !== preferredUserDataPath) {
