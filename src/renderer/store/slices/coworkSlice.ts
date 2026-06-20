@@ -115,8 +115,8 @@ const markSessionUnread = (state: CoworkState, sessionId: string) => {
 };
 
 const MediaGenerationToolName = {
-  Image: 'lobsterai_image_generate',
-  Video: 'lobsterai_video_generate',
+  Image: 'heyclaw_image_generate',
+  Video: 'heyclaw_video_generate',
 } as const;
 
 const MediaGenerationActionName = {

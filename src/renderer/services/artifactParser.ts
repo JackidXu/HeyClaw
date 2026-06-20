@@ -590,7 +590,6 @@ const WRITE_TOOL_NAMES = new Set(['write', 'writefile', 'write_file']);
 
 const IMAGE_GEN_TOOL_NAMES_FOR_PATH_DETECTION = new Set([
   'image_generate',
-  'lobsterai_image_generate',
   'heyclaw_image_generate',
 ]);
 
