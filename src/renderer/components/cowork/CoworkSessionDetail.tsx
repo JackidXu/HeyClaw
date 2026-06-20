@@ -177,7 +177,7 @@ const buildRailItems = (turns: ConversationTurn[]): RailItem[] => {
       items.push({
         key: `${turn.id}-asst`,
         turnIndex: index,
-        label: getRailLabel(assistantContent, 'LobsterAI'),
+        label: getRailLabel(assistantContent, 'HeyClaw'),
         contentLen: assistantContent.length,
         isUser: false,
       });
@@ -597,11 +597,11 @@ const composeExportCanvas = async (
 
   ctx.fillStyle = brandColor;
   ctx.font = `600 ${brandFontSize}px ${fontStack}`;
-  ctx.fillText('LobsterAI — 全场景个人助理 Agent', textX, footerCenterY - taglineFontSize / 2 - 2);
+  ctx.fillText('HeyClaw — 全场景个人助理 Agent', textX, footerCenterY - taglineFontSize / 2 - 2);
 
   ctx.fillStyle = subtitleColor;
   ctx.font = `400 ${taglineFontSize}px ${fontStack}`;
-  ctx.fillText('7×24 小时帮你干活的全场景个人助理，由网易有道开发', textX, footerCenterY + brandFontSize / 2 + 3);
+  ctx.fillText('7×24 小时帮你干活的全场景个人助理，由 HeyClaw 团队开发', textX, footerCenterY + brandFontSize / 2 + 3);
 
   ctx.restore(); // card clip
 
@@ -3429,7 +3429,7 @@ const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
           >
             {!railTooltip.isUser && (
               <div className="text-[12px] font-medium mb-0.5 text-neutral-800 dark:text-neutral-200">
-                LobsterAI:
+                HeyClaw:
               </div>
             )}
             <div
