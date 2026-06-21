@@ -54,7 +54,7 @@ const macSizes = [
 
 macSizes.forEach(item => {
   const targetPath = path.join(iconsetPath, item.name);
-  const innerSize = Math.round(item.size * 0.72);
+  const innerSize = Math.round(item.size * 0.80);
   execSync(`sips -z ${innerSize} ${innerSize} "${PUBLIC_LOGO}" --out "${targetPath}"`, { stdio: 'ignore' });
   execSync(`sips -p ${item.size} ${item.size} "${targetPath}" --out "${targetPath}"`, { stdio: 'ignore' });
 });
