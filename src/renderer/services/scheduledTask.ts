@@ -90,6 +90,9 @@ class ScheduledTaskService {
 
     const cleanupRun = api.onRunUpdate((event: ScheduledTaskRunEvent) => {
       store.dispatch(addOrUpdateRun(event.run));
+      if (event.run.status !== 'running') {
+        window.dispatchEvent(new CustomEvent('app:refresh-balance'));
+      }
     });
     this.cleanupFns.push(cleanupRun);
 

@@ -279,6 +279,8 @@ class CoworkService {
     const completeCleanup = cowork.onStreamComplete(({ sessionId }) => {
       store.dispatch(updateSessionStatus({ sessionId, status: 'completed' }));
       this.scheduleFinalContextUsageRefresh(sessionId, true);
+      // 会话/操作成功响应后自动静默刷新余额
+      window.dispatchEvent(new CustomEvent('app:refresh-balance'));
     });
     this.streamListenerCleanups.push(completeCleanup);
 
@@ -292,6 +294,8 @@ class CoworkService {
         return;
       }
       store.dispatch(updateSessionStatus({ sessionId, status: 'error' }));
+      // 会话出错结束后自动静默刷新余额
+      window.dispatchEvent(new CustomEvent('app:refresh-balance'));
       // Surface the error as a visible message so the user knows what happened.
       if (error) {
         const displayError = classifyError(error);
