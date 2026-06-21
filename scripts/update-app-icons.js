@@ -54,7 +54,9 @@ const macSizes = [
 
 macSizes.forEach(item => {
   const targetPath = path.join(iconsetPath, item.name);
-  execSync(`sips -z ${item.size} ${item.size} "${PUBLIC_LOGO}" --out "${targetPath}"`, { stdio: 'ignore' });
+  const innerSize = Math.round(item.size * 0.72);
+  execSync(`sips -z ${innerSize} ${innerSize} "${PUBLIC_LOGO}" --out "${targetPath}"`, { stdio: 'ignore' });
+  execSync(`sips -p ${item.size} ${item.size} "${targetPath}" --out "${targetPath}"`, { stdio: 'ignore' });
 });
 
 const icnsDest = path.join(MAC_DIR, 'icon.icns');
