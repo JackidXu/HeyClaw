@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { i18nService } from '../../services/i18n';
 import SkillsManager from './SkillsManager';
+import McpManager from '../mcp/McpManager';
 import SidebarToggleIcon from '../icons/SidebarToggleIcon';
 import ComposeIcon from '../icons/ComposeIcon';
 import WindowTitleBar from '../window/WindowTitleBar';
@@ -12,10 +13,25 @@ interface SkillsViewProps {
   onCreateSkillByChat?: () => void;
   updateBadge?: React.ReactNode;
   readOnly?: boolean;
+  activeTab?: 'skills' | 'mcp';
+  onChangeTab?: (tab: 'skills' | 'mcp') => void;
 }
 
-const SkillsView: React.FC<SkillsViewProps> = ({ isSidebarCollapsed, onToggleSidebar, onNewChat, onCreateSkillByChat, updateBadge, readOnly }) => {
+const SkillsView: React.FC<SkillsViewProps> = ({
+  isSidebarCollapsed,
+  onToggleSidebar,
+  onNewChat,
+  onCreateSkillByChat,
+  updateBadge,
+  readOnly,
+  activeTab,
+  onChangeTab,
+}) => {
   const isMac = window.electron.platform === 'darwin';
+  const [localTab, setLocalTab] = useState<'skills' | 'mcp'>('skills');
+  const currentTab = activeTab ?? localTab;
+  const handleTabChange = onChangeTab ?? setLocalTab;
+
   return (
     <div className="flex-1 flex flex-col bg-background h-full">
       <div className="draggable flex h-12 items-center justify-between px-4 border-b border-border shrink-0">
@@ -39,16 +55,53 @@ const SkillsView: React.FC<SkillsViewProps> = ({ isSidebarCollapsed, onToggleSid
               {updateBadge}
             </div>
           )}
-          <h1 className="text-lg font-semibold text-foreground">
-            {i18nService.t('skills')}
-          </h1>
+          
+          {/* 技能 / MCP 切换 Tab 组 */}
+          <div className="non-draggable flex items-center space-x-5 h-8 text-base font-semibold select-none">
+            <button
+              type="button"
+              onClick={() => handleTabChange('skills')}
+              className={`relative py-1 transition-colors focus:outline-none ${
+                currentTab === 'skills'
+                  ? 'text-foreground font-semibold'
+                  : 'text-secondary hover:text-foreground font-medium'
+              }`}
+            >
+              {i18nService.t('skills')}
+              <div
+                className={`absolute bottom-[-10px] left-0 right-0 h-0.5 rounded-full transition-colors ${
+                  currentTab === 'skills' ? 'bg-primary' : 'bg-transparent'
+                }`}
+              />
+            </button>
+            <button
+              type="button"
+              onClick={() => handleTabChange('mcp')}
+              className={`relative py-1 transition-colors focus:outline-none ${
+                currentTab === 'mcp'
+                  ? 'text-foreground font-semibold'
+                  : 'text-secondary hover:text-foreground font-medium'
+              }`}
+            >
+              {i18nService.t('mcpServers')}
+              <div
+                className={`absolute bottom-[-10px] left-0 right-0 h-0.5 rounded-full transition-colors ${
+                  currentTab === 'mcp' ? 'bg-primary' : 'bg-transparent'
+                }`}
+              />
+            </button>
+          </div>
         </div>
         <WindowTitleBar inline />
       </div>
 
       <div className="flex-1 overflow-y-auto min-h-0 [scrollbar-gutter:stable]">
         <div className="max-w-3xl mx-auto px-4 py-6">
-          <SkillsManager readOnly={readOnly} onCreateByChat={onCreateSkillByChat} />
+          {currentTab === 'skills' ? (
+            <SkillsManager readOnly={readOnly} onCreateByChat={onCreateSkillByChat} />
+          ) : (
+            <McpManager />
+          )}
         </div>
       </div>
     </div>

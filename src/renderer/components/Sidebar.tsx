@@ -28,7 +28,6 @@ import Cog6ToothIcon from './icons/Cog6ToothIcon';
 import ComposeIcon from './icons/ComposeIcon';
 import SidebarAutomationIcon from './icons/SidebarAutomationIcon';
 import SidebarKitsIcon from './icons/SidebarKitsIcon';
-import SidebarMcpIcon from './icons/SidebarMcpIcon';
 import SidebarSearchIcon from './icons/SidebarSearchIcon';
 import SidebarToggleIcon from './icons/SidebarToggleIcon';
 import SkillIcon from './icons/SkillIcon';
@@ -43,7 +42,6 @@ interface SidebarProps {
   onShowCowork: () => void;
   onShowScheduledTasks: () => void;
   onShowKits: () => void;
-  onShowMcp: () => void;
   onNewChat: () => void;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
@@ -73,7 +71,6 @@ const Sidebar: React.FC<SidebarProps> = ({
   onShowCowork,
   onShowScheduledTasks,
   onShowKits,
-  onShowMcp,
   onNewChat,
   isCollapsed,
   onToggleCollapse,
@@ -571,6 +568,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             <ComposeIcon className={sidebarCreateIconClassName} />
             {i18nService.t('newChat')}
           </button>
+
           <button
             type="button"
             onClick={() => {
@@ -582,6 +580,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             <SidebarSearchIcon className="h-4 w-4 shrink-0" />
             {i18nService.t('search')}
           </button>
+
           <button
             type="button"
             onClick={() => {
@@ -624,18 +623,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             <SkillIcon className="h-4 w-4 shrink-0" />
             {i18nService.t('skills')}
           </button>
-          <button
-            type="button"
-            onClick={() => {
-              setIsSearchOpen(false);
-              onShowMcp();
-            }}
-            className={activeView === 'mcp' ? activeSidebarNavItemClassName : sidebarNavItemClassName}
-            aria-current={activeView === 'mcp' ? 'page' : undefined}
-          >
-            <SidebarMcpIcon className="h-4 w-4 shrink-0" />
-            {i18nService.t('mcpServers')}
-          </button>
+
         </div>
       </div>
       <div className="relative min-h-0 flex-1">

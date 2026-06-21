@@ -17,7 +17,6 @@ import CoworkPermissionModal from './components/cowork/CoworkPermissionModal';
 import CoworkQuestionWizard from './components/cowork/CoworkQuestionWizard';
 import EngineStartupOverlay from './components/cowork/EngineStartupOverlay';
 import KitsView from './components/kits/KitsView';
-import { McpView } from './components/mcp';
 import PrivacyDialog from './components/PrivacyDialog';
 import { ScheduledTasksView } from './components/scheduledTasks';
 import Settings, { type SettingsOpenOptions } from './components/Settings';
@@ -97,6 +96,7 @@ const App: React.FC = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [settingsOptions, setSettingsOptions] = useState<SettingsOpenOptions & { requestId: number }>({ requestId: 0 });
   const [mainView, setMainView] = useState<'cowork' | 'skills' | 'scheduledTasks' | 'kits' | 'mcp'>('cowork');
+  const [skillsActiveTab, setSkillsActiveTab] = useState<'skills' | 'mcp'>('skills');
   const [isInitialized, setIsInitialized] = useState(false);
   const [isActivated, setIsActivated] = useState<boolean>(true);
   const [initError, setInitError] = useState<string | null>(null);
@@ -443,6 +443,7 @@ const App: React.FC = () => {
 
   const handleShowSkills = useCallback(() => {
     setMainView('skills');
+    setSkillsActiveTab('skills');
   }, []);
 
   const handleShowCowork = useCallback(() => {
@@ -454,7 +455,8 @@ const App: React.FC = () => {
   }, []);
 
   const handleShowMcp = useCallback(() => {
-    setMainView('mcp');
+    setMainView('skills');
+    setSkillsActiveTab('mcp');
   }, []);
 
   const handleShowKits = useCallback(() => {
@@ -1154,7 +1156,6 @@ const App: React.FC = () => {
           onShowCowork={handleShowCowork}
           onShowScheduledTasks={handleShowScheduledTasks}
           onShowKits={handleShowKits}
-          onShowMcp={handleShowMcp}
           onNewChat={handleNewChat}
           isCollapsed={isSidebarCollapsed}
           onToggleCollapse={handleToggleSidebar}
@@ -1171,6 +1172,8 @@ const App: React.FC = () => {
                 onCreateSkillByChat={handleCreateSkillByChat}
                 updateBadge={isSidebarCollapsed ? updateBadge : null}
                 readOnly={enterpriseConfig?.ui?.skills === 'readonly'}
+                activeTab={skillsActiveTab}
+                onChangeTab={setSkillsActiveTab}
               />
             ) : mainView === 'scheduledTasks' ? (
               <ScheduledTasksView
@@ -1186,13 +1189,6 @@ const App: React.FC = () => {
                 onNewChat={handleNewChat}
                 updateBadge={isSidebarCollapsed ? updateBadge : null}
                 onTryAsking={handleKitTryAsking}
-              />
-            ) : mainView === 'mcp' ? (
-              <McpView
-                isSidebarCollapsed={isSidebarCollapsed}
-                onToggleSidebar={handleToggleSidebar}
-                onNewChat={handleNewChat}
-                updateBadge={isSidebarCollapsed ? updateBadge : null}
               />
             ) : (
               <CoworkView
