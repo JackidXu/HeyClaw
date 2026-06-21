@@ -125,9 +125,9 @@ export const defaultConfig: AppConfig = {
   },
   model: {
     availableModels: [
-      { id: 'Doubao-Seed-2.0-pro', name: 'Doubao-Seed-2.0-pro', supportsImage: true },
+      { id: 'HeyClaw', name: 'HeyClaw', supportsImage: true },
     ],
-    defaultModel: 'Doubao-Seed-2.0-pro',
+    defaultModel: 'HeyClaw',
     defaultModelProvider: 'oneapi',
   },
   providers: buildDefaultProviders(),

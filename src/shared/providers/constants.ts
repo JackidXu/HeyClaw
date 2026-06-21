@@ -350,7 +350,7 @@ const PROVIDER_DEFINITIONS = [
     region: 'china',
     enPriority: 0,
     defaultModels: [
-      { id: 'Doubao-Seed-2.0-pro', name: 'Doubao-Seed-2.0-pro', supportsImage: true },
+      { id: 'HeyClaw', name: 'HeyClaw', supportsImage: true },
     ],
   },
   {
