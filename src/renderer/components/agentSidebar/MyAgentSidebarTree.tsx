@@ -41,6 +41,7 @@ interface MyAgentSidebarTreeProps {
   onEnterBatchMode: (sessionId: string, agentId: string) => void;
   onBatchSelectableItemsChange: (items: AgentSidebarBatchItem[]) => void;
   onSelectSubagent?: (subagent: SubagentSessionSummary) => void;
+  onSearchTasks?: () => void;
 }
 
 const MyAgentSidebarTree: React.FC<MyAgentSidebarTreeProps> = ({
@@ -54,6 +55,7 @@ const MyAgentSidebarTree: React.FC<MyAgentSidebarTreeProps> = ({
   onEnterBatchMode,
   onBatchSelectableItemsChange,
   onSelectSubagent,
+  onSearchTasks,
 }) => {
   const currentAgentId = useSelector((state: RootState) => state.agent.currentAgentId);
   const currentSessionId = useSelector(selectCurrentSessionId);
@@ -358,6 +360,7 @@ const MyAgentSidebarTree: React.FC<MyAgentSidebarTreeProps> = ({
 
       <MyAgentSidebarHeader
         onCreateAgent={() => setIsCreateOpen(true)}
+        onSearchTasks={onSearchTasks}
       />
 
       {agentNodes.length === 0 ? (

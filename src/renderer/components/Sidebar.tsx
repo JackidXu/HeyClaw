@@ -28,7 +28,6 @@ import Cog6ToothIcon from './icons/Cog6ToothIcon';
 import ComposeIcon from './icons/ComposeIcon';
 import SidebarAutomationIcon from './icons/SidebarAutomationIcon';
 import SidebarKitsIcon from './icons/SidebarKitsIcon';
-import SidebarSearchIcon from './icons/SidebarSearchIcon';
 import SidebarToggleIcon from './icons/SidebarToggleIcon';
 import SkillIcon from './icons/SkillIcon';
 import TrashIcon from './icons/TrashIcon';
@@ -572,18 +571,6 @@ const Sidebar: React.FC<SidebarProps> = ({
           <button
             type="button"
             onClick={() => {
-              onShowCowork();
-              setIsSearchOpen(true);
-            }}
-            className={sidebarNavItemClassName}
-          >
-            <SidebarSearchIcon className="h-4 w-4 shrink-0" />
-            {i18nService.t('search')}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
               setIsSearchOpen(false);
               onShowScheduledTasks();
             }}
@@ -642,6 +629,10 @@ const Sidebar: React.FC<SidebarProps> = ({
             onToggleSelection={handleToggleSelection}
             onEnterBatchMode={handleEnterBatchMode}
             onBatchSelectableItemsChange={handleBatchSelectableItemsChange}
+            onSearchTasks={() => {
+              onShowCowork();
+              setIsSearchOpen(true);
+            }}
           />
         </div>
         <div
