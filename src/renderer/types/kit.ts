@@ -23,6 +23,7 @@ export interface MarketplaceKit {
   skills?: KitSkillBundle;
   mcpServers?: unknown[] | null;
   connectors?: unknown[] | null;
+  category?: string;
 }
 
 export type InstalledKit = InstalledKitRecord;

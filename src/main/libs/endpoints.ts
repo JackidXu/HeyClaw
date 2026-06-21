@@ -68,8 +68,4 @@ const getPortalBase = (): string => isTestModeEnabled() ? PORTAL_BASE_TEST : POR
 
 export const getPortalTasksUrl = (): string => `${getPortalBase()}/profile/detail?tab=tasks`;
 
-export const getKitStoreUrl = (): string => (
-  isTestModeEnabled()
-    ? 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/test/kit-store'
-    : 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/prod/kit-store'
-);
+export const getKitStoreUrl = (): string => 'http://101.96.234.167:8081/kit-store.json';
