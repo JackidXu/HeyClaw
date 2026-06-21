@@ -132,6 +132,14 @@ const AgentAvatarIcon: React.FC<AgentAvatarIconProps> = ({
   const avatar = parsedAvatar ?? (!normalized && useDefaultWhenEmpty ? DefaultAgentAvatar : null);
 
   if (avatar) {
+    if (avatar.svg === AgentAvatarSvg.Lobster) {
+      return (
+        <span className={`inline-flex shrink-0 items-center justify-center rounded-full overflow-hidden ${className}`}>
+          <img src="logo.png" alt="HeyClaw" className="w-full h-full object-cover select-none" />
+        </span>
+      );
+    }
+
     const iconUrl = getAgentAvatarSvgUrl(avatar.svg);
     const maskStyle: React.CSSProperties = {
       WebkitMaskImage: `url("${iconUrl}")`,
