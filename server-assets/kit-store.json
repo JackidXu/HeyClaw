@@ -1266,6 +1266,94 @@
           "id": "bio-research",
           "version": "1.2.0",
           "downloadCount": "0"
+        },
+        {
+          "skills": {
+            "list": [
+              {
+                "name": "/brand-review",
+                "description": {
+                  "en": "Review content against your brand voice, style guide, and messaging pillars, flagging deviations by severity with specific before/after fixes. Use when checking a draft before it ships, when auditing copy for voice consistency and terminology, or when screening for unsubstantiated claims, missing disclaimers, and other legal flags.",
+                  "zh": "对照您的品牌调性、风格指南和核心信息支柱审查内容，按严重程度标记偏差，并提供具体的修改前后建议。适用于在发布前审查草稿、审计文案的语调一致性和术语，或筛查无根据的声明、遗漏的免责声明及其他法律风险。"
+                },
+                "id": "brand-review"
+              },
+              {
+                "name": "/campaign-plan",
+                "description": {
+                  "en": "Generate a full campaign brief with objectives, audience, messaging, channel strategy, content calendar, and success metrics. Use when planning a product launch, lead-gen push, or awareness campaign, when you need a week-by-week content calendar with dependencies, or when translating a marketing goal into a structured, executable plan.",
+                  "zh": "生成完整的营销活动简报，涵盖目标、受众、核心信息、渠道策略、内容日历和成功指标。适用于规划产品发布、线索生成或品牌认知活动，需要包含依赖关系的逐周内容日历，或将营销目标转化为结构化可执行计划时使用。"
+                },
+                "id": "campaign-plan"
+              }
+            ],
+            "bundle": "https://ydhardwarebusiness.nosdn.127.net/8201efaf99a7343fbee2e99a9b95b338.zip"
+          },
+          "author": "LobsterAI",
+          "name": { "en": "IP Marketing", "zh": "IP营销" },
+          "icon": "https://ydhardwarecommon.nosdn.127.net/8633fce664b311769e04cbdf2cf33e40.png",
+          "tryAsking": [
+            {
+              "en": "Review this post for brand voice alignment",
+              "zh": "审查这篇推文是否符合品牌调性"
+            },
+            {
+              "en": "Create a campaign plan for our new product launch",
+              "zh": "为我们的新产品发布创建营销活动计划"
+            }
+          ],
+          "description": {
+            "en": "Focus on brand review, campaign planning, and audience growth.",
+            "zh": "专注于品牌审查、活动规划和受众增长。"
+          },
+          "id": "ip-marketing",
+          "version": "1.2.0",
+          "downloadCount": "0",
+          "category": "marketing"
+        },
+        {
+          "skills": {
+            "list": [
+              {
+                "name": "/design-critique",
+                "description": {
+                  "en": "Get structured design feedback on usability, hierarchy, and consistency. Trigger with \"review this design\", \"critique this mockup\", \"what do you think of this screen?\", or when sharing a Figma link or screenshot for feedback at any stage from exploration to final polish.",
+                  "zh": "从可用性、层级 and 一致性方面获取结构化的设计反馈。当提到“审查这个设计”、“点评这个模型”、“你觉得这个界面怎么样？”，或者在从探索到最终打磨的任何阶段分享 Figma 链接或截图以获取反馈时触发。"
+                },
+                "id": "design-critique"
+              },
+              {
+                "name": "/ux-copy",
+                "description": {
+                  "en": "Write or review UX copy — microcopy, error messages, empty states, CTAs. Trigger with \"write copy for\", \"what should this button say?\", \"review this error message\", or when naming a CTA, wording a confirmation dialog, filling an empty state, or writing onboarding text.",
+                  "zh": "撰写或审查 UX 文案——微文案、错误提示、空状态、CTA。当提到“为...写文案”、“这个按钮应该怎么写？”、“审查这个错误提示”，或者在为 CTA 命名、斟酌确认弹窗措辞、填充空状态或撰写引导文本时触发。"
+                },
+                "id": "ux-copy"
+              }
+            ],
+            "bundle": "https://ydhardwarebusiness.nosdn.127.net/a3c5595a8a1a57fef82e04d9c5dc37a6.zip"
+          },
+          "author": "LobsterAI",
+          "name": { "en": "Image Production", "zh": "图片制作" },
+          "icon": "https://ydhardwarecommon.nosdn.127.net/5ed9e5cbd1b3232bc2e688c33d6d7549.png",
+          "tryAsking": [
+            {
+              "en": "Give feedback on this banner design",
+              "zh": "对这个横幅设计给出反馈"
+            },
+            {
+              "en": "Help write copy for our image placeholders",
+              "zh": "帮我们的图片占位符撰写文案"
+            }
+          ],
+          "description": {
+            "en": "Generate, edit, and critique image assets and designs.",
+            "zh": "用于生成、编辑和点评图像资产及设计。"
+          },
+          "id": "image-production",
+          "version": "1.2.0",
+          "downloadCount": "0",
+          "category": "image"
         }
       ]
     }

@@ -148,6 +148,7 @@ const KitsManager: React.FC<KitsManagerProps> = ({ onTryAsking }) => {
   const [installedKits, setInstalledKits] = useState<Record<string, InstalledKit>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState<'market' | 'marketing' | 'image'>('market');
   const [selectedKit, setSelectedKit] = useState<MarketplaceKit | null>(null);
   const [operatingKitId, setOperatingKitId] = useState<string | null>(null);
   const [operationType, setOperationType] = useState<KitOperationType | null>(null);
@@ -173,6 +174,12 @@ const KitsManager: React.FC<KitsManagerProps> = ({ onTryAsking }) => {
 
   const filteredKits = useMemo(() => {
     let results = kits;
+    // Tab filtering
+    if (activeTab === 'market') {
+      results = results.filter((kit) => !kit.category || kit.category === 'market');
+    } else {
+      results = results.filter((kit) => kit.category === activeTab);
+    }
     // Search filtering
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
@@ -183,7 +190,7 @@ const KitsManager: React.FC<KitsManagerProps> = ({ onTryAsking }) => {
       });
     }
     return results;
-  }, [kits, searchQuery]);
+  }, [kits, activeTab, searchQuery]);
 
   const handleInstall = async (kit: MarketplaceKit) => {
     setOperatingKitId(kit.id);
@@ -498,11 +505,43 @@ const KitsManager: React.FC<KitsManagerProps> = ({ onTryAsking }) => {
         </div>
 
         {/* Market section */}
-        <div className="flex items-center border-b border-border">
-          <h2 className="relative px-2.5 pb-2.5 pt-0.5 text-[13px] font-semibold text-foreground">
+        <div className="flex items-center gap-6 border-b border-border">
+          <button
+            type="button"
+            onClick={() => setActiveTab('market')}
+            className={`relative px-2.5 pb-2.5 pt-0.5 text-[13px] font-semibold transition-colors focus:outline-none ${
+              activeTab === 'market' ? 'text-foreground font-semibold' : 'text-secondary hover:text-foreground'
+            }`}
+          >
             {i18nService.t('kitMarketplace')}
-            <div className="absolute bottom-[-1px] left-0 right-0 h-0.5 rounded-full bg-primary" />
-          </h2>
+            {activeTab === 'market' && (
+              <div className="absolute bottom-[-1px] left-0 right-0 h-0.5 rounded-full bg-primary" />
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('marketing')}
+            className={`relative px-2.5 pb-2.5 pt-0.5 text-[13px] font-semibold transition-colors focus:outline-none ${
+              activeTab === 'marketing' ? 'text-foreground font-semibold' : 'text-secondary hover:text-foreground'
+            }`}
+          >
+            {i18nService.t('kitIPMarketing')}
+            {activeTab === 'marketing' && (
+              <div className="absolute bottom-[-1px] left-0 right-0 h-0.5 rounded-full bg-primary" />
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('image')}
+            className={`relative px-2.5 pb-2.5 pt-0.5 text-[13px] font-semibold transition-colors focus:outline-none ${
+              activeTab === 'image' ? 'text-foreground font-semibold' : 'text-secondary hover:text-foreground'
+            }`}
+          >
+            {i18nService.t('kitImageProduction')}
+            {activeTab === 'image' && (
+              <div className="absolute bottom-[-1px] left-0 right-0 h-0.5 rounded-full bg-primary" />
+            )}
+          </button>
         </div>
       </div>
 
