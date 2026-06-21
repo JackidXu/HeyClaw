@@ -41,6 +41,17 @@ const isRecord = (value: unknown): value is Record<string, unknown> => {
   return !!value && typeof value === 'object' && !Array.isArray(value);
 };
 
+const cleanStringArg = (value: unknown): unknown => {
+  if (typeof value !== 'string') {
+    return value;
+  }
+  let str = value.trim();
+  while ((str.startsWith('"') && str.endsWith('"')) || (str.startsWith("'") && str.endsWith("'"))) {
+    str = str.slice(1, -1).trim();
+  }
+  return str;
+};
+
 const sanitizeArgsForLog = (args: Record<string, unknown>): Record<string, unknown> => {
   const prompt = typeof args.prompt === 'string' ? args.prompt : '';
   return {
@@ -151,11 +162,7 @@ function extractResponseText(response: MediaToolResponse): string {
 }
 
 const ImageGenerateSchema = Type.Object({
-  action: Type.Optional(Type.Union([
-    Type.Literal('generate'),
-    Type.Literal('list'),
-    Type.Literal('status'),
-  ], { description: 'Action to perform. Default: generate.' })),
+  action: Type.Optional(Type.String({ description: 'Action to perform: "generate", "list", "status". Default: "generate".' })),
   prompt: Type.Optional(Type.String({ description: 'Text prompt describing the image to generate.' })),
   model: Type.Optional(Type.String({ description: 'Model ID for generation. Use action=list to see available models.' })),
   image: Type.Optional(Type.String({ description: 'Single reference image absolute file path, URL, or data URL for image-to-image generation. If a media reference mapping is provided, use the mapped path; do not pass @ media tokens.' })),
@@ -176,12 +183,7 @@ const ImageGenerateSchema = Type.Object({
 });
 
 const VideoGenerateSchema = Type.Object({
-  action: Type.Optional(Type.Union([
-    Type.Literal('generate'),
-    Type.Literal('list'),
-    Type.Literal('status'),
-    Type.Literal('cancel'),
-  ], { description: 'Action to perform. Default: generate.' })),
+  action: Type.Optional(Type.String({ description: 'Action to perform: "generate", "list", "status", "cancel". Default: "generate".' })),
   prompt: Type.Optional(Type.String({ description: 'Text prompt describing the video to generate. Chinese and English supported.' })),
   model: Type.Optional(Type.String({ description: 'Model ID for generation. Use action="list" to see available models and their supported parameters.' })),
   image: Type.Optional(Type.String({ description: 'Single reference image absolute file path, URL, or data URL (e.g. first frame for image-to-video). If a media reference mapping is provided, use the mapped path; do not pass @ media tokens.' })),
@@ -243,6 +245,9 @@ const plugin = {
         parameters: ImageGenerateSchema,
         async execute(id: string, params: unknown) {
           const args = (params ?? {}) as Record<string, unknown>;
+          for (const key of Object.keys(args)) {
+            args[key] = cleanStringArg(args[key]);
+          }
           try {
             api.logger.info(`[lobster-media-generation] image tool callback started: toolCallId=${id} args=${JSON.stringify(sanitizeArgsForLog(args))}`);
             const startedAt = Date.now();
@@ -286,6 +291,9 @@ const plugin = {
         parameters: VideoGenerateSchema,
         async execute(id: string, params: unknown, _signal?: AbortSignal, onUpdate?: (result: { content: Array<{type: string; text: string}>; details?: Record<string, unknown> }) => void) {
           const args = (params ?? {}) as Record<string, unknown>;
+          for (const key of Object.keys(args)) {
+            args[key] = cleanStringArg(args[key]);
+          }
           const action = typeof args.action === 'string' ? args.action : 'generate';
 
           // status action: poll with adaptive intervals until terminal
