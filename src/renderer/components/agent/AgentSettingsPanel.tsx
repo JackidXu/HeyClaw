@@ -584,8 +584,6 @@ const AgentSettingsPanel: React.FC<AgentSettingsPanelProps> = ({ agentId, onClos
         {/* Footer */}
         <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 px-5 py-3.5 border-t border-border">
           <AgentDetailToolbar
-            model={model}
-            onModelChange={setModel}
             workingDirectory={workingDirectory}
             onWorkingDirectoryChange={setWorkingDirectory}
           />

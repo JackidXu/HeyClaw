@@ -15,7 +15,6 @@ import { scheduledTaskService } from '../../services/scheduledTask';
 import { RootState } from '../../store';
 import type { Model } from '../../store/slices/modelSlice';
 import { resolveOpenClawModelRef, toOpenClawModelRef } from '../../utils/openclawModelRef';
-import ModelSelector from '../ModelSelector';
 import ScheduledTaskTemplatePickerModal from './ScheduledTaskTemplatePickerModal';
 import { SCHEDULED_TASK_TEMPLATES, type ScheduledTaskTemplate } from './taskTemplates';
 import { formatScheduleLabel, type PlanType, scheduleToPlanInfo } from './utils';
@@ -411,11 +410,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
   const resolvedSelectedModelValue: Model | null = form.modelId
     ? resolveOpenClawModelRef(form.modelId, availableModels)
     : null;
-  const selectedModelIsInvalid = Boolean(form.modelId.trim() && !resolvedSelectedModelValue);
-  const selectedModelValue: Model | null = resolvedSelectedModelValue
-    ?? (form.modelId.trim()
-      ? { id: '__invalid__', name: form.modelId.split('/').pop() || form.modelId } as Model
-      : null);
+
 
   const validate = (): boolean => {
     const nextErrors: Record<string, string> = {};
@@ -426,11 +421,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
     if (!form.payloadText.trim()) {
       nextErrors.payloadText = i18nService.t('scheduledTasksFormValidationPromptRequired');
     }
-    if (!isSystemEventTask && !form.modelId.trim()) {
-      nextErrors.modelId = i18nService.t('scheduledTasksFormValidationModelRequired');
-    } else if (!isSystemEventTask && !resolvedSelectedModelValue) {
-      nextErrors.modelId = i18nService.t('scheduledTasksFormValidationModelUnavailable');
-    }
+    // 隐藏模型校验以防止拦截
 
     if (form.planType === 'once') {
       const runAt = new Date(
@@ -491,7 +482,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
         : {
             kind: PayloadKind.AgentTurn,
             message: form.payloadText.trim(),
-            model: form.modelId,
+            model: (form.modelId.trim() && resolvedSelectedModelValue) ? form.modelId : fallbackModelRef,
           };
 
       const input: ScheduledTaskInput = {
@@ -538,9 +529,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
   const errorClass = 'text-xs text-red-500 mt-1';
   const hintClass = 'text-xs text-secondary mt-0.5';
 
-  const handleModelChange = (model: Model | null) => {
-    updateForm({ modelId: model ? toOpenClawModelRef(model) : '' });
-  };
+
 
   const timeValue = `${String(form.hour).padStart(2, '0')}:${String(form.minute).padStart(2, '0')}`;
   const handleTimeChange = (value: string) => {
@@ -1369,19 +1358,11 @@ const TaskForm: React.FC<TaskFormProps> = ({
                 style={{ minHeight: '80px', height: '120px' }}
                 placeholder={i18nService.t('scheduledTasksFormPromptPlaceholder')}
               />
-              {!isSystemEventTask && (
-                <div className="flex items-center gap-2 px-2 py-1 border-t border-border/40">
-                  <ModelSelector
-                    dropdownDirection="up"
-                    value={selectedModelValue}
-                    onChange={handleModelChange}
-                  />
-                </div>
-              )}
+              {/* 隐藏模型选择器 */}
             </div>
-            {!isSystemEventTask && (errors.modelId || selectedModelIsInvalid) && (
+            {!isSystemEventTask && errors.modelId && (
               <p className={errorClass}>
-                {errors.modelId || i18nService.t('scheduledTasksFormValidationModelUnavailable')}
+                {errors.modelId}
               </p>
             )}
             {errors.payloadText && <p className={errorClass}>{errors.payloadText}</p>}
