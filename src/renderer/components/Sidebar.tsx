@@ -1,4 +1,4 @@
-import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import { ExclamationTriangleIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import { AgentId } from '@shared/agent';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
@@ -10,6 +10,7 @@ import { RootState } from '../store';
 import {
   selectCoworkSessions,
   selectCurrentSessionId,
+  selectIsStreaming,
 } from '../store/selectors/coworkSelectors';
 import type { CoworkSessionSummary } from '../types/cowork';
 import { getAgentDisplayNameById } from '../utils/agentDisplay';
@@ -32,7 +33,7 @@ import SidebarSearchIcon from './icons/SidebarSearchIcon';
 import SidebarToggleIcon from './icons/SidebarToggleIcon';
 import SkillIcon from './icons/SkillIcon';
 import TrashIcon from './icons/TrashIcon';
-import LoginButton from './LoginButton';
+import { configService } from '../services/config';
 
 interface SidebarProps {
   onShowSettings: () => void;
@@ -47,7 +48,6 @@ interface SidebarProps {
   isCollapsed: boolean;
   onToggleCollapse: () => void;
   updateBadge?: React.ReactNode;
-  hideLogin?: boolean;
 }
 
 const DEFAULT_SIDEBAR_WIDTH = 244;
@@ -78,7 +78,6 @@ const Sidebar: React.FC<SidebarProps> = ({
   isCollapsed,
   onToggleCollapse,
   updateBadge,
-  hideLogin = true,
 }) => {
   const currentAgentId = useSelector((state: RootState) => state.agent.currentAgentId);
   const agents = useSelector((state: RootState) => state.agent.agents);
@@ -86,6 +85,181 @@ const Sidebar: React.FC<SidebarProps> = ({
   const currentSessionId = useSelector(selectCurrentSessionId);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isBatchMode, setIsBatchMode] = useState(false);
+
+  // 用户卡片状态与逻辑
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [balance, setBalance] = useState<number | null>(null);
+  const [balanceLoading, setBalanceLoading] = useState(false);
+  const [userNickname, setUserNickname] = useState('HeyClaw 用户');
+  const [userAvatar, setUserAvatar] = useState('🐱');
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editNickname, setEditNickname] = useState('');
+  const [editAvatar, setEditAvatar] = useState('');
+  const [showConfirmDeactivate, setShowConfirmDeactivate] = useState(false);
+
+  const userCardContainerRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // 渲染头像辅助函数
+  const renderAvatar = (avatarValue: string, nickname: string) => {
+    if (avatarValue && avatarValue.startsWith('data:image/')) {
+      return (
+        <img 
+          src={avatarValue} 
+          alt={nickname} 
+          className="w-full h-full object-cover rounded-full" 
+        />
+      );
+    }
+    return <span className="select-none text-lg">{avatarValue || '🐱'}</span>;
+  };
+
+  // 上传图片处理函数
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      window.dispatchEvent(new CustomEvent('app:showToast', { detail: '头像大小不能超过 2MB' }));
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target?.result;
+      if (typeof dataUrl === 'string') {
+        setEditAvatar(dataUrl);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // 点击空白处关闭菜单
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (userCardContainerRef.current && !userCardContainerRef.current.contains(event.target as Node)) {
+        setShowUserMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleRefreshBalance = useCallback(async (showToast = true) => {
+    if (balanceLoading) return;
+    setBalanceLoading(true);
+    const minDelayPromise = new Promise((resolve) => setTimeout(resolve, 800));
+    try {
+      const config = configService.getConfig();
+      const oneapiConfig = config.providers?.['oneapi'];
+      const apiKey = oneapiConfig?.apiKey?.trim();
+      const baseUrl = oneapiConfig?.baseUrl?.trim() || 'http://101.96.234.167:3000/v1';
+
+      if (!apiKey) {
+        await minDelayPromise;
+        if (showToast) {
+          window.dispatchEvent(new CustomEvent('app:showToast', { detail: '未激活系统，请先输入激活码' }));
+        }
+        return;
+      }
+
+      const cleanBase = baseUrl.replace(/\/+$/, '');
+      let hardLimitUsd = 0;
+      let totalUsageCents = 0;
+
+      const fetchPromise = (async () => {
+        // 1. 获取 subscription
+        try {
+          const subResp = await window.electron.api.fetch({
+            url: `${cleanBase}/dashboard/billing/subscription`,
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${apiKey}` }
+          }) as { ok: boolean; data?: any };
+          if (subResp.ok && subResp.data) {
+            hardLimitUsd = subResp.data.hard_limit_usd || 0;
+          }
+        } catch (e) {
+          console.error('[Sidebar] Balance sub fetch failed:', e);
+        }
+
+        // 2. 获取 usage
+        try {
+          const now = new Date();
+          const startDate = '2020-01-01';
+          const endDate = new Date(now.getTime() + 24 * 3600 * 1000).toISOString().split('T')[0];
+          const usageResp = await window.electron.api.fetch({
+            url: `${cleanBase}/dashboard/billing/usage?start_date=${startDate}&end_date=${endDate}`,
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${apiKey}` }
+          }) as { ok: boolean; data?: any };
+          if (usageResp.ok && usageResp.data) {
+            totalUsageCents = usageResp.data.total_usage || 0;
+          }
+        } catch (e) {
+          console.error('[Sidebar] Balance usage fetch failed:', e);
+        }
+      })();
+
+      await Promise.all([fetchPromise, minDelayPromise]);
+
+      const balanceUsd = hardLimitUsd - (totalUsageCents / 100);
+      const points = Math.max(0, Math.round(balanceUsd * 100));
+      
+      setBalance(points);
+      localStorage.setItem('heyclaw_user_balance', String(points));
+    } catch (err) {
+      console.error('[Sidebar] Refresh balance error:', err);
+      if (showToast) {
+        window.dispatchEvent(new CustomEvent('app:showToast', { detail: '余额刷新失败，请检查网络' }));
+      }
+    } finally {
+      setBalanceLoading(false);
+    }
+  }, [balanceLoading]);
+
+  const handleRefreshBalanceRef = useRef(handleRefreshBalance);
+  useEffect(() => {
+    handleRefreshBalanceRef.current = handleRefreshBalance;
+  }, [handleRefreshBalance]);
+
+  // 从 localStorage 加载配置并做静默刷新
+  useEffect(() => {
+    const savedName = localStorage.getItem('heyclaw_user_name');
+    if (savedName) {
+      setUserNickname(savedName);
+      setEditNickname(savedName);
+    } else {
+      setEditNickname('HeyClaw 用户');
+    }
+    const savedAvatar = localStorage.getItem('heyclaw_user_avatar');
+    if (savedAvatar) {
+      setUserAvatar(savedAvatar);
+      setEditAvatar(savedAvatar);
+    } else {
+      setEditAvatar('🐱');
+    }
+    const savedBalance = localStorage.getItem('heyclaw_user_balance');
+    if (savedBalance) {
+      setBalance(Number(savedBalance));
+    }
+    
+    // 延迟 1 秒静默刷新余额，以免影响启动加载
+    const timer = setTimeout(() => {
+      void handleRefreshBalanceRef.current(false);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // 监听对话流状态，成功响应后（streaming 结束）自动静默刷新余额
+  const isStreaming = useSelector(selectIsStreaming);
+  const prevIsStreamingRef = useRef(isStreaming);
+
+  useEffect(() => {
+    if (prevIsStreamingRef.current && !isStreaming) {
+      void handleRefreshBalanceRef.current(false);
+    }
+    prevIsStreamingRef.current = isStreaming;
+  }, [isStreaming]);
   const [batchAgentId, setBatchAgentId] = useState<string | null>(null);
   const [batchSelectableItems, setBatchSelectableItems] = useState<AgentSidebarBatchItem[]>([]);
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
@@ -555,21 +729,100 @@ const Sidebar: React.FC<SidebarProps> = ({
           </div>
         </div>
       ) : (
-        <div className="flex items-center gap-1 pb-2 pl-3 pr-2 pt-1">
-          {!hideLogin && (
-            <div className="flex-1 min-w-0">
-              <LoginButton />
+        <div 
+          ref={userCardContainerRef}
+          className="relative px-3 pb-3 pt-2 border-t border-border/40"
+        >
+          {/* 用户卡片 */}
+          <div 
+            onClick={() => setShowUserMenu(!showUserMenu)}
+            className="flex items-center justify-between p-2 rounded-xl bg-surface/50 hover:bg-surface-raised transition-all duration-200 shadow-sm border border-border/10 cursor-pointer select-none"
+          >
+            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+              {/* 圆形头像 */}
+              <div 
+                className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center shadow-sm select-none shrink-0 overflow-hidden"
+              >
+                {renderAvatar(userAvatar, userNickname)}
+              </div>
+              {/* 昵称与余额 */}
+              <div className="flex-1 min-w-0 leading-tight">
+                <div 
+                  className="text-sm font-semibold text-foreground/90 truncate"
+                >
+                  {userNickname}
+                </div>
+                <div className="text-[11px] text-secondary mt-0.5 flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                  <span className="font-medium tracking-wide">{balance !== null ? `${balance} 点` : '-- 点'}</span>
+                  <button 
+                    onClick={() => handleRefreshBalance(true)}
+                    disabled={balanceLoading}
+                    className="hover:text-primary active:scale-95 transition-all p-0.5 rounded text-secondary"
+                    title="刷新余额"
+                  >
+                    {balanceLoading ? (
+                      <svg className="animate-spin h-3.5 w-3.5 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    ) : (
+                      <ArrowPathIcon className="w-3.5 h-3.5" />
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* 设置按钮 */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowUserMenu(false);
+                onShowSettings();
+              }}
+              className="h-8 w-8 inline-flex items-center justify-center rounded-lg text-secondary hover:bg-surface hover:text-foreground transition-all shrink-0 ml-1.5"
+              title={i18nService.t('settings')}
+            >
+              <Cog6ToothIcon className="h-4 w-4 shrink-0" />
+            </button>
+          </div>
+
+          {/* 点击后滑出控制菜单 */}
+          {showUserMenu && (
+            <div className="absolute bottom-[calc(100%-8px)] left-3 right-3 z-50 p-1.5 rounded-xl border border-border bg-surface shadow-popover flex flex-col space-y-0.5 animate-fade-in">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowUserMenu(false);
+                  setEditNickname(userNickname);
+                  setEditAvatar(userAvatar);
+                  setIsEditModalOpen(true);
+                }}
+                className="w-full flex items-center gap-2 px-2.5 py-1.5 text-left text-xs text-foreground/80 hover:bg-surface-raised rounded-lg transition-colors font-medium"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                编辑资料
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowUserMenu(false);
+                  setShowConfirmDeactivate(true);
+                }}
+                className="w-full flex items-center gap-2 px-2.5 py-1.5 text-left text-xs text-red-500 hover:bg-red-500/10 rounded-lg transition-colors font-medium"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                退出激活
+              </button>
             </div>
           )}
-          <button
-            type="button"
-            onClick={() => onShowSettings()}
-            className={`inline-flex h-7 items-center justify-start gap-1.5 rounded-md px-1.5 text-[14px] font-normal text-foreground/80 transition-colors hover:bg-black/[0.03] dark:hover:bg-white/[0.04] ${hideLogin ? 'w-full' : 'shrink-0'}`}
-            aria-label={i18nService.t('settings')}
-          >
-            <Cog6ToothIcon className="h-4 w-4 shrink-0" />
-            {i18nService.t('settings')}
-          </button>
         </div>
       )}
       {/* Batch Delete Confirmation Modal */}
@@ -605,6 +858,113 @@ const Sidebar: React.FC<SidebarProps> = ({
               className="px-4 py-2 text-sm font-medium rounded-lg bg-red-500 hover:bg-red-600 text-white transition-colors"
             >
               {i18nService.t('batchDelete')} ({selectedKeys.size})
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {/* 编辑个人资料 Modal */}
+      {isEditModalOpen && (
+        <Modal
+          onClose={() => setIsEditModalOpen(false)}
+          className="w-full max-w-sm mx-4 bg-surface rounded-2xl shadow-xl overflow-hidden border border-border"
+        >
+          <div className="px-5 py-4 border-b border-border">
+            <h3 className="text-base font-semibold text-foreground">编辑个人资料</h3>
+          </div>
+          <div className="p-5 space-y-4">
+            {/* 头像编辑 (上传图片) */}
+            <div className="flex flex-col items-center space-y-3">
+              <label className="text-xs font-semibold text-secondary tracking-wider uppercase">头像</label>
+              <div className="flex flex-col items-center space-y-2">
+                <div 
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center shadow-md overflow-hidden text-2xl cursor-pointer hover:opacity-90 transition-opacity"
+                  title="点击上传头像"
+                >
+                  {renderAvatar(editAvatar, editNickname)}
+                </div>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleImageUpload}
+                />
+
+              </div>
+            </div>
+            {/* 昵称编辑 */}
+            <div className="flex flex-col space-y-1.5">
+              <label className="text-xs font-semibold text-secondary tracking-wider uppercase pl-1">昵称</label>
+              <input
+                type="text"
+                value={editNickname}
+                onChange={(e) => setEditNickname(e.target.value)}
+                placeholder="请输入昵称"
+                className="w-full px-4 py-2.5 bg-surface-raised border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/50 text-sm text-foreground"
+              />
+            </div>
+          </div>
+          <div className="flex items-center justify-end gap-3 px-5 py-4 border-t border-border">
+            <button
+              onClick={() => setIsEditModalOpen(false)}
+              className="px-4 py-2 text-sm font-medium rounded-lg text-secondary hover:bg-surface-raised transition-colors"
+            >
+              取消
+            </button>
+            <button
+              onClick={() => {
+                const finalName = editNickname.trim() || 'HeyClaw 用户';
+                const finalAvatar = editAvatar.trim() || '🐱';
+                setUserNickname(finalName);
+                setUserAvatar(finalAvatar);
+                localStorage.setItem('heyclaw_user_name', finalName);
+                localStorage.setItem('heyclaw_user_avatar', finalAvatar);
+                setIsEditModalOpen(false);
+              }}
+              className="px-4 py-2 text-sm font-medium rounded-lg bg-primary hover:bg-primary-hover text-white transition-colors"
+            >
+              保存
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {/* 退出激活二次确认 Modal */}
+      {showConfirmDeactivate && (
+        <Modal
+          onClose={() => setShowConfirmDeactivate(false)}
+          className="w-full max-w-sm mx-4 bg-surface rounded-2xl shadow-xl overflow-hidden border border-border"
+        >
+          <div className="flex items-center gap-3 px-5 py-4 border-b border-border">
+            <div className="p-2 rounded-full bg-red-100 dark:bg-red-900/30">
+              <svg className="w-5 h-5 text-red-600 dark:text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <h2 className="text-base font-semibold text-foreground">确认退出激活</h2>
+          </div>
+          <div className="px-5 py-4">
+            <p className="text-sm text-secondary">
+              确定要退出激活吗？退出后系统需要重新输入激活码才能继续使用。
+            </p>
+          </div>
+          <div className="flex items-center justify-end gap-3 px-5 py-4 border-t border-border">
+            <button
+              onClick={() => setShowConfirmDeactivate(false)}
+              className="px-4 py-2 text-sm font-medium rounded-lg text-secondary hover:bg-surface-raised transition-colors"
+            >
+              取消
+            </button>
+            <button
+              onClick={() => {
+                setShowConfirmDeactivate(false);
+                window.dispatchEvent(new CustomEvent('app:deactivate'));
+              }}
+              className="px-4 py-2 text-sm font-medium rounded-lg bg-red-500 hover:bg-red-600 text-white transition-colors"
+            >
+              确认退出
             </button>
           </div>
         </Modal>
