@@ -98,6 +98,7 @@ const App: React.FC = () => {
   const [settingsOptions, setSettingsOptions] = useState<SettingsOpenOptions & { requestId: number }>({ requestId: 0 });
   const [mainView, setMainView] = useState<'cowork' | 'skills' | 'scheduledTasks' | 'kits' | 'mcp'>('cowork');
   const [isInitialized, setIsInitialized] = useState(false);
+  const [isActivated, setIsActivated] = useState<boolean>(true);
   const [initError, setInitError] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [, forceLanguageRefresh] = useState(0);
@@ -195,15 +196,95 @@ const App: React.FC = () => {
         mark('authService.init done');
 
         const config = await configService.getConfig();
+        
+        // 读取 oneapi 配置，将其作为激活服务商的底层配置
+        const oneapiConfig = config.providers?.['oneapi'];
+        const oneapiKey = oneapiConfig?.apiKey?.trim();
+        const oneapiBaseUrl = oneapiConfig?.baseUrl?.trim() || 'http://101.96.234.167:3000/v1';
+
+        let activated = false;
+        let finalConfig = config;
+
+        if (oneapiKey) {
+          try {
+            mark('oneapi auth validation start');
+            const cleanBaseUrl = oneapiBaseUrl.replace(/\/+$/, '');
+            const testUrl = `${cleanBaseUrl}/models`;
+            const checkResp = await window.electron.api.fetch({
+              url: testUrl,
+              method: 'GET',
+              headers: {
+                'Authorization': `Bearer ${oneapiKey}`,
+              },
+            }) as { ok: boolean; status: number; data: any };
+
+            if (checkResp.ok && checkResp.data && Array.isArray(checkResp.data.data)) {
+              activated = true;
+
+              // 同步过滤出的对话大模型
+              const chatModels: any[] = [];
+              for (const m of checkResp.data.data) {
+                const modelId = m.id;
+                const isImage = /dall-e|stable-diffusion|\bsdxl\b|midjourney|\bmj-v\d+|controlnet|\bflux\b|seedream/i.test(modelId);
+                const hasVideoKeyword = /cogvideo|seedance|sora|kling|\bluma\b|runway|video-gen/i.test(modelId);
+                const isVideoUnderstanding = /chat|understand|vision|vl|multimodal/i.test(modelId);
+                const isVideo = hasVideoKeyword && !isVideoUnderstanding;
+
+                if (!isImage && !isVideo) {
+                  chatModels.push({
+                    id: modelId,
+                    name: modelId,
+                    supportsImage: true,
+                  });
+                }
+              }
+
+              const defaultChatModel = chatModels[0]?.id;
+              if (chatModels.length > 0) {
+                const updatedProviders = {
+                  ...config.providers,
+                  oneapi: {
+                    ...oneapiConfig,
+                    enabled: true, // 确保自动开启模型
+                    apiKey: oneapiKey,
+                    models: chatModels,
+                  }
+                };
+
+                await configService.updateConfig({
+                  providers: updatedProviders,
+                  model: {
+                    ...config.model,
+                    defaultModel: defaultChatModel || config.model?.defaultModel || '',
+                    defaultModelProvider: 'oneapi',
+                    availableModels: chatModels.map(m => ({
+                      ...m,
+                      provider: 'oneapi',
+                      providerKey: 'oneapi',
+                    })),
+                  }
+                });
+                
+                // 重新获取更新后的配置
+                finalConfig = configService.getConfig();
+              }
+            }
+          } catch (checkErr) {
+            console.error('[App] Startup apiKey validation failed:', checkErr);
+          }
+        }
+
+        setIsActivated(activated);
+
         const apiConfig: ApiConfig = {
-          apiKey: config.api.key,
-          baseUrl: config.api.baseUrl,
+          apiKey: finalConfig.api.key,
+          baseUrl: finalConfig.api.baseUrl,
         };
         apiService.setConfig(apiConfig);
 
         const providerModels: { id: string; name: string; provider?: string; providerKey?: string; openClawProviderId?: string; supportsImage?: boolean }[] = [];
-        if (config.providers) {
-          Object.entries(config.providers).forEach(([providerName, providerConfig]) => {
+        if (finalConfig.providers) {
+          Object.entries(finalConfig.providers).forEach(([providerName, providerConfig]) => {
             if (providerConfig.enabled && providerConfig.models) {
               const openClawProviderId = getOpenClawProviderIdForConfig(providerName, providerConfig);
               providerConfig.models.forEach((model: { id: string; name: string; supportsImage?: boolean }) => {
@@ -223,8 +304,8 @@ const App: React.FC = () => {
         if (providerModels.length > 0) {
           const allModels = store.getState().model.availableModels;
           const preferredModel = allModels.find(
-            model => model.id === config.model.defaultModel
-              && (!config.model.defaultModelProvider || model.providerKey === config.model.defaultModelProvider)
+            model => model.id === finalConfig.model.defaultModel
+              && (!finalConfig.model.defaultModelProvider || model.providerKey === finalConfig.model.defaultModelProvider)
           ) ?? allModels[0];
           dispatch(setDefaultSelectedModel(preferredModel));
         }
@@ -275,6 +356,39 @@ const App: React.FC = () => {
     });
     return removeListener;
   }, []);
+
+  // 监听主进程静默同步 OneAPI 模型的事件，以实现无感热更新
+  useEffect(() => {
+    if (!window.electron?.ipcRenderer) return;
+    const unsubscribe = window.electron.ipcRenderer.on('config:sync-models', (data: any) => {
+      if (data && Array.isArray(data.availableModels)) {
+        console.log('[App] Received dynamically synced models from main process:', data);
+        
+        // 1. 同步内存中的 configService
+        const config = configService.getConfig();
+        if (config.model) {
+          config.model.availableModels = data.availableModels;
+          if (data.defaultModel) {
+            config.model.defaultModel = data.defaultModel;
+          }
+        }
+        
+        // 2. 同步前端 Redux Store 状态，重新渲染可用模型和默认选中的模型
+        dispatch(setAvailableModels(data.availableModels));
+        if (data.defaultModel) {
+          const allModels = store.getState().model.availableModels;
+          const preferredModel = allModels.find(
+            model => model.id === data.defaultModel
+              && (!config.model?.defaultModelProvider || model.providerKey === config.model.defaultModelProvider)
+          ) ?? allModels[0];
+          if (preferredModel) {
+            dispatch(setDefaultSelectedModel(preferredModel));
+          }
+        }
+      }
+    });
+    return unsubscribe;
+  }, [dispatch]);
 
   // Network status monitoring
   useEffect(() => {
@@ -933,6 +1047,15 @@ const App: React.FC = () => {
     );
   }
 
+  if (isInitialized && !isActivated) {
+    return (
+      <ActivationOverlay 
+        onActivated={() => setIsActivated(true)} 
+        windowsStandaloneTitleBar={windowsStandaloneTitleBar}
+      />
+    );
+  }
+
   if (initError) {
     return (
       <div className="h-screen overflow-hidden flex flex-col">
@@ -1075,6 +1198,194 @@ const App: React.FC = () => {
         />
       )}
 
+    </div>
+  );
+};
+
+interface ActivationOverlayProps {
+  onActivated: () => void;
+  windowsStandaloneTitleBar: React.ReactNode;
+}
+
+const ActivationOverlay: React.FC<ActivationOverlayProps> = ({ onActivated, windowsStandaloneTitleBar }) => {
+  const [code, setCode] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const dispatch = useDispatch();
+
+  const handleActivate = async () => {
+    const trimmedCode = code.trim();
+    if (!trimmedCode) {
+      setError('请输入激活码');
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const config = configService.getConfig();
+      const oneapiConfig = config.providers?.['oneapi'];
+      const oneapiBaseUrl = oneapiConfig?.baseUrl?.trim() || 'http://101.96.234.167:3000/v1';
+      const cleanBaseUrl = oneapiBaseUrl.replace(/\/+$/, '');
+      const testUrl = `${cleanBaseUrl}/models`;
+
+      const response = await window.electron.api.fetch({
+        url: testUrl,
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${trimmedCode}`,
+        },
+      }) as { ok: boolean; status: number; data: any; statusText?: string };
+
+      if (!response.ok) {
+        setError(response.status === 401 ? '激活码无效，请检查后重试' : `校验失败: HTTP ${response.status}`);
+      } else {
+        const body = response.data as { data: Array<{ id: string }> };
+        if (!body || !Array.isArray(body.data) || body.data.length === 0) {
+          setError('获取模型列表失败，请检查 OneAPI 配置');
+          return;
+        }
+
+        const chatModels: any[] = [];
+        for (const m of body.data) {
+          const modelId = m.id;
+          const isImage = /dall-e|stable-diffusion|\bsdxl\b|midjourney|\bmj-v\d+|controlnet|\bflux\b|seedream/i.test(modelId);
+          const hasVideoKeyword = /cogvideo|seedance|sora|kling|\bluma\b|runway|video-gen/i.test(modelId);
+          const isVideoUnderstanding = /chat|understand|vision|vl|multimodal/i.test(modelId);
+          const isVideo = hasVideoKeyword && !isVideoUnderstanding;
+
+          if (!isImage && !isVideo) {
+            chatModels.push({
+              id: modelId,
+              name: modelId,
+              supportsImage: true,
+            });
+          }
+        }
+
+        const defaultChatModel = chatModels[0]?.id;
+        if (chatModels.length === 0) {
+          setError('该激活码无可用的对话模型');
+          return;
+        }
+
+        const updatedProviders = {
+          ...config.providers,
+          oneapi: {
+            ...oneapiConfig,
+            enabled: true,
+            apiKey: trimmedCode,
+            models: chatModels,
+          }
+        };
+
+        // 写入本地 sqlite 数据库
+        await configService.updateConfig({
+          providers: updatedProviders,
+          model: {
+            ...config.model,
+            defaultModel: defaultChatModel || config.model?.defaultModel || '',
+            defaultModelProvider: 'oneapi',
+            availableModels: chatModels.map(m => ({
+              ...m,
+              provider: 'oneapi',
+              providerKey: 'oneapi',
+            })),
+          }
+        });
+
+        // 同步 Redux 状态
+        dispatch(setAvailableModels(chatModels.map(m => ({
+          ...m,
+          provider: 'oneapi',
+          providerKey: 'oneapi',
+        }))));
+
+        if (defaultChatModel) {
+          const allModels = store.getState().model.availableModels;
+          const preferredModel = allModels.find(
+            m => m.id === defaultChatModel && m.providerKey === 'oneapi'
+          ) ?? allModels[0];
+          if (preferredModel) {
+            dispatch(setDefaultSelectedModel(preferredModel));
+          }
+        }
+
+        onActivated();
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '网络连接失败，请检查网络设置');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="h-screen overflow-hidden flex flex-col bg-[#0e101f] text-foreground font-sans selection:bg-primary/30 selection:text-white relative">
+      {windowsStandaloneTitleBar}
+      
+      {/* 渐变流光背景 */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-[-25%] left-[-15%] w-[70%] h-[70%] rounded-full bg-gradient-to-br from-primary/25 to-transparent blur-[140px] animate-pulse duration-[8000ms]" />
+        <div className="absolute bottom-[-25%] right-[-15%] w-[70%] h-[70%] rounded-full bg-gradient-to-tr from-violet-500/18 to-transparent blur-[140px] animate-pulse duration-[10000ms]" />
+      </div>
+
+      <div className="flex-1 flex items-center justify-center p-6 relative z-10">
+        {/* 玻璃卡片 */}
+        <div className="w-full max-w-[420px] rounded-2xl bg-white/[0.04] border border-white/15 backdrop-blur-2xl p-8 shadow-[0_20px_50px_rgba(0,0,0,0.6)] flex flex-col space-y-6 transform hover:scale-[1.01] transition-all duration-300">
+          
+          {/* 标志与标题 */}
+          <div className="flex flex-col items-center space-y-3 text-center">
+            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center shadow-[0_0_20px_rgba(99,102,241,0.5)]">
+              <ChatBubbleLeftRightIcon className="h-7 w-7 text-white" />
+            </div>
+            <h2 className="text-2xl font-bold tracking-tight text-white/90">HeyClaw 激活</h2>
+            <p className="text-sm text-white/60 max-w-[280px]">
+              请输入您的激活码以开启 HeyClaw AI 工作站
+            </p>
+          </div>
+
+          {/* 表单输入 */}
+          <div className="flex flex-col space-y-4">
+            <div className="flex flex-col space-y-1.5">
+              <label className="text-xs font-semibold text-white/70 tracking-wider uppercase pl-1">
+                激活码
+              </label>
+              <input
+                type="password"
+                value={code}
+                onChange={(e) => { setCode(e.target.value); setError(null); }}
+                placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxx"
+                disabled={loading}
+                className="w-full px-4 py-3 bg-white/[0.06] hover:bg-white/[0.08] focus:bg-white/[0.09] border border-white/15 focus:border-primary/50 rounded-xl text-white placeholder-white/40 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 shadow-inner transition-all duration-200"
+              />
+            </div>
+
+            {error && (
+              <div className="text-xs text-red-400 pl-1 animate-fade-in">
+                ⚠️ {error}
+              </div>
+            )}
+
+            <button
+              onClick={handleActivate}
+              disabled={loading}
+              className="w-full py-3.5 bg-gradient-to-r from-primary to-violet-600 hover:from-primary-hover hover:to-violet-700 disabled:opacity-50 text-white rounded-xl font-medium text-sm transition-all duration-300 transform active:scale-[0.98] shadow-md hover:shadow-glow-accent disabled:transform-none disabled:active:scale-100 flex items-center justify-center space-x-2"
+            >
+              {loading ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span>正在验证激活码...</span>
+                </>
+              ) : (
+                <span>激活并开始使用</span>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
