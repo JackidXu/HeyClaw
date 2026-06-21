@@ -5258,17 +5258,22 @@ if (!gotTheLock) {
         }
         appConfig.model.availableModels = [...otherModels, ...newOneApiModels];
 
-        const currentDefault = appConfig.model.defaultModel;
-        const defaultStillExists = appConfig.model.availableModels.some((m: any) => m.id === currentDefault);
-        if (currentDefault === 'doubao-pro' || !defaultStillExists) {
-          const defaultChatModel = chat[0]?.id;
-          if (defaultChatModel) {
-            appConfig.model.defaultModel = defaultChatModel;
-          }
+        // 强制使用唯一的对话大模型作为默认模型，实现无感热更新
+        const defaultChatModel = chat[0]?.id;
+        if (defaultChatModel) {
+          appConfig.model.defaultModel = defaultChatModel;
         }
 
         sqliteStore.set('app_config', appConfig);
         console.log('[MediaGeneration] Successfully fetched and synced models from OneAPI. Count:', chat.length);
+
+        // 主动广播更新通知渲染进程同步更新内存及 Redux 模型状态
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('config:sync-models', {
+            availableModels: [...otherModels, ...newOneApiModels],
+            defaultModel: defaultChatModel,
+          });
+        }
       }
     }
   }
