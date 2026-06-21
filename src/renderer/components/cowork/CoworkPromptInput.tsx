@@ -1,7 +1,6 @@
 import { CheckIcon, ChevronDownIcon, ChevronRightIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import { ArrowUpIcon, FolderIcon } from '@heroicons/react/24/solid';
 import { AuthSubscriptionStatus } from '@shared/auth/constants';
-import { ProviderName } from '@shared/providers';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
@@ -469,25 +468,8 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
   const modelSupportsImage = !!effectiveSelectedModel?.supportsImage;
 
   const resolveSubmitModelAccessPrompt = useCallback((): ModelAccessPromptKind | null => {
-    const hasAccessibleUserModel = availableModels.some(
-      model => !model.isServerModel && model.accessible !== false
-    );
-    if (!isLoggedIn && !hasAccessibleUserModel) {
-      return ModelAccessPromptKind.Login;
-    }
-    if (
-      effectiveSelectedModel?.providerKey === ProviderName.LobsteraiServer
-      && effectiveSelectedModel.accessible === false
-    ) {
-      return isLoggedIn ? ModelAccessPromptKind.Subscribe : ModelAccessPromptKind.Login;
-    }
     return null;
-  }, [
-    availableModels,
-    effectiveSelectedModel?.accessible,
-    effectiveSelectedModel?.providerKey,
-    isLoggedIn,
-  ]);
+  }, []);
 
   const {
     handleVoiceInput,
@@ -1414,7 +1396,7 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
     void handleIncomingFiles(files);
   }, [disabled, handleIncomingFiles, isStreaming, voiceInputLocksEditing]);
 
-  const canSubmit = !disabled && !isVoiceRecognizing && !isPatchingModel && !agentModelIsInvalid && (!!value.trim() || hasAttachments);
+  const canSubmit = !disabled && !isVoiceRecognizing && !isPatchingModel && (!!value.trim() || hasAttachments);
   const enhancedContainerClass = isDraggingFiles
     ? `${containerClass} ring-2 ring-primary/50 border-primary/60`
     : containerClass;

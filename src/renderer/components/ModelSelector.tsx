@@ -1,16 +1,14 @@
-import { CheckIcon, ChevronDownIcon, ChevronRightIcon, LockClosedIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { CheckIcon, ChevronDownIcon, ChevronRightIcon, LockClosedIcon } from '@heroicons/react/24/outline';
 import { ProviderName } from '@shared/providers';
 import React from 'react';
 import { createPortal } from 'react-dom';
 import { useDispatch, useSelector } from 'react-redux';
 
 import { getProviderIcon, ProviderIconId } from '../providers/uiRegistry';
-import { authService } from '../services/auth';
 import { i18nService } from '../services/i18n';
 import { RootState } from '../store';
 import type { Model } from '../store/slices/modelSlice';
 import { getModelIdentityKey, isSameModelIdentity, setSelectedModel } from '../store/slices/modelSlice';
-import Modal from './common/Modal';
 
 interface ModelSelectorProps {
   dropdownDirection?: 'up' | 'down' | 'auto';
@@ -68,76 +66,9 @@ interface ModelAccessPromptModalProps {
   showLearnMore?: boolean;
 }
 
-export const ModelAccessPromptModal: React.FC<ModelAccessPromptModalProps> = ({
-  promptKind,
-  onClose,
-  titleKey,
-  descriptionKey,
-  primaryButtonKey,
-  showLearnMore = true,
-}) => {
-  const loginPrompt = promptKind === ModelAccessPromptKind.Login;
-  const resolvedTitleKey = titleKey ?? (loginPrompt ? 'modelSelectorLoginTitle' : 'modelSelectorSubscribeTitle');
-  const resolvedDescriptionKey = descriptionKey ?? (loginPrompt ? 'modelSelectorLoginDesc' : 'modelSelectorSubscribeDesc');
-  const resolvedPrimaryButtonKey = primaryButtonKey ?? (loginPrompt ? 'modelSelectorLoginBtn' : 'modelSelectorSubscribeBtn');
-
-  const openSubscriptionPage = async () => {
-    onClose();
-    const { getPortalPricingUrl } = await import('../services/endpoints');
-    await window.electron.shell.openExternal(getPortalPricingUrl());
-  };
-
-  const handlePrimary = async () => {
-    if (promptKind === ModelAccessPromptKind.Login) {
-      onClose();
-      await authService.login();
-      return;
-    }
-    await openSubscriptionPage();
-  };
-
-  return (
-    <Modal
-      onClose={onClose}
-      overlayClassName="fixed inset-0 z-[10050] flex items-center justify-center modal-backdrop px-4"
-      className="modal-content w-full max-w-sm rounded-2xl border border-border bg-surface p-5 shadow-modal"
-    >
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <div className="text-base font-semibold leading-6 text-foreground">
-            {i18nService.t(resolvedTitleKey)}
-          </div>
-          <div className="mt-1.5 text-sm leading-5 text-secondary">
-            {i18nService.t(resolvedDescriptionKey)}
-          </div>
-        </div>
-        <button
-          type="button"
-          onClick={onClose}
-          className="-mr-1 -mt-1 rounded-lg p-1 text-secondary transition-colors hover:bg-surface-raised hover:text-foreground"
-          aria-label={i18nService.t('close')}
-        >
-          <XMarkIcon className="h-5 w-5" />
-        </button>
-      </div>
-      <button
-        type="button"
-        onClick={() => { void handlePrimary(); }}
-        className="mt-5 w-full rounded-lg bg-primary px-3 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary/90"
-      >
-        {i18nService.t(resolvedPrimaryButtonKey)}
-      </button>
-      {loginPrompt && showLearnMore && (
-        <button
-          type="button"
-          onClick={() => { void openSubscriptionPage(); }}
-          className="mt-3 w-full text-center text-sm text-secondary transition-colors hover:text-foreground"
-        >
-          {i18nService.t('modelSelectorLearnMore')}
-        </button>
-      )}
-    </Modal>
-  );
+export const ModelAccessPromptModal: React.FC<ModelAccessPromptModalProps> = () => {
+  // 彻底屏蔽有道原厂登录/订阅弹窗，防止用户感受到有道
+  return null;
 };
 
 export function resolveHoverCardTop(
