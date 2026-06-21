@@ -355,9 +355,9 @@ interface ProvidersImportPayload {
   providers?: Record<string, ProvidersImportEntry>;
 }
 
-const ABOUT_CONTACT_EMAIL = 'heyclaw.project@rd.netease.com';
-const ABOUT_USER_MANUAL_URL = 'https://claw.163.com/#/docs/heyclaw_user_manual';
-const ABOUT_USER_COMMUNITY_URL = 'https://claw.163.com/#/about';
+// const ABOUT_CONTACT_EMAIL = 'heyclaw.project@rd.netease.com';
+// const ABOUT_USER_MANUAL_URL = 'https://claw.163.com/#/docs/heyclaw_user_manual';
+// const ABOUT_USER_COMMUNITY_URL = 'https://claw.163.com/#/about';
 const ABOUT_SERVICE_TERMS_URL = 'https://c.youdao.com/dict/hardware/heyclaw/heyclaw_service.html';
 
 // MiniMax Portal OAuth constants
@@ -819,7 +819,7 @@ const Settings: React.FC<SettingsProps> = ({
 
   // About tab
   const [appVersion, setAppVersion] = useState('');
-  const [emailCopied, setEmailCopied] = useState(false);
+  // const [emailCopied, setEmailCopied] = useState(false);
   const [isExportingLogs, setIsExportingLogs] = useState(false);
   const [testMode, setTestMode] = useState(false);
   const [logoClickCount, setLogoClickCount] = useState(0);
@@ -872,19 +872,19 @@ const Settings: React.FC<SettingsProps> = ({
     };
   }, []);
 
-  const handleCopyContactEmail = useCallback(async () => {
-    const copied = await copyTextToClipboard(ABOUT_CONTACT_EMAIL);
-    if (copied) {
-      setEmailCopied(true);
-      if (emailCopiedTimerRef.current != null) {
-        window.clearTimeout(emailCopiedTimerRef.current);
-      }
-      emailCopiedTimerRef.current = window.setTimeout(() => {
-        setEmailCopied(false);
-        emailCopiedTimerRef.current = null;
-      }, 1200);
-    }
-  }, []);
+  // const handleCopyContactEmail = useCallback(async () => {
+  //   const copied = await copyTextToClipboard(ABOUT_CONTACT_EMAIL);
+  //   if (copied) {
+  //     setEmailCopied(true);
+  //     if (emailCopiedTimerRef.current != null) {
+  //       window.clearTimeout(emailCopiedTimerRef.current);
+  //     }
+  //     emailCopiedTimerRef.current = window.setTimeout(() => {
+  //       setEmailCopied(false);
+  //       emailCopiedTimerRef.current = null;
+  //     }, 1200);
+  //   }
+  // }, []);
 
   const authUser = useSelector((state: RootState) => state.auth.user);
 
@@ -948,13 +948,13 @@ const Settings: React.FC<SettingsProps> = ({
     return i18nService.t('checkForUpdate');
   }, [appUpdateState?.progress?.percent, updateCheckStatus]);
 
-  const handleOpenUserManual = useCallback(() => {
-    void window.electron.shell.openExternal(ABOUT_USER_MANUAL_URL);
-  }, []);
-
-  const handleOpenUserCommunity = useCallback(() => {
-    void window.electron.shell.openExternal(ABOUT_USER_COMMUNITY_URL);
-  }, []);
+  // const handleOpenUserManual = useCallback(() => {
+  //   void window.electron.shell.openExternal(ABOUT_USER_MANUAL_URL);
+  // }, []);
+  // 
+  // const handleOpenUserCommunity = useCallback(() => {
+  //   void window.electron.shell.openExternal(ABOUT_USER_COMMUNITY_URL);
+  // }, []);
 
   const handleOpenServiceTerms = useCallback(() => {
     void window.electron.shell.openExternal(ABOUT_SERVICE_TERMS_URL);
@@ -4048,14 +4048,14 @@ const Settings: React.FC<SettingsProps> = ({
 
             {/* Info Card */}
             <div className="w-full mt-8 rounded-xl border border-border overflow-hidden">
-              <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3 border-b border-border">
+              <div className={`flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3${testModeUnlocked ? ' border-b border-border' : ''}`}>
                 <span className="shrink-0 text-sm text-foreground">{i18nService.t('aboutVersion')}</span>
                 <div className="flex min-w-0 flex-wrap items-center justify-end gap-2">
                   <span className="text-sm text-secondary">{appVersion}</span>
                   {!enterpriseConfig?.disableUpdate && (
                   <button
                     type="button"
-                    disabled={updateCheckStatus === 'checking' || updateCheckStatus === 'downloading'}
+                    disabled={true}
                     onClick={(e) => {
                       e.stopPropagation();
                       void handleCheckUpdate();
@@ -4071,53 +4071,6 @@ const Settings: React.FC<SettingsProps> = ({
                   </span>
                   )}
                 </div>
-              </div>
-              <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3 border-b border-border">
-                <span className="shrink-0 text-sm text-foreground">{i18nService.t('aboutContactEmail')}</span>
-                <div className="flex min-w-0 flex-wrap items-center justify-end gap-2">
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      void handleCopyContactEmail();
-                    }}
-                    title={i18nService.t('copyToClipboard')}
-                    className="min-w-0 break-all text-right text-sm text-secondary bg-transparent border-none appearance-none p-0 m-0 cursor-pointer focus:outline-none"
-                  >
-                    {ABOUT_CONTACT_EMAIL}
-                  </button>
-                  {emailCopied && (
-                    <span className="text-[11px] leading-4 text-emerald-600 dark:text-emerald-400">
-                      {i18nService.t('copied')}
-                    </span>
-                  )}
-                </div>
-              </div>
-              <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3 border-b border-border">
-                <span className="shrink-0 text-sm text-foreground">{i18nService.t('aboutUserCommunity')}</span>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleOpenUserCommunity();
-                  }}
-                  className="min-w-0 break-all text-right text-sm text-secondary hover:text-primary dark:hover:text-primary bg-transparent border-none appearance-none px-1.5 py-0.5 -mx-1.5 -my-0.5 rounded-md cursor-pointer focus:outline-none hover:bg-surface-raised transition-colors"
-                >
-                  {ABOUT_USER_COMMUNITY_URL}
-                </button>
-              </div>
-              <div className={`flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3${testModeUnlocked ? ' border-b border-border' : ''}`}>
-                <span className="shrink-0 text-sm text-foreground">{i18nService.t('aboutUserManual')}</span>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleOpenUserManual();
-                  }}
-                  className="min-w-0 break-all text-right text-sm text-secondary hover:text-primary dark:hover:text-primary bg-transparent border-none appearance-none px-1.5 py-0.5 -mx-1.5 -my-0.5 rounded-md cursor-pointer focus:outline-none hover:bg-surface-raised transition-colors"
-                >
-                  {ABOUT_USER_MANUAL_URL}
-                </button>
               </div>
               {testModeUnlocked && (
                 <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3">
