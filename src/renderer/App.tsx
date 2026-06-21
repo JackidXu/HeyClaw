@@ -248,6 +248,7 @@ const App: React.FC = () => {
                     enabled: true, // 确保自动开启模型
                     apiKey: oneapiKey,
                     models: chatModels,
+                    baseUrl: oneapiBaseUrl,
                   }
                 };
 
@@ -896,6 +897,49 @@ const App: React.FC = () => {
     return () => window.removeEventListener('app:showToast', handler);
   }, [showToast]);
 
+  // 监听退出激活事件
+  useEffect(() => {
+    const handleDeactivate = async () => {
+      try {
+        const config = configService.getConfig();
+        const oneapiConfig = config.providers?.['oneapi'];
+        const updatedProviders = {
+          ...config.providers,
+          oneapi: {
+            ...oneapiConfig,
+            enabled: false,
+            apiKey: '',
+            models: [],
+            baseUrl: oneapiConfig?.baseUrl || 'http://101.96.234.167:3000/v1',
+          }
+        };
+
+        await configService.updateConfig({
+          providers: updatedProviders,
+          model: {
+            ...config.model,
+            defaultModel: '',
+            availableModels: [],
+          }
+        });
+
+        dispatch(setAvailableModels([]));
+        dispatch(setDefaultSelectedModel(null as any));
+        try {
+          await coworkService.restartOpenClawGateway();
+        } catch (e) {
+          console.warn('[App] restartOpenClawGateway on deactivate failed:', e);
+        }
+      } catch (err) {
+        console.error('[App] Deactivate failed:', err);
+      } finally {
+        setIsActivated(false);
+      }
+    };
+    window.addEventListener('app:deactivate', handleDeactivate);
+    return () => window.removeEventListener('app:deactivate', handleDeactivate);
+  }, [dispatch]);
+
   // Listen for ask-ai events: close settings, navigate to cowork, pre-fill input
   useEffect(() => {
     const handler = (e: Event) => {
@@ -1115,7 +1159,6 @@ const App: React.FC = () => {
           isCollapsed={isSidebarCollapsed}
           onToggleCollapse={handleToggleSidebar}
           updateBadge={!isSidebarCollapsed ? updateBadge : null}
-          hideLogin={true}
         />
         <div className={`flex-1 min-w-0 transition-[padding] duration-200 ease-out ${isSidebarCollapsed ? 'pl-1.5' : ''}`}>
           <div className="relative h-full min-h-0 rounded-xl border border-border bg-background overflow-hidden">
@@ -1275,6 +1318,7 @@ const ActivationOverlay: React.FC<ActivationOverlayProps> = ({ onActivated, wind
             enabled: true,
             apiKey: trimmedCode,
             models: chatModels,
+            baseUrl: oneapiBaseUrl,
           }
         };
 
@@ -1310,6 +1354,12 @@ const ActivationOverlay: React.FC<ActivationOverlayProps> = ({ onActivated, wind
           }
         }
 
+        // 重新启动大模型网关引擎
+        try {
+          await coworkService.restartOpenClawGateway();
+        } catch (e) {
+          console.warn('[App] restartOpenClawGateway on activate failed:', e);
+        }
         onActivated();
       }
     } catch (err) {
@@ -1320,26 +1370,26 @@ const ActivationOverlay: React.FC<ActivationOverlayProps> = ({ onActivated, wind
   };
 
   return (
-    <div className="h-screen overflow-hidden flex flex-col bg-[#0e101f] text-foreground font-sans selection:bg-primary/30 selection:text-white relative">
+    <div className="h-screen overflow-hidden flex flex-col bg-[#f4f5f7] dark:bg-[#0e101f] text-foreground font-sans selection:bg-primary/30 selection:text-white relative transition-colors duration-200">
       {windowsStandaloneTitleBar}
       
       {/* 渐变流光背景 */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-25%] left-[-15%] w-[70%] h-[70%] rounded-full bg-gradient-to-br from-primary/25 to-transparent blur-[140px] animate-pulse duration-[8000ms]" />
-        <div className="absolute bottom-[-25%] right-[-15%] w-[70%] h-[70%] rounded-full bg-gradient-to-tr from-violet-500/18 to-transparent blur-[140px] animate-pulse duration-[10000ms]" />
+        <div className="absolute top-[-25%] left-[-15%] w-[70%] h-[70%] rounded-full bg-gradient-to-br from-primary/12 dark:from-primary/25 to-transparent blur-[140px] animate-pulse duration-[8000ms]" />
+        <div className="absolute bottom-[-25%] right-[-15%] w-[70%] h-[70%] rounded-full bg-gradient-to-tr from-violet-500/8 dark:from-violet-500/18 to-transparent blur-[140px] animate-pulse duration-[10000ms]" />
       </div>
 
       <div className="flex-1 flex items-center justify-center p-6 relative z-10">
         {/* 玻璃卡片 */}
-        <div className="w-full max-w-[420px] rounded-2xl bg-white/[0.04] border border-white/15 backdrop-blur-2xl p-8 shadow-[0_20px_50px_rgba(0,0,0,0.6)] flex flex-col space-y-6 transform hover:scale-[1.01] transition-all duration-300">
+        <div className="w-full max-w-[420px] rounded-2xl bg-white dark:bg-[#151728] border border-border/80 dark:border-white/15 p-8 shadow-[0_15px_35px_rgba(0,0,0,0.05)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.6)] flex flex-col space-y-6 transform hover:scale-[1.01] transition-all duration-300">
           
           {/* 标志与标题 */}
           <div className="flex flex-col items-center space-y-3 text-center">
-            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center shadow-[0_0_20px_rgba(99,102,241,0.5)]">
+            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center shadow-md dark:shadow-[0_0_20px_rgba(99,102,241,0.4)]">
               <ChatBubbleLeftRightIcon className="h-7 w-7 text-white" />
             </div>
-            <h2 className="text-2xl font-bold tracking-tight text-white/90">HeyClaw 激活</h2>
-            <p className="text-sm text-white/60 max-w-[280px]">
+            <h2 className="text-2xl font-bold tracking-tight text-foreground dark:text-white/90">HeyClaw 激活</h2>
+            <p className="text-sm text-secondary dark:text-white/60 max-w-[280px]">
               请输入您的激活码以开启 HeyClaw AI 工作站
             </p>
           </div>
@@ -1347,7 +1397,7 @@ const ActivationOverlay: React.FC<ActivationOverlayProps> = ({ onActivated, wind
           {/* 表单输入 */}
           <div className="flex flex-col space-y-4">
             <div className="flex flex-col space-y-1.5">
-              <label className="text-xs font-semibold text-white/70 tracking-wider uppercase pl-1">
+              <label className="text-xs font-semibold text-secondary dark:text-white/70 tracking-wider uppercase pl-1">
                 激活码
               </label>
               <input
@@ -1356,12 +1406,12 @@ const ActivationOverlay: React.FC<ActivationOverlayProps> = ({ onActivated, wind
                 onChange={(e) => { setCode(e.target.value); setError(null); }}
                 placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxx"
                 disabled={loading}
-                className="w-full px-4 py-3 bg-white/[0.06] hover:bg-white/[0.08] focus:bg-white/[0.09] border border-white/15 focus:border-primary/50 rounded-xl text-white placeholder-white/40 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 shadow-inner transition-all duration-200"
+                className="w-full px-4 py-3 bg-surface-raised dark:bg-white/[0.06] hover:bg-surface-raised/80 dark:hover:bg-white/[0.08] focus:bg-surface border border-border dark:border-white/15 focus:border-primary/50 dark:focus:border-primary/50 rounded-xl text-foreground dark:text-white placeholder-foreground/30 dark:placeholder-white/40 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 shadow-inner transition-all duration-200"
               />
             </div>
 
             {error && (
-              <div className="text-xs text-red-400 pl-1 animate-fade-in">
+              <div className="text-xs text-red-500 dark:text-red-400 pl-1 animate-fade-in">
                 ⚠️ {error}
               </div>
             )}
@@ -1369,7 +1419,7 @@ const ActivationOverlay: React.FC<ActivationOverlayProps> = ({ onActivated, wind
             <button
               onClick={handleActivate}
               disabled={loading}
-              className="w-full py-3.5 bg-gradient-to-r from-primary to-violet-600 hover:from-primary-hover hover:to-violet-700 disabled:opacity-50 text-white rounded-xl font-medium text-sm transition-all duration-300 transform active:scale-[0.98] shadow-md hover:shadow-glow-accent disabled:transform-none disabled:active:scale-100 flex items-center justify-center space-x-2"
+              className="w-full py-3.5 bg-primary hover:bg-primary-hover disabled:opacity-50 text-white rounded-xl font-medium text-sm transition-all duration-300 transform active:scale-[0.98] shadow-sm hover:shadow-glow-accent disabled:transform-none disabled:active:scale-100 flex items-center justify-center space-x-2"
             >
               {loading ? (
                 <>
