@@ -1805,7 +1805,7 @@ const getOpenClawConfigSync = (): OpenClawConfigSync => {
           .listUserPlugins()
           .filter(p => !isHiddenUserPluginId(p.pluginId))
           .map(p => ({ pluginId: p.pluginId, enabled: p.enabled, config: p.config })),
-      canUseMediaGeneration: () => cachedMediaGenerationEntitled,
+      canUseMediaGeneration: () => true,
     });
   }
   return openClawConfigSync;
@@ -3276,6 +3276,11 @@ if (!gotTheLock) {
           void getOpenClawEngineManager().restartGateway('browser-access-settings-change');
         }
       }
+
+      // 异步同步 OneAPI 模型列表
+      syncOneApiModelsAndSave().catch(e => {
+        console.log('[OpenClaw] Failed to sync models from OneAPI after app_config update:', e);
+      });
     }
   });
 
@@ -3634,7 +3639,12 @@ if (!gotTheLock) {
     args: Record<string, unknown>;
     context: { sessionKey: string; toolCallId: string };
   }): Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean; details?: Record<string, unknown> }> => {
-    const { tool, args } = request;
+    let { tool, args } = request;
+    if (tool === 'lobsterai_image_generate') {
+      tool = 'heyclaw_image_generate';
+    } else if (tool === 'lobsterai_video_generate') {
+      tool = 'heyclaw_video_generate';
+    }
     const action = (args.action as string) || 'generate';
     const serverBaseUrl = getServerApiBaseUrl();
     const sessionId = extractSessionIdFromKey(request.context.sessionKey);
@@ -3684,25 +3694,16 @@ if (!gotTheLock) {
     try {
       if (action === 'list') {
         const mediaType = tool === MediaGenerationTool.Image ? 'image' : 'video';
-        const endpoint = mediaType === 'image' ? '/api/media/images/models' : '/api/media/videos/models';
-        console.log(`[MediaGeneration] listing ${mediaType} models from server.`);
-        const resp = await fetchWithAuth(`${serverBaseUrl}${endpoint}`);
-        console.log(`[MediaGeneration] server returned HTTP ${resp.status} for ${mediaType} model list.`);
-        const body = await resp.json() as { code: number; data?: unknown[]; message?: string };
-        if (body.code !== 0) {
-          console.warn('[MediaGeneration] server rejected model list request:', serializeForLog({ mediaType, code: body.code, message: body.message }));
-          return { content: [{ type: 'text', text: body.message || 'Failed to list models.' }], isError: true };
+        let imageModels: any[] = [];
+        let videoModels: any[] = [];
+
+        const res = await fetchModelsFromOneAPI();
+        if (res.success && res.models) {
+          imageModels = res.models.image;
+          videoModels = res.models.video;
         }
-        const models = (body.data || []).map(model => {
-          const mediaModel = model as { modelId?: string; displayName?: string };
-          const modelId = canonicalizeMediaModelId(mediaModel.modelId);
-          return {
-            ...(model as Record<string, unknown>),
-            modelId,
-            displayName: mediaModelDisplayName(modelId, mediaModel.displayName),
-          };
-        });
-        console.log(`[MediaGeneration] server returned ${models.length} ${mediaType} models.`);
+
+        const models = mediaType === 'image' ? imageModels : videoModels;
         let text = models.length > 0
           ? `Available ${mediaType} models:\n\n${(models as Array<{ modelId: string; displayName: string; capabilities?: string; parameterSpec?: Record<string, unknown> }>).map(m => {
               let line = `### ${m.displayName} (model: "${m.modelId}")`;
@@ -3832,25 +3833,16 @@ if (!gotTheLock) {
       const mediaType = tool === MediaGenerationTool.Image ? 'image' : 'video';
       const endpoint = mediaType === 'image' ? '/api/media/images/generate' : '/api/media/videos/generate';
 
-      // Video generation confirmation: inform user about cost and duration
+      // Video generation confirmation
       if (mediaType === 'video') {
-        const durationSec = typeof args.durationSeconds === 'number' ? args.durationSeconds : null;
-        const costPoints = durationSec ? durationSec * 100 : null;
-        const portalTasksUrl = getPortalTasksUrl();
-        const subtitle = costPoints
-          ? `本次生成大约预计消耗 **${costPoints}** 积分`
-          : '费用约为 **100** 积分/秒';
         const questionText = [
           '请确认当前描述无误，提交后将无法取消。',
           '视频生成任务耗时较长，请耐心等待。',
-          '',
-          `生成后请妥善保存视频，若误删可在[「个人主页-用量详情-生成任务」](${portalTasksUrl})中下载`,
-          '~~（链接有时效性，请尽快下载）~~',
         ].join('\n');
         const confirmResponse = await getMcpRuntime().askUserInternal([{
           question: questionText,
           title: '确认生成视频？',
-          subtitle,
+          subtitle: '确认后将调用视频生成模型开始生成。',
           options: [
             { label: '确认生成', description: '开始视频生成任务' },
             { label: '取消', description: '暂不生成' },
@@ -3986,92 +3978,125 @@ if (!gotTheLock) {
         params.media = await Promise.all((params.media as unknown[]).map(resolveMediaItem));
       }
 
-      const inferVideoGenerationType = (): string => {
-        const normalizedModel = selectedModel.toLowerCase();
-        if (normalizedModel.includes('happyhorse-1.0-r2v')) return 'r2v';
-        if (normalizedModel.includes('happyhorse-1.0-t2v')) return 't2v';
-        if (normalizedModel.includes('happyhorse-1.0-i2v')) return 'i2v';
+      // OneAPI 媒体生成逻辑
+      const sqliteStore = getStore();
+      const appConfig = sqliteStore?.get<any>('app_config');
+      const oneapiConfig = appConfig?.providers?.['oneapi'];
+      const oneapiKey = oneapiConfig?.apiKey?.trim();
 
-        const imageRoles = Array.isArray(params.imageRoles)
-          ? (params.imageRoles as unknown[]).map(role => String(role).toLowerCase())
-          : [];
-        const mediaItems = Array.isArray(params.media) ? params.media as unknown[] : [];
-        const mediaTypes = mediaItems
-          .filter(item => item && typeof item === 'object' && !Array.isArray(item))
-          .map(item => String((item as Record<string, unknown>).type || '').toLowerCase());
-        const hasReferenceImage = (Array.isArray(params.referenceImages) && (params.referenceImages as unknown[]).length > 0)
-          || imageRoles.some(role => role === 'reference_image' || role === 'reference')
-          || mediaTypes.some(type => type === 'reference_image');
-        if (hasReferenceImage) return 'r2v';
+      if (!oneapiKey) {
+        return {
+          content: [{ type: 'text', text: '未检测到有效的激活码，请先激活软件。' }],
+          isError: true,
+          details: { status: 'failed', warnings: ['No active OneAPI key'] },
+        };
+      }
 
-        const hasFirstFrame = typeof params.firstFrame === 'string'
-          || imageRoles.some(role => role === 'first_frame' || role === 'firstframe')
-          || mediaTypes.some(type => type === 'first_frame')
-          || (Array.isArray(params.images) && (params.images as unknown[]).length > 0);
-        return hasFirstFrame ? 'i2v' : 't2v';
-      };
+      const oneapiBaseUrl = oneapiConfig?.baseUrl?.trim() || 'https://api.openai.com/v1';
+      const cleanBaseUrl = oneapiBaseUrl.replace(/\/+$/, '');
 
-      const generateReq = {
-        model: selectedModel,
-        type: mediaType === 'video' ? inferVideoGenerationType() : mediaType,
-        prompt,
-        params,
-      };
+      const model = selectedModel || (mediaType === 'image' ? 'dall-e-3' : 'cogvideo-stage1');
+      const oneapiUrl = `${cleanBaseUrl}/images/generations`;
+      let bodyData: Record<string, any>;
 
-      console.log('[MediaGeneration] sending generate request to server:', serializeForLog({
-        endpoint,
-        mediaType,
-        selectedModel,
-        selectedModelSource,
+      if (mediaType === 'video') {
+        bodyData = {
+          model,
+          prompt,
+        };
+      } else {
+        // 组装 OneAPI 生图参数
+        let size = '1024x1024';
+        if (args.size && typeof args.size === 'string') {
+          size = args.size;
+        } else if (args.aspectRatio && typeof args.aspectRatio === 'string') {
+          const ar = args.aspectRatio.trim();
+          if (ar === '16:9' || ar === '4:3') {
+            size = '1792x1024';
+          } else if (ar === '9:16' || ar === '3:4') {
+            size = '1024x1792';
+          }
+        }
+
+        let n = 1;
+        if (model !== 'dall-e-3') {
+          n = typeof params.n === 'number' ? params.n : (typeof args.count === 'number' ? args.count : 1);
+        }
+
+        bodyData = {
+          model,
+          prompt,
+          n,
+          size,
+        };
+
+        if (args.quality && typeof args.quality === 'string') {
+          bodyData.quality = args.quality;
+        }
+      }
+
+      console.log('[MediaGeneration] sending OneAPI generate request:', {
+        url: oneapiUrl,
+        model,
         promptLength: prompt.length,
-        promptPreview: prompt.slice(0, 120),
-        params: summarizeMediaGenerationParamsForLog(params),
-      }));
-      const resp = await fetchWithAuth(`${serverBaseUrl}${endpoint}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(generateReq),
+        ...(mediaType === 'image' ? { size: bodyData.size, n: bodyData.n } : {}),
       });
-      console.log(`[MediaGeneration] server returned HTTP ${resp.status} for ${mediaType} generate request.`);
-      const body = await resp.json() as { code: number; data?: Record<string, unknown>; message?: string };
 
-      if (body.code === 40203) {
-        console.warn('[MediaGeneration] server rejected generate request because subscription is required.');
+      const resp = await net.fetch(oneapiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${oneapiKey}`,
+        },
+        body: JSON.stringify(bodyData),
+      });
+
+      if (!resp.ok) {
+        const errBody = await resp.json().catch(() => ({}));
+        const errMsg = errBody?.error?.message || `HTTP ${resp.status}`;
+        console.warn('[MediaGeneration] OneAPI generate request failed:', errMsg);
         return {
-          content: [{ type: 'text', text: 'Media generation requires an active subscription. Please subscribe to use this feature.' }],
+          content: [{ type: 'text', text: `生成失败: ${errMsg}` }],
           isError: true,
-          details: { status: 'failed', warnings: ['MEDIA_SUBSCRIPTION_REQUIRED'] },
-        };
-      }
-      if (body.code === 40204) {
-        console.warn('[MediaGeneration] server rejected generate request because quota was exhausted.');
-        return {
-          content: [{ type: 'text', text: 'Media generation quota exhausted for this period. Please wait for quota reset or upgrade your plan.' }],
-          isError: true,
-          details: { status: 'failed', warnings: ['MEDIA_QUOTA_EXHAUSTED'] },
-        };
-      }
-      if (body.code !== 0) {
-        console.warn('[MediaGeneration] server rejected generate request:', serializeForLog({ mediaType, selectedModel, code: body.code, message: body.message }));
-        return {
-          content: [{ type: 'text', text: body.message || 'Media generation request failed.' }],
-          isError: true,
-          details: { status: 'failed', warnings: [body.message || 'Unknown error'] },
+          details: { status: 'failed', warnings: [errMsg] },
         };
       }
 
-      const task = body.data!;
-      const status = task.status as string;
-      const resultUrls = (task.resultUrls as string[]) || [];
-      const outputModel = mediaModelIdForOutput(task.model, selectedModel);
-      console.log('[MediaGeneration] server accepted generate request:', serializeForLog({
+      let resultUrls: string[] = [];
+      const body = await resp.json() as any;
+
+      if (body.data && Array.isArray(body.data)) {
+        resultUrls = (body.data as Array<{ url?: string; b64_json?: string }>).map(item => item.url || (item.b64_json ? `data:image/png;base64,${item.b64_json}` : '')).filter(Boolean);
+      }
+
+      // 兼容兜底
+      if (resultUrls.length === 0) {
+        const content = body.choices?.[0]?.message?.content || (typeof body === 'string' ? body : '');
+        const videoRegex = /https?:\/\/[^\s"'<>]+?\.(?:mp4|webm|mov|avi|mkv)(?:\?[^\s"'<>]+)?/gi;
+        resultUrls = content.match(videoRegex) || [];
+        if (resultUrls.length === 0 && typeof content === 'string' && content.trim().startsWith('http')) {
+          resultUrls = [content.trim()];
+        }
+      }
+
+      if (resultUrls.length === 0) {
+        console.warn(`[MediaGeneration] OneAPI response has no ${mediaType === 'image' ? 'images' : 'videos'}.`);
+        return {
+          content: [{ type: 'text', text: `生成失败：返回的数据中没有有效的${mediaType === 'image' ? '图片' : '视频'}链接。` }],
+          isError: true,
+          details: { status: 'failed', warnings: [`No ${mediaType === 'image' ? 'images' : 'videos'} in response`] },
+        };
+      }
+
+      const status = 'succeeded';
+      const outputModel = model;
+      console.log('[MediaGeneration] OneAPI generate request succeeded:', {
         mediaType,
-        taskId: task.taskId,
         status,
         model: outputModel,
         resultCount: resultUrls.length,
-        quotaRemaining: task.quotaRemaining,
-      }));
+      });
+
       const assets = resultUrls.map(url => ({
         type: mediaType,
         url,
@@ -4080,91 +4105,50 @@ if (!gotTheLock) {
       }));
       let detailsAssets: unknown[] = assets;
 
-      const billing: Record<string, unknown> = {};
-      if (task.quotaRemaining != null) billing.quotaRemaining = task.quotaRemaining;
-      if (mediaType === 'image') {
-        if (args.count) billing.frozenImages = args.count;
-        else if (args.n) billing.frozenImages = args.n;
-      } else {
-        if (args.durationSeconds) billing.frozenVideoSeconds = args.durationSeconds;
-      }
-
       const lines = [
-        `${mediaType === 'image' ? 'Image' : 'Video'} generation task created.`,
-        `Task ID: ${task.upstreamTaskId || task.taskId}`,
-        `Model: ${outputModel}`,
-        `Status: ${status}`,
-        ...(task.quotaRemaining != null ? [`Quota remaining: ${task.quotaRemaining}`] : []),
+        `${mediaType === 'image' ? '图片' : '视频'}生成成功。`,
+        `模型: ${outputModel}`,
       ];
 
-      if (status === 'succeeded' && mediaType === 'image' && sessionId) {
+      if (mediaType === 'image' && sessionId) {
         const persistResult = await persistGeneratedImages(sessionId, assets);
         if (persistResult && persistResult.saved.length > 0) {
           detailsAssets = persistResult.saved;
           const fileLines = persistResult.saved.map(asset =>
             `  - [${asset.filename}](${pathToFileURL(asset.filePath).toString()})`
           );
-          lines.push(`Results:\n${fileLines.join('\n')}`);
+          lines.push(`结果:\n${fileLines.join('\n')}`);
         } else if (assets.length > 0) {
-          const resultLines = resultUrls.map((url, index) => `  - ![Generated image ${index + 1}](${url})`);
-          lines.push(`Results:\n${resultLines.join('\n')}`);
+          const resultLines = resultUrls.map((url, index) => `  - ![生成图片 ${index + 1}](${url})`);
+          lines.push(`结果:\n${resultLines.join('\n')}`);
         }
-      } else if (status === 'succeeded' && mediaType === 'video' && sessionId) {
+      } else if (mediaType === 'video' && sessionId) {
         const persistResult = await persistGeneratedVideos(sessionId, assets);
         if (persistResult && persistResult.saved.length > 0) {
           detailsAssets = persistResult.saved;
           const fileLines = persistResult.saved.map(asset =>
             `  - [${asset.filename}](${pathToFileURL(asset.filePath).toString()})`
           );
-          lines.push(`Results:\n${fileLines.join('\n')}`);
+          lines.push(`结果:\n${fileLines.join('\n')}`);
         } else if (assets.length > 0) {
           const resultLines = resultUrls.map(url => `  - ${url}`);
-          lines.push(`Results:\n${resultLines.join('\n')}`);
-        }
-      } else if (status === 'succeeded' && assets.length > 0) {
-        const resultLines = resultUrls.map(url => `  - ${url}`);
-        lines.push(`Results:\n${resultLines.join('\n')}`);
-      }
-
-      // Register async media tasks for background polling if not already completed.
-      if (status !== 'succeeded' && status !== 'failed' && status !== 'cancelled') {
-        if (sessionId) {
-          const metadata = task.metadata as Record<string, unknown> | undefined;
-          const expiresAfterSec = metadata?.execution_expires_after ?? task.execution_expires_after;
-          const timeoutMs = typeof expiresAfterSec === 'number' && expiresAfterSec > 0
-            ? expiresAfterSec * 1000
-            : MEDIA_TASK_DEFAULT_TIMEOUT_MS;
-          registerMediaTaskForPolling({
-            taskId: String(task.taskId),
-            sessionId,
-            mediaType,
-            model: outputModel,
-            startedAt: Date.now(),
-            pollCount: 0,
-            timeoutMs,
-          });
+          lines.push(`结果:\n${resultLines.join('\n')}`);
         }
       }
 
       return {
         content: [{ type: 'text', text: lines.join('\n') }],
         details: {
-          taskId: String(task.taskId),
-          ...(task.upstreamTaskId ? { upstreamTaskId: String(task.upstreamTaskId) } : {}),
+          taskId: `oneapi-${Date.now()}`,
           status,
           model: outputModel,
           ...(detailsAssets.length > 0 ? { assets: detailsAssets } : {}),
-          ...(Object.keys(billing).length > 0 ? { billing } : {}),
         },
       };
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
-      if (msg === 'No auth tokens') {
-        console.warn('[MediaGeneration] blocked media generation because the user is not logged in.');
-        return { content: [{ type: 'text', text: 'Not logged in. Please log in to use media generation.' }], isError: true };
-      }
       console.error('[MediaGeneration] media generation request failed:', error);
-      return { content: [{ type: 'text', text: `Media generation error: ${msg}` }], isError: true };
+      return { content: [{ type: 'text', text: `多媒体生成出错: ${msg}` }], isError: true };
     }
   };
 
@@ -4456,7 +4440,7 @@ if (!gotTheLock) {
 
   const getAuthQuotaGateState = () => ({
     subscriptionStatus: cachedSubscriptionStatus,
-    mediaGenerationEntitled: cachedMediaGenerationEntitled,
+    mediaGenerationEntitled: true,
   });
 
   const hasAuthQuotaGateStateChanged = (previous: ReturnType<typeof getAuthQuotaGateState>) => (
@@ -5153,29 +5137,155 @@ if (!gotTheLock) {
     }
   });
 
+  async function fetchModelsFromOneAPI(): Promise<{ success: boolean; models?: { chat: any[]; image: any[]; video: any[] }; error?: string }> {
+    const sqliteStore = getStore();
+    const appConfig = sqliteStore?.get<any>('app_config');
+    const oneapiConfig = appConfig?.providers?.['oneapi'];
+    const oneapiKey = oneapiConfig?.apiKey?.trim();
+    const oneapiBaseUrl = oneapiConfig?.baseUrl?.trim() || 'https://api.openai.com/v1';
+
+    if (!oneapiKey) {
+      return { success: false, error: 'No API key' };
+    }
+
+    try {
+      const cleanBaseUrl = oneapiBaseUrl.replace(/\/+$/, '');
+      const url = `${cleanBaseUrl}/models`;
+      const resp = await net.fetch(url, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${oneapiKey}`,
+        },
+      });
+
+      if (!resp.ok) {
+        return { success: false, error: `HTTP ${resp.status}` };
+      }
+
+      const data = await resp.json() as { data: Array<{ id: string }> };
+      if (!data || !Array.isArray(data.data)) {
+        return { success: false, error: 'Invalid response format' };
+      }
+
+      const chatModels: any[] = [];
+      const imageModels: any[] = [];
+      const videoModels: any[] = [];
+
+      for (const m of data.data) {
+        const modelId = m.id;
+        const lowerId = modelId.toLowerCase();
+
+        // 判断是否是生图模型
+        const isImage = /dall-e|stable-diffusion|\bsdxl\b|midjourney|\bmj-v\d+|controlnet|\bflux\b|seedream/i.test(modelId);
+
+        // 判断是否是视频模型
+        const hasVideoKeyword = /cogvideo|seedance|sora|kling|\bluma\b|runway|video-gen/i.test(modelId);
+        const isVideoUnderstanding = /chat|understand|vision|vl|multimodal/i.test(modelId);
+        const isVideo = hasVideoKeyword && !isVideoUnderstanding;
+
+        if (isImage) {
+          imageModels.push({
+            modelId: modelId,
+            displayName: modelId,
+            provider: 'oneapi',
+            mediaType: 'image',
+            generationTimeout: 60,
+            pricing: {},
+            description: `OneAPI ${modelId} 图像生成模型`,
+          });
+        } else if (isVideo) {
+          videoModels.push({
+            modelId: modelId,
+            displayName: modelId,
+            provider: 'oneapi',
+            mediaType: 'video',
+            generationTimeout: 300,
+            pricing: {},
+            description: `OneAPI ${modelId} 视频生成模型`,
+          });
+        } else {
+          // 作为普通的对话大模型
+          chatModels.push({
+            id: modelId,
+            name: modelId,
+            supportsImage: true,
+          });
+        }
+      }
+
+      return {
+        success: true,
+        models: {
+          chat: chatModels,
+          image: imageModels,
+          video: videoModels,
+        }
+      };
+    } catch (e) {
+      return { success: false, error: e instanceof Error ? e.message : String(e) };
+    }
+  }
+
+  async function syncOneApiModelsAndSave() {
+    const sqliteStore = getStore();
+    const appConfig = sqliteStore?.get<any>('app_config');
+    if (!appConfig) return;
+
+    const res = await fetchModelsFromOneAPI();
+    if (res.success && res.models) {
+      const { chat } = res.models;
+      if (chat.length > 0) {
+        if (!appConfig.providers) {
+          appConfig.providers = {};
+        }
+        if (!appConfig.providers.oneapi) {
+          appConfig.providers.oneapi = {};
+        }
+        appConfig.providers.oneapi.models = chat;
+        
+        const otherModels = (appConfig.model?.availableModels || []).filter(
+          (m: any) => m.provider !== 'oneapi' && m.providerKey !== 'oneapi'
+        );
+        
+        const newOneApiModels = chat.map(m => ({
+          ...m,
+          provider: 'oneapi',
+          providerKey: 'oneapi'
+        }));
+
+        if (!appConfig.model) {
+          appConfig.model = {};
+        }
+        appConfig.model.availableModels = [...otherModels, ...newOneApiModels];
+
+        const currentDefault = appConfig.model.defaultModel;
+        const defaultStillExists = appConfig.model.availableModels.some((m: any) => m.id === currentDefault);
+        if (currentDefault === 'doubao-pro' || !defaultStillExists) {
+          const defaultChatModel = chat[0]?.id;
+          if (defaultChatModel) {
+            appConfig.model.defaultModel = defaultChatModel;
+          }
+        }
+
+        sqliteStore.set('app_config', appConfig);
+        console.log('[MediaGeneration] Successfully fetched and synced models from OneAPI. Count:', chat.length);
+      }
+    }
+  }
+
   // Media generation IPC handlers
   ipcMain.handle('media:getModels', async (_event, type: 'image' | 'video') => {
     try {
-      const tokens = getAuthTokens();
-      if (!tokens) {
-        console.warn('[Media:getModels] No auth tokens, skipping');
-        return { success: false, error: 'Not logged in' };
+      let imageModels: any[] = [];
+      let videoModels: any[] = [];
+
+      const res = await fetchModelsFromOneAPI();
+      if (res.success && res.models) {
+        imageModels = res.models.image;
+        videoModels = res.models.video;
       }
-      const serverBaseUrl = getServerApiBaseUrl();
-      const endpoint = type === 'image' ? '/api/media/images/models' : '/api/media/videos/models';
-      const resp = await fetchWithAuth(`${serverBaseUrl}${endpoint}`);
-      if (!resp.ok) return { success: false, error: `HTTP ${resp.status}` };
-      const body = await resp.json() as { code: number; data?: unknown[]; message?: string };
-      if (body.code !== 0) return { success: false, error: body.message };
-      const models = (body.data || []).map(model => {
-        const mediaModel = model as { modelId?: string; displayName?: string };
-        const modelId = canonicalizeMediaModelId(mediaModel.modelId);
-        return {
-          ...(model as Record<string, unknown>),
-          modelId,
-          displayName: mediaModelDisplayName(modelId, mediaModel.displayName),
-        };
-      });
+
+      const models = type === 'image' ? imageModels : videoModels;
       return { success: true, models };
     } catch (e) {
       console.error('[Media:getModels] Error:', e);
@@ -10171,6 +10281,7 @@ if (!gotTheLock) {
       profiler.measure('startupCacheWarmup');
     }
 
+
     // Agent model migration — runs after cache warmup so resolveMatchedProvider
     // can match lobsterai-server models without falling back.
     const defaultAgentModelRef = resolveDefaultAgentModelRef();
@@ -10239,6 +10350,11 @@ if (!gotTheLock) {
     createWindow();
     profiler.measure('createWindow');
     console.log('[Main] initApp: window created');
+
+    // 启动时异步从 OneAPI 同步可用模型列表并存入 sqlite
+    syncOneApiModelsAndSave().catch(e => {
+      console.log('[OpenClaw] Failed to sync models from OneAPI on startup:', e);
+    });
 
     // ── Step 2-4: Skill bootstrap (non-blocking) ────────────────────
     console.log('[Main] initApp: starting skill bootstrap');

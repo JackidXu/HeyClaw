@@ -416,9 +416,8 @@ const MediaModelPicker: React.FC<MediaModelPickerProps> = ({ draftKey, disabled 
   const [hoverCardStyle, setHoverCardStyle] = useState<React.CSSProperties>({});
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const isLoggedIn = useSelector((state: RootState) => state.auth.isLoggedIn);
-  const authQuota = useSelector((state: RootState) => state.auth.quota);
-  const canUseMediaGeneration = isLoggedIn && (authQuota?.subscriptionStatus === 'active' || authQuota?.hasPaidCredits === true);
+  const isLoggedIn = true;
+  const canUseMediaGeneration = true;
 
   const mediaModels = useSelector((state: RootState) => state.cowork.mediaModels);
   const selection = useSelector((state: RootState) => state.cowork.mediaSelection[draftKey]);
