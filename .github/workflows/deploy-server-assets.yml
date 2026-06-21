@@ -1,0 +1,26 @@
+name: Deploy Server Assets to BT Server
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'server-assets/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Deploy to Baota Server via Rsync
+        uses: easingthemes/ssh-deploy@main
+        with:
+          SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_KEY }}
+          REMOTE_HOST: ${{ secrets.SERVER_HOST }}
+          REMOTE_USER: ${{ secrets.SERVER_USER }}
+          REMOTE_PORT: ${{ secrets.SERVER_PORT || 22 }}
+          SOURCE: "server-assets/"
+          TARGET: ${{ secrets.SERVER_TARGET_DIR }}
+          ARGS: "-rlgoDzvO" # 仅复制目录下的内容，不带 server-assets 文件夹本身
