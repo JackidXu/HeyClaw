@@ -340,7 +340,7 @@ const PROVIDER_DEFINITIONS = [
   },
   {
     id: ProviderName.Oneapi,
-    label: 'Oneapi',
+    label: 'HeyClaw',
     website: 'http://101.96.234.167:3000',
     apiKeyUrl: 'http://101.96.234.167:3000',
     openClawProviderId: OpenClawProviderId.OpenAI,
@@ -350,7 +350,7 @@ const PROVIDER_DEFINITIONS = [
     region: 'china',
     enPriority: 0,
     defaultModels: [
-      { id: 'doubao-pro', name: 'Doubao Pro', supportsImage: true },
+      { id: 'Doubao-Seed-2.0-pro', name: 'Doubao-Seed-2.0-pro', supportsImage: true },
     ],
   },
   {

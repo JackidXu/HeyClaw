@@ -125,9 +125,9 @@ export const defaultConfig: AppConfig = {
   },
   model: {
     availableModels: [
-      { id: 'doubao-pro', name: 'Doubao Pro', supportsImage: true },
+      { id: 'Doubao-Seed-2.0-pro', name: 'Doubao-Seed-2.0-pro', supportsImage: true },
     ],
-    defaultModel: 'doubao-pro',
+    defaultModel: 'Doubao-Seed-2.0-pro',
     defaultModelProvider: 'oneapi',
   },
   providers: buildDefaultProviders(),
