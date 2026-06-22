@@ -11,34 +11,34 @@ export const isTestModeEnabled = () => {
 
 // 自动更新
 export const getUpdateCheckUrl = () => isTestModeEnabled()
-  ? 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/test/update'
-  : 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/prod/update';
+  ? 'https://api-overmind.heyclaw.com/openapi/get/luna/hardware/lobsterai/test/update'
+  : 'https://api-overmind.heyclaw.com/openapi/get/luna/hardware/lobsterai/prod/update';
 
 // 手动检查更新
 export const getManualUpdateCheckUrl = () => isTestModeEnabled()
-  ? 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/test/update-manual'
-  : 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/prod/update-manual';
+  ? 'https://api-overmind.heyclaw.com/openapi/get/luna/hardware/lobsterai/test/update-manual'
+  : 'https://api-overmind.heyclaw.com/openapi/get/luna/hardware/lobsterai/prod/update-manual';
 
 export const getFallbackDownloadUrl = () => isTestModeEnabled()
-  ? 'https://lobsterai.inner.youdao.com/#/download-list'
-  : 'https://lobsterai.youdao.com/#/download-list';
+  ? 'https://inner.heyclaw.com/#/download-list'
+  : 'https://portal.heyclaw.com/#/download-list';
 
 // Skill 商店
 export const getSkillStoreUrl = () => isTestModeEnabled()
-  ? 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/test/skill-store'
-  : 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/prod/skill-store';
+  ? 'https://api-overmind.heyclaw.com/openapi/get/luna/hardware/lobsterai/test/skill-store'
+  : 'https://api-overmind.heyclaw.com/openapi/get/luna/hardware/lobsterai/prod/skill-store';
 
 // Kit 商店
 export const getKitStoreUrl = () => 'http://101.96.234.167:8081/kit-store.json';
 
 // 登录地址
 export const getLoginOvermindUrl = () => isTestModeEnabled()
-  ? 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/test/login-url'
-  : 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/prod/login-url';
+  ? 'https://api-overmind.heyclaw.com/openapi/get/luna/hardware/lobsterai/test/login-url'
+  : 'https://api-overmind.heyclaw.com/openapi/get/luna/hardware/lobsterai/prod/login-url';
 
 // Portal 页面
-const PORTAL_BASE_TEST = 'https://lobsterai.inner.youdao.com/portal#';
-const PORTAL_BASE_PROD = 'https://lobsterai.youdao.com/portal#';
+const PORTAL_BASE_TEST = 'https://inner.heyclaw.com/portal#';
+const PORTAL_BASE_PROD = 'https://portal.heyclaw.com/portal#';
 
 const getPortalBase = () => isTestModeEnabled() ? PORTAL_BASE_TEST : PORTAL_BASE_PROD;
 

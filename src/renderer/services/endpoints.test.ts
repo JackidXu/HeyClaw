@@ -22,23 +22,23 @@ afterEach(() => {
 test('portal account urls use production base when test mode is disabled', () => {
   mockTestMode(false);
 
-  expect(getPortalProfileUrl()).toBe('https://lobsterai.youdao.com/portal#/profile');
-  expect(getPortalRechargeUrl()).toBe('https://lobsterai.youdao.com/portal#/');
-  expect(getPortalInvitationUrl()).toBe('https://lobsterai.youdao.com/portal#/invitation');
+  expect(getPortalProfileUrl()).toBe('https://portal.heyclaw.com/portal#/profile');
+  expect(getPortalRechargeUrl()).toBe('https://portal.heyclaw.com/portal#/');
+  expect(getPortalInvitationUrl()).toBe('https://portal.heyclaw.com/portal#/invitation');
 });
 
 test('portal account urls use test base when test mode is enabled', () => {
   mockTestMode(true);
 
-  expect(getPortalProfileUrl()).toBe('https://lobsterai.inner.youdao.com/portal#/profile');
-  expect(getPortalRechargeUrl()).toBe('https://lobsterai.inner.youdao.com/portal#/');
-  expect(getPortalInvitationUrl()).toBe('https://lobsterai.inner.youdao.com/portal#/invitation');
+  expect(getPortalProfileUrl()).toBe('https://inner.heyclaw.com/portal#/profile');
+  expect(getPortalRechargeUrl()).toBe('https://inner.heyclaw.com/portal#/');
+  expect(getPortalInvitationUrl()).toBe('https://inner.heyclaw.com/portal#/invitation');
 });
 
 test('portal pricing url can include html share keyfrom', () => {
   mockTestMode(false);
 
   expect(getPortalPricingUrl(PortalPricingKeyfrom.HtmlShare)).toBe(
-    'https://lobsterai.youdao.com/portal#/pricing?keyfrom=html_share',
+    'https://portal.heyclaw.com/portal#/pricing?keyfrom=html_share',
   );
 });
