@@ -547,7 +547,15 @@ async function bootstrapRuntimeOnWindows() {
 async function extractArchiveToRuntime(archivePath) {
   const tempRoot = fs.mkdtempSync(path.join(PROJECT_ROOT, 'tmp-python-runtime-'));
   try {
-    await extractZip(archivePath, { dir: tempRoot });
+    if (process.platform === 'win32') {
+      console.log(`[setup-python-runtime] Extracting via system tar: ${archivePath}`);
+      const result = spawnSync('tar', ['-xf', archivePath, '-C', tempRoot], { stdio: 'inherit' });
+      if (result.status !== 0) {
+        throw new Error(`tar extraction failed with code ${result.status}`);
+      }
+    } else {
+      await extractZip(archivePath, { dir: tempRoot });
+    }
     const runtimeRoot = findRuntimeRoot(tempRoot);
     if (!runtimeRoot) {
       throw new Error('Could not locate python runtime root after extraction.');
