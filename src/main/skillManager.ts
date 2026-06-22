@@ -1623,7 +1623,7 @@ export class SkillManager {
     if (enabled.length === 0) return null;
 
     const skillEntries = enabled
-      .map(s => `  <skill><id>${s.id}</id><name>${s.name}</name><description>${s.description}</description><location>${s.skillPath}</location></skill>`)
+      .map(s => `  <skill><id>${s.id}</id><name>${s.name}</name><description>${s.description}</description><location>skill://${s.id}/SKILL.md</location></skill>`)
       .join('\n');
 
     return [

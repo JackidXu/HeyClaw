@@ -23,6 +23,46 @@ import { Readable } from 'stream';
 import { fileURLToPath, pathToFileURL } from 'url';
 
 import { CoworkSystemMessageKind } from '../common/coworkSystemMessages';
+
+// ── Built-in Skill Crypto & Virtual Path Hook ────────────────────────────────
+const originalReadFileSync = fs.readFileSync;
+const originalReadFile = fs.readFile;
+const originalPromisesReadFile = fs.promises.readFile;
+
+function resolveVirtualSkillPath(virtualPath: any): any {
+  if (typeof virtualPath === 'string' && virtualPath.startsWith('skill://')) {
+    const match = virtualPath.match(/^skill:\/\/([a-zA-Z0-9_-]+)\/(.+)$/);
+    if (match) {
+      const [_, skillId, subPath] = match;
+      try {
+        const userData = app.getPath('userData');
+        return path.join(userData, 'SKILLs', skillId, subPath);
+      } catch (e) {
+        console.error('[VirtualFS] Failed to get userData path:', e);
+      }
+    }
+  }
+  return virtualPath;
+}
+
+// @ts-ignore
+fs.readFileSync = function (path: any, options: any) {
+  const realPath = resolveVirtualSkillPath(path);
+  return originalReadFileSync(realPath, options);
+};
+
+// @ts-ignore
+fs.readFile = function (path: any, options: any, callback: any) {
+  const realPath = resolveVirtualSkillPath(path);
+  return originalReadFile(realPath, options, callback);
+};
+
+// @ts-ignore
+fs.promises.readFile = async function (path: any, options: any) {
+  const realPath = resolveVirtualSkillPath(path);
+  return originalPromisesReadFile(realPath, options);
+};
+// ─────────────────────────────────────────────────────────────────────────────
 import type { OpenClawSessionPatch } from '../common/openclawSession';
 import { buildSessionTitleFromInput } from '../common/sessionTitle';
 import { buildScheduledTaskEnginePrompt } from '../scheduledTask/enginePrompt';

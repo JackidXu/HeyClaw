@@ -19,7 +19,7 @@ export const buildSelectedSkillRoutingPrompt = (skills: Skill[]): string | undef
   if (selectedSkills.length === 0) return undefined;
 
   const skillEntries = selectedSkills.map((skill) => {
-    const location = skill.skillPath.trim();
+    const location = `skill://${skill.id}/SKILL.md`;
     return [
       '  <skill>',
       `    <id>${escapeXmlText(skill.id)}</id>`,
