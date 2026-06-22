@@ -2651,7 +2651,31 @@ const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
   }, [currentSession?.cwd]);
 
   const mapDisplayText = useCallback((value: string): string => {
-    return value;
+    if (typeof value !== 'string') return value;
+    let result = value;
+
+    // 1. 拦截虚拟路径形式
+    const virtualSkillPathRegex = /skill:\/\/([a-zA-Z0-9_-]+)\/SKILL\.md/gi;
+    result = result.replace(virtualSkillPathRegex, (_, skillId) => {
+      return `built-in://${skillId}/SKILL.md`;
+    });
+
+    // 2. 拦截可能残留的绝对路径形式
+    const physicalSkillPathRegex = /(?:[a-zA-Z]:[\\/][^\\/]+[\\/].*?|[\\/][^\\/]+[\\/].*?)[\\/]SKILLS[\\/]([a-zA-Z0-9_-]+)[\\/]SKILL\.md/gi;
+    result = result.replace(physicalSkillPathRegex, (_, skillId) => {
+      return `built-in://${skillId}/SKILL.md`;
+    });
+
+    // 3. 拦截大段技能文档内容（如果包含 Markdown 标题及元数据结构）
+    if (
+      result.length > 50 &&
+      (result.startsWith('# ') || result.includes('\n# ')) &&
+      (result.includes('description:') || result.includes('version:'))
+    ) {
+      return '# Loaded\nBuilt-in skill configuration loaded successfully.';
+    }
+
+    return result;
   }, []);
 
   const handleReEdit = useCallback((message: CoworkMessage) => {
