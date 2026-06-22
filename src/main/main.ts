@@ -25,9 +25,26 @@ import { fileURLToPath, pathToFileURL } from 'url';
 import { CoworkSystemMessageKind } from '../common/coworkSystemMessages';
 
 // ── Built-in Skill Crypto & Virtual Path Hook ────────────────────────────────
+import { encryptSkillContent, decryptSkillContent } from './libs/skillCrypto';
+
 const originalReadFileSync = fs.readFileSync;
 const originalReadFile = fs.readFile;
 const originalPromisesReadFile = fs.promises.readFile;
+const originalWriteFileSync = fs.writeFileSync;
+const originalCopyFileSync = fs.copyFileSync;
+
+function isBuiltInSkillPath(filePath: any): boolean {
+  if (typeof filePath !== 'string' || !filePath.endsWith('SKILL.md')) {
+    return false;
+  }
+  try {
+    const userData = app.getPath('userData');
+    const relative = path.relative(path.join(userData, 'SKILLs'), filePath);
+    return !relative.startsWith('..') && !path.isAbsolute(relative);
+  } catch (e) {
+    return filePath.includes('/SKILLs/') || filePath.includes('\\SKILLs\\');
+  }
+}
 
 function resolveVirtualSkillPath(virtualPath: any): any {
   if (typeof virtualPath === 'string' && virtualPath.startsWith('skill://')) {
@@ -48,19 +65,91 @@ function resolveVirtualSkillPath(virtualPath: any): any {
 // @ts-ignore
 fs.readFileSync = function (path: any, options: any) {
   const realPath = resolveVirtualSkillPath(path);
-  return originalReadFileSync(realPath, options);
+  const content = originalReadFileSync(realPath, options) as any;
+  if (isBuiltInSkillPath(realPath)) {
+    if (typeof content === 'string' && content.startsWith('HEYCLAW_ENC:')) {
+      return decryptSkillContent(content);
+    }
+    if (content instanceof Buffer) {
+      const str = content.toString('utf8');
+      if (str.startsWith('HEYCLAW_ENC:')) {
+        return Buffer.from(decryptSkillContent(str), 'utf8');
+      }
+    }
+  }
+  return content;
 };
 
 // @ts-ignore
 fs.readFile = function (path: any, options: any, callback: any) {
   const realPath = resolveVirtualSkillPath(path);
-  return originalReadFile(realPath, options, callback);
+  let actualCallback = callback;
+  let actualOptions = options;
+  if (typeof options === 'function') {
+    actualCallback = options;
+    actualOptions = undefined;
+  }
+  const wrappedCallback = (err: any, data: any) => {
+    if (!err) {
+      let decryptedData = data;
+      if (isBuiltInSkillPath(realPath)) {
+        if (typeof data === 'string' && data.startsWith('HEYCLAW_ENC:')) {
+          decryptedData = decryptSkillContent(data);
+        } else if (data instanceof Buffer) {
+          const str = data.toString('utf8');
+          if (str.startsWith('HEYCLAW_ENC:')) {
+            decryptedData = Buffer.from(decryptSkillContent(str), 'utf8');
+          }
+        }
+      }
+      actualCallback(null, decryptedData);
+    } else {
+      actualCallback(err, data);
+    }
+  };
+  return originalReadFile(realPath, actualOptions, wrappedCallback);
 };
 
 // @ts-ignore
 fs.promises.readFile = async function (path: any, options: any) {
   const realPath = resolveVirtualSkillPath(path);
-  return originalPromisesReadFile(realPath, options);
+  const content = (await originalPromisesReadFile(realPath, options)) as any;
+  if (isBuiltInSkillPath(realPath)) {
+    if (typeof content === 'string' && content.startsWith('HEYCLAW_ENC:')) {
+      return decryptSkillContent(content);
+    }
+    if (content instanceof Buffer) {
+      const str = content.toString('utf8');
+      if (str.startsWith('HEYCLAW_ENC:')) {
+        return Buffer.from(decryptSkillContent(str), 'utf8');
+      }
+    }
+  }
+  return content;
+};
+
+// @ts-ignore
+fs.writeFileSync = function (path: any, data: any, options: any) {
+  let finalData = data;
+  if (isBuiltInSkillPath(path) && typeof data === 'string') {
+    finalData = encryptSkillContent(data);
+  }
+  return originalWriteFileSync(path, finalData, options);
+};
+
+// @ts-ignore
+fs.copyFileSync = function (src: any, dest: any, flags: any) {
+  if (isBuiltInSkillPath(dest)) {
+    try {
+      const content = originalReadFileSync(src, 'utf8');
+      const encrypted = encryptSkillContent(content);
+      originalWriteFileSync(dest, encrypted, 'utf8');
+      return;
+    } catch (e) {
+      console.error('[VirtualFS] copyFileSync hook failed, fallback:', e);
+    }
+  }
+  return originalCopyFileSync(src, dest, flags);
 };
 // ─────────────────────────────────────────────────────────────────────────────
 import type { OpenClawSessionPatch } from '../common/openclawSession';
