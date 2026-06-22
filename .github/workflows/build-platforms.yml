@@ -134,10 +134,21 @@ jobs:
           LOBSTERAI_PORTABLE_PYTHON_ARCHIVE: ${{ secrets.WINDOWS_PYTHON_ARCHIVE }}
       
       - name: Build Windows
-        run: npm run dist:win -- --publish never
+        shell: bash
+        run: |
+          # 如果 WIN_CSC_LINK 或者是 CSC_LINK 是占位符 "."，则强行置空以防止签名工具报错
+          if [[ "$WIN_CSC_LINK" == "." || -z "$WIN_CSC_LINK" ]]; then
+            export WIN_CSC_LINK=""
+          fi
+          if [[ "$CSC_LINK" == "." || -z "$CSC_LINK" ]]; then
+            export CSC_LINK=""
+          fi
+          npm run dist:win -- --publish never
         env:
           CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+          WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
           CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+          WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
       
       - name: List Release Files (Debug)
         shell: bash
