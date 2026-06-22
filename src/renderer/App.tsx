@@ -1381,9 +1381,12 @@ const ActivationOverlay: React.FC<ActivationOverlayProps> = ({ onActivated, wind
           
           {/* 标志与标题 */}
           <div className="flex flex-col items-center space-y-3 text-center">
-            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center shadow-md dark:shadow-[0_0_20px_rgba(99,102,241,0.4)]">
-              <ChatBubbleLeftRightIcon className="h-7 w-7 text-white" />
-            </div>
+            <img
+              src="logo.png?v=heyclaw"
+              alt="HeyClaw Logo"
+              className="w-14 h-14 rounded-2xl select-none"
+              draggable={false}
+            />
             <h2 className="text-2xl font-bold tracking-tight text-foreground dark:text-white/90">HeyClaw 激活</h2>
             <p className="text-sm text-secondary dark:text-white/60 max-w-[280px]">
               请输入您的激活码以开启 HeyClaw AI 工作站
