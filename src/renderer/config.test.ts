@@ -74,7 +74,7 @@ test('getProviderDisplayName: custom provider with undefined displayName uses de
 });
 
 test('defaultConfig uses OpenAI-compatible DeepSeek defaults', () => {
-  expect(defaultConfig.api.baseUrl).toBe('https://api.deepseek.com');
+  expect(defaultConfig.api.baseUrl).toBe('http://101.96.234.167:3000/v1');
   expect(defaultConfig.providers?.[ProviderName.DeepSeek]?.apiFormat).toBe(ApiFormat.OpenAI);
   expect(defaultConfig.providers?.[ProviderName.Xiaomi]?.apiFormat).toBe(ApiFormat.OpenAI);
 });

@@ -198,10 +198,10 @@ test('outbound prompt injects continuity capsule bridge before the current reque
 
   const prompt = await internal.buildOutboundPrompt('session-1', '继续');
 
-  expect(prompt).toContain('[LobsterAI continuity context after context compaction]');
+  expect(prompt).toContain('[HeyClaw continuity context after context compaction]');
   expect(prompt).toContain('Improve compaction continuity.');
   expect(prompt).toContain('src/main/libs/agentEngine/openclawRuntimeAdapter.ts');
-  expect(prompt.indexOf('[LobsterAI continuity context after context compaction]')).toBeLessThan(
+  expect(prompt.indexOf('[HeyClaw continuity context after context compaction]')).toBeLessThan(
     prompt.indexOf('[Current user request]'),
   );
 });
@@ -246,10 +246,10 @@ test('outbound prompt injects full capsule first and mini capsule on later turns
   const firstPrompt = await internal.buildOutboundPrompt('session-1', '继续');
   const secondPrompt = await internal.buildOutboundPrompt('session-1', '再继续');
 
-  expect(firstPrompt).toContain('[LobsterAI continuity context after context compaction]');
+  expect(firstPrompt).toContain('[HeyClaw continuity context after context compaction]');
   expect(firstPrompt).toContain('Touched files:');
   expect(firstPrompt).toContain('src/main/libs/agentEngine/openclawRuntimeAdapter.ts');
-  expect(secondPrompt).toContain('[LobsterAI brief continuity context after context compaction]');
+  expect(secondPrompt).toContain('[HeyClaw brief continuity context after context compaction]');
   expect(secondPrompt).toContain('Improve compaction continuity.');
   expect(secondPrompt).toContain('Inject capsule bridge.');
   expect(secondPrompt).not.toContain('Touched files:');
@@ -298,9 +298,9 @@ test('outbound prompt injects workspace rehydration bridge before the current re
 
   const prompt = await internal.buildOutboundPrompt('session-1', '继续');
 
-  expect(prompt).toContain('[LobsterAI workspace state after context compaction]');
+  expect(prompt).toContain('[HeyClaw workspace state after context compaction]');
   expect(prompt).toContain('src/main/libs/agentEngine/coworkWorkspaceRehydration.ts');
-  expect(prompt.indexOf('[LobsterAI workspace state after context compaction]')).toBeLessThan(
+  expect(prompt.indexOf('[HeyClaw workspace state after context compaction]')).toBeLessThan(
     prompt.indexOf('[Current user request]'),
   );
 });
@@ -348,8 +348,8 @@ test('outbound prompt injects workspace rehydration bridge once per compaction',
   const firstPrompt = await internal.buildOutboundPrompt('session-1', '继续');
   const secondPrompt = await internal.buildOutboundPrompt('session-1', '再继续');
 
-  expect(firstPrompt).toContain('[LobsterAI workspace state after context compaction]');
-  expect(secondPrompt).not.toContain('[LobsterAI workspace state after context compaction]');
+  expect(firstPrompt).toContain('[HeyClaw workspace state after context compaction]');
+  expect(secondPrompt).not.toContain('[HeyClaw workspace state after context compaction]');
 });
 
 test('outbound prompt injects top-k evidence bridge before the current request', async () => {
@@ -408,9 +408,9 @@ test('outbound prompt injects top-k evidence bridge before the current request',
 
   const prompt = await internal.buildOutboundPrompt('session-1', '继续处理 src/pages/Bakery.tsx 的 npm test failed');
 
-  expect(prompt).toContain('[LobsterAI retrieved evidence after context compaction]');
+  expect(prompt).toContain('[HeyClaw retrieved evidence after context compaction]');
   expect(prompt).toContain('npm test failed in src/pages/Bakery.tsx');
-  expect(prompt.indexOf('[LobsterAI retrieved evidence after context compaction]')).toBeLessThan(
+  expect(prompt.indexOf('[HeyClaw retrieved evidence after context compaction]')).toBeLessThan(
     prompt.indexOf('[Current user request]'),
   );
 });
@@ -452,7 +452,7 @@ test('outbound prompt skips continuity capsule bridge before compaction', async 
 
   const prompt = await internal.buildOutboundPrompt('session-1', 'hello');
 
-  expect(prompt).not.toContain('[LobsterAI continuity context after context compaction]');
+  expect(prompt).not.toContain('[HeyClaw continuity context after context compaction]');
 });
 
 test('context usage ignores non-checkpoint compactionCount', () => {

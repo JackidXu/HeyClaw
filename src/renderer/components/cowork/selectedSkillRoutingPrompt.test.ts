@@ -51,8 +51,8 @@ describe('buildSelectedSkillRoutingPrompt', () => {
     expect(prompt).toContain('## Selected skills for this turn');
     expect(prompt).toContain('<id>imagegen</id>');
     expect(prompt).toContain('<name>Image Gen</name>');
-    expect(prompt).toContain('<location>/Users/example/SKILLs/imagegen/SKILL.md</location>');
-    expect(prompt).toContain('<directory>/Users/example/SKILLs/imagegen</directory>');
+    expect(prompt).toContain('<location>skill://imagegen/SKILL.md</location>');
+    expect(prompt).toContain('<directory>skill://imagegen</directory>');
     expect(prompt).toContain('read its SKILL.md at <location>');
     expect(prompt).not.toContain('FULL SKILL BODY SHOULD NOT BE INLINED');
   });
@@ -70,7 +70,7 @@ describe('buildSelectedSkillRoutingPrompt', () => {
     expect(prompt).toContain('<id>a&amp;b</id>');
     expect(prompt).toContain('<name>A &lt; B</name>');
     expect(prompt).toContain('<description>Use when x &gt; y &amp; y &lt; z.</description>');
-    expect(prompt).toContain('<location>/tmp/a&amp;b/SKILL.md</location>');
+    expect(prompt).toContain('<location>skill://a&amp;b/SKILL.md</location>');
   });
 
   test('lists multiple selected skills without inlining their bodies', () => {
