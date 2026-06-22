@@ -565,56 +565,95 @@
       dateVal.classList.remove("skeleton", "skeleton-text");
       dateVal.style.width = "auto";
 
-      // 2. 渲染下载按钮
-      let html = "";
+      // 2. 准备下载选项数据
+      const options = [];
       
-      // Windows 按钮 (主推荐按钮)
       if (data.files && data.files.windows) {
-        html += `
-          <a href="./${data.files.windows}" class="download-btn primary-btn" download>
-            <div class="btn-left">
-              <span class="btn-icon">${SVG_ICONS.windows}</span>
-              <div class="btn-info">
-                <span class="btn-title">下载 Windows 客户端</span>
-                <span class="btn-desc">适用于 Windows 10 / 11 系统的 x64 架构</span>
-              </div>
-            </div>
-            <div class="btn-right">${SVG_ICONS.arrow}</div>
-          </a>
-        `;
+        options.push({
+          key: "windows",
+          href: `./${data.files.windows}`,
+          title: "下载 Windows 客户端",
+          desc: "适用于 Windows 10 / 11 系统的 x64 架构",
+          icon: SVG_ICONS.windows,
+          iconColor: "#60a5fa"
+        });
       }
-
-      // macOS Apple Silicon (M1/M2/M3) 按钮
+      
       if (data.files && data.files.mac_arm64) {
-        html += `
-          <a href="./${data.files.mac_arm64}" class="download-btn" download>
-            <div class="btn-left">
-              <span class="btn-icon" style="color: #a5b4fc;">${SVG_ICONS.macos}</span>
-              <div class="btn-info">
-                <span class="btn-title">下载 macOS 客户端 (Apple 芯片)</span>
-                <span class="btn-desc">适用于 M1 / M2 / M3 等 Apple Silicon 芯片的 Mac</span>
-              </div>
-            </div>
-            <div class="btn-right">${SVG_ICONS.arrow}</div>
-          </a>
-        `;
+        options.push({
+          key: "mac_arm64",
+          href: `./${data.files.mac_arm64}`,
+          title: "下载 macOS 客户端 (Apple 芯片)",
+          desc: "适用于 M1 / M2 / M3 等 Apple Silicon 芯片的 Mac",
+          icon: SVG_ICONS.macos,
+          iconColor: "#a5b4fc"
+        });
+      }
+      
+      if (data.files && data.files.mac_x64) {
+        options.push({
+          key: "mac_x64",
+          href: `./${data.files.mac_x64}`,
+          title: "下载 macOS 客户端 (Intel 芯片)",
+          desc: "适用于 Intel 处理器架构的 Mac",
+          icon: SVG_ICONS.macos,
+          iconColor: "#a5b4fc"
+        });
       }
 
-      // macOS Intel 芯片按钮
-      if (data.files && data.files.mac_x64) {
+      // 3. 检测系统并决策推荐版本
+      const userAgent = window.navigator.userAgent.toLowerCase();
+      const platform = window.navigator.platform.toLowerCase();
+      let recommended = "windows"; // 默认推荐 Windows
+      
+      if (userAgent.includes("mac") || platform.includes("mac")) {
+        let isArm = true;
+        try {
+          const canvas = document.createElement("canvas");
+          const gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+          if (gl) {
+            const debugInfo = gl.getExtension("WEBGL_debug_renderer_info");
+            if (debugInfo) {
+              const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_RENDERER_SGIS) || "";
+              if (renderer.toLowerCase().includes("intel")) {
+                isArm = false;
+              }
+            }
+          }
+        } catch (e) {}
+        recommended = isArm ? "mac_arm64" : "mac_x64";
+      } else if (userAgent.includes("win") || platform.includes("win")) {
+        recommended = "windows";
+      }
+
+      // 4. 将推荐的选项排序至最前
+      options.sort((a, b) => {
+        if (a.key === recommended) return -1;
+        if (b.key === recommended) return 1;
+        return 0;
+      });
+
+      // 5. 渲染下载按钮
+      let html = "";
+      options.forEach(opt => {
+        const isPrimary = opt.key === recommended;
+        const btnClass = isPrimary ? "download-btn primary-btn" : "download-btn";
+        const iconStyle = isPrimary ? "" : ` style="color: ${opt.iconColor};"`;
+        const descStyle = isPrimary ? ` style="color: rgba(255, 255, 255, 0.8);"` : "";
+        
         html += `
-          <a href="./${data.files.mac_x64}" class="download-btn" download>
+          <a href="${opt.href}" class="${btnClass}" download>
             <div class="btn-left">
-              <span class="btn-icon" style="color: #a5b4fc;">${SVG_ICONS.macos}</span>
+              <span class="btn-icon"${iconStyle}>${opt.icon}</span>
               <div class="btn-info">
-                <span class="btn-title">下载 macOS 客户端 (Intel 芯片)</span>
-                <span class="btn-desc">适用于 Intel 处理器架构的 Mac</span>
+                <span class="btn-title">${opt.title}</span>
+                <span class="btn-desc"${descStyle}>${opt.desc}</span>
               </div>
             </div>
             <div class="btn-right">${SVG_ICONS.arrow}</div>
           </a>
         `;
-      }
+      });
 
       if (!html) {
         html = `<div style="text-align: center; color: var(--text-muted); padding: 20px;">暂无可用的安装包，请稍后再试。</div>`;
