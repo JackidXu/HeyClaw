@@ -13,11 +13,6 @@ on:
         required: true
         default: true
         type: boolean
-      build_linux:
-        description: 'Build Linux'
-        required: true
-        default: true
-        type: boolean
   push:
     tags:
       - 'v*'
@@ -83,13 +78,6 @@ jobs:
           fi
            npm run dist:mac:${{ matrix.arch }} -- --publish never
       
-      - name: List Release Files (Debug)
-        run: |
-          echo "=== Root Directory Contents ==="
-          ls -la
-          echo "=== Release Directory Contents ==="
-          ls -la release/ || echo "release directory not found"
-      
       - uses: actions/upload-artifact@v4
         with:
           name: macos-build-${{ matrix.arch }}
@@ -151,61 +139,15 @@ jobs:
           CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
           WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
       
-      - name: List Release Files (Debug)
-        shell: bash
-        run: |
-          echo "=== Root Directory Contents ==="
-          ls -la
-          echo "=== Release Directory Contents ==="
-          ls -la release/ || echo "release directory not found"
-      
       - uses: actions/upload-artifact@v4
         with:
           name: windows-build
           path: release/*.exe
           retention-days: 7
 
-  # ========== Linux 构建 ==========
-  build-linux:
-    if: ${{ github.event_name == 'push' || inputs.build_linux }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '24.x'
-      - uses: actions/cache@v4
-        with:
-          path: |
-            ~/.npm
-            vendor/openclaw-runtime
-          key: npm-${{ runner.os }}-${{ hashFiles('package.json') }}
-          restore-keys: npm-${{ runner.os }}-
-      
-      - name: Install pnpm
-        run: npm install -g pnpm@10
-      
-      - name: Install Dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 xdg-utils libatspi2.0-0 libuuid1 libsecret-1-0
-      
-      - run: npm install
-      
-      - name: Build Linux
-        run: npm run dist:linux -- --publish never
-      
-      - uses: actions/upload-artifact@v4
-        with:
-          name: linux-build
-          path: |
-            release/*.AppImage
-            release/*.deb
-          retention-days: 7
-
   # ========== 创建 Release ==========
   create-release:
-    needs: [build-macos, build-windows, build-linux]
+    needs: [build-macos, build-windows]
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     steps:
@@ -223,7 +165,6 @@ jobs:
             artifacts/macos-build-arm64/*.dmg
             artifacts/macos-build-x64/*.dmg
             artifacts/windows-build/*.exe
-            artifacts/linux-build/*
           draft: true
           prerelease: ${{ contains(github.ref, '-beta') || contains(github.ref, '-alpha') || contains(github.ref, '-rc') }}
           generate_release_notes: true
