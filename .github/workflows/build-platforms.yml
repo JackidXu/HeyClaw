@@ -136,12 +136,13 @@ jobs:
       - name: Build Windows
         shell: bash
         run: |
-          # 如果 WIN_CSC_LINK 或者是 CSC_LINK 是占位符 "."，则强行置空以防止签名工具报错
-          if [[ "$WIN_CSC_LINK" == "." || -z "$WIN_CSC_LINK" ]]; then
-            export WIN_CSC_LINK=""
-          fi
-          if [[ "$CSC_LINK" == "." || -z "$CSC_LINK" ]]; then
-            export CSC_LINK=""
+          # 如果 WIN_CSC_LINK 既不是有效文件，其长度又明显不是 Base64 证书内容（小于 100 字符），则彻底注销环境变量
+          if [[ ! -f "$WIN_CSC_LINK" && ${#WIN_CSC_LINK} -lt 100 ]]; then
+            echo "[Codesign] 检测到 WIN_CSC_LINK 为无效占位符 (${WIN_CSC_LINK})，彻底注销签名环境变量以跳过签名。"
+            unset WIN_CSC_LINK
+            unset CSC_LINK
+            unset WIN_CSC_KEY_PASSWORD
+            unset CSC_KEY_PASSWORD
           fi
           npm run dist:win -- --publish never
         env:
