@@ -3632,6 +3632,90 @@ if (!gotTheLock) {
     parseManagedSessionKey(sessionKey)?.sessionId ?? null;
 
   /**
+   * 向自建 New API (OneAPI) 查询异步任务（如 Midjourney Task 或是视频生成任务）的执行状态
+   */
+  async function fetchOneApiTaskStatus(taskId: string, mediaType?: string): Promise<{ success: boolean; status: string; resultUrls: string[]; errorMessage?: string }> {
+    const sqliteStore = getStore();
+    const appConfig = sqliteStore?.get<any>('app_config');
+    const oneapiConfig = appConfig?.providers?.['oneapi'];
+    const oneapiKey = oneapiConfig?.apiKey?.trim();
+
+    if (!oneapiKey) {
+      return { success: false, status: 'failed', resultUrls: [], errorMessage: '未检测到有效的激活码' };
+    }
+
+    let oneapiBaseUrl = oneapiConfig?.baseUrl?.trim() || 'https://api.openai.com/v1';
+    if (oneapiBaseUrl && !/^https?:\/\//i.test(oneapiBaseUrl)) {
+      oneapiBaseUrl = `http://${oneapiBaseUrl}`;
+    }
+    const cleanBaseUrl = oneapiBaseUrl.replace(/\/+$/, '');
+    const url = mediaType === 'video' ? `${cleanBaseUrl}/video/generations/${taskId}` : `${cleanBaseUrl}/tasks/${taskId}`;
+
+    try {
+      const resp = await net.fetch(url, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${oneapiKey}`,
+        },
+      });
+
+      if (!resp.ok) {
+        return { success: false, status: 'failed', resultUrls: [], errorMessage: `HTTP ${resp.status}` };
+      }
+
+      const body = await resp.json() as any;
+      if (!body) {
+        return { success: false, status: 'failed', resultUrls: [], errorMessage: '返回空数据' };
+      }
+
+      // 提取并转换状态
+      const rawStatus = String(body.status || body.data?.status || body.task_status || '').toLowerCase();
+      let status = 'processing';
+      if (['success', 'succeeded', 'completed', 'finished'].includes(rawStatus)) {
+        status = 'succeeded';
+      } else if (['failed', 'failure', 'error', 'fail'].includes(rawStatus)) {
+        status = 'failed';
+      } else if (['cancelled', 'canceled'].includes(rawStatus)) {
+        status = 'cancelled';
+      }
+
+      // 提取多媒体结果 URL
+      let resultUrls: string[] = [];
+      const imageUrl = body.imageUrl || body.image_url || body.resultUrl || body.url || body.result || body.data?.result_url || body.data?.video_url || body.data?.image_url || body.data?.data?.content?.video_url || body.data?.data?.video_url || body.data?.data?.image_url || body.data?.video?.url || body.data?.data?.video?.url;
+      if (imageUrl && typeof imageUrl === 'string' && imageUrl.startsWith('http')) {
+        resultUrls = [imageUrl];
+      } else if (body.response?.video_url && typeof body.response.video_url === 'string' && body.response.video_url.startsWith('http')) {
+        resultUrls = [body.response.video_url];
+      } else if (body.response?.url && typeof body.response.url === 'string' && body.response.url.startsWith('http')) {
+        resultUrls = [body.response.url];
+      } else if (Array.isArray(body.resultUrls)) {
+        resultUrls = body.resultUrls.filter((u: any) => typeof u === 'string' && u.startsWith('http'));
+      } else if (body.data && Array.isArray(body.data)) {
+        resultUrls = body.data.map((item: any) => item.url || '').filter((u: any) => typeof u === 'string' && u.startsWith('http'));
+      } else if (body.data?.data && Array.isArray(body.data.data)) {
+        resultUrls = body.data.data.map((item: any) => item.url || item.video_url || '').filter((u: any) => typeof u === 'string' && u.startsWith('http'));
+      }
+
+      const errorMessage = body.failReason || body.fail_reason || body.errorMessage || body.error || '';
+
+      return {
+        success: true,
+        status,
+        resultUrls,
+        errorMessage,
+      };
+    } catch (e) {
+      console.error('[MediaGeneration] fetchOneApiTaskStatus failed:', e instanceof Error ? e.stack || e.message : String(e));
+      return {
+        success: false,
+        status: 'processing',
+        resultUrls: [],
+        errorMessage: e instanceof Error ? e.message : String(e),
+      };
+    }
+  }
+
+  /**
    * Handle media generation tool callbacks from the OpenClaw plugin.
    */
   const handleMediaGenerationCallback = async (request: {
@@ -3725,22 +3809,20 @@ if (!gotTheLock) {
           return { content: [{ type: 'text', text: 'taskId is required for status action.' }], isError: true };
         }
         const pollCount = incrementMediaStatusPollCount(sessionId, taskId);
-        const mediaType = tool === MediaGenerationTool.Image ? 'images' : 'videos';
         const statusMediaType = tool === MediaGenerationTool.Image ? 'image' : 'video';
         if (sessionId && statusMediaType === 'video') {
           markMediaTaskHandledByStatusPolling(sessionId, taskId);
         }
-        console.log(`[MediaGeneration] checking ${mediaType} task status for task ${taskId}.`);
-        const resp = await fetchWithAuth(`${serverBaseUrl}/api/media/${mediaType}/tasks/${taskId}`);
-        console.log(`[MediaGeneration] server returned HTTP ${resp.status} for ${mediaType} task status.`);
-        const body = await resp.json() as { code: number; data?: Record<string, unknown>; message?: string };
-        if (body.code !== 0) {
-          console.warn('[MediaGeneration] server rejected task status request:', serializeForLog({ mediaType, taskId, code: body.code, message: body.message }));
-          return { content: [{ type: 'text', text: body.message || 'Failed to get task status.' }], isError: true };
+        console.log(`[MediaGeneration] checking task status for task ${taskId} via OneAPI.`);
+
+        const taskResult = await fetchOneApiTaskStatus(taskId, statusMediaType);
+        if (!taskResult.success && taskResult.errorMessage === '未检测到有效的激活码') {
+          return { content: [{ type: 'text', text: '未检测到有效的激活码，请先激活软件。' }], isError: true };
         }
-        const task = body.data!;
-        const status = task.status as string;
-        const resultUrls = (task.resultUrls as string[]) || [];
+
+        const status = taskResult.status;
+        const resultUrls = taskResult.resultUrls;
+
         if (sessionId && TERMINAL_MEDIA_TASK_STATUSES.has(status)) {
           pendingMediaTasks.delete(taskId);
         }
@@ -3779,21 +3861,18 @@ if (!gotTheLock) {
         }
 
         const lines = [
-          `Task ID: ${task.upstreamTaskId || task.taskId}`,
+          `Task ID: ${taskId}`,
           `Status: ${status}`,
-          ...(task.progress ? [`Progress: ${task.progress}%`] : []),
           ...(resultUrls.length > 0 ? [`Results:\n${resultLines.join('\n')}`] : []),
-          ...(task.errorMessage ? [`Error: ${task.errorMessage}`] : []),
+          ...(taskResult.errorMessage ? [`Error: ${taskResult.errorMessage}`] : []),
         ];
         const details = {
-          taskId: String(task.taskId),
-          ...(task.upstreamTaskId ? { upstreamTaskId: String(task.upstreamTaskId) } : {}),
+          taskId: String(taskId),
           status,
           ...(pollCount > 1 ? { pollCount } : {}),
-          model: mediaModelIdForOutput(task.model),
+          model: selectedModel || (statusMediaType === 'image' ? 'dall-e-3' : 'cogvideo-stage1'),
           mediaType: statusMediaType,
           ...(detailsAssets.length > 0 ? { assets: detailsAssets } : {}),
-          ...(task.quotaRemaining != null ? { billing: { quotaRemaining: task.quotaRemaining } } : {}),
         };
         if (sessionId) {
           emitMediaStatusPollUpdate({
@@ -3992,11 +4071,16 @@ if (!gotTheLock) {
         };
       }
 
-      const oneapiBaseUrl = oneapiConfig?.baseUrl?.trim() || 'https://api.openai.com/v1';
+      let oneapiBaseUrl = oneapiConfig?.baseUrl?.trim() || 'https://api.openai.com/v1';
+      if (oneapiBaseUrl && !/^https?:\/\//i.test(oneapiBaseUrl)) {
+        oneapiBaseUrl = `http://${oneapiBaseUrl}`;
+      }
       const cleanBaseUrl = oneapiBaseUrl.replace(/\/+$/, '');
 
       const model = selectedModel || (mediaType === 'image' ? 'dall-e-3' : 'cogvideo-stage1');
-      const oneapiUrl = `${cleanBaseUrl}/images/generations`;
+      const oneapiUrl = mediaType === 'video'
+        ? `${cleanBaseUrl}/video/generations`
+        : `${cleanBaseUrl}/images/generations`;
       let bodyData: Record<string, any>;
 
       if (mediaType === 'video') {
@@ -4052,9 +4136,19 @@ if (!gotTheLock) {
       });
 
       if (!resp.ok) {
-        const errBody = await resp.json().catch(() => ({}));
-        const errMsg = errBody?.error?.message || `HTTP ${resp.status}`;
-        console.warn('[MediaGeneration] OneAPI generate request failed:', errMsg);
+        const rawText = await resp.text().catch(() => '');
+        let errBody: any = {};
+        try {
+          errBody = JSON.parse(rawText);
+        } catch (e) {
+          // Ignore
+        }
+        const errMsg = errBody?.error?.message || errBody?.message || rawText || `HTTP ${resp.status}`;
+        console.warn('[MediaGeneration] OneAPI generate request failed:', {
+          status: resp.status,
+          errMsg,
+          rawText
+        });
         return {
           content: [{ type: 'text', text: `生成失败: ${errMsg}` }],
           isError: true,
@@ -4077,6 +4171,60 @@ if (!gotTheLock) {
         if (resultUrls.length === 0 && typeof content === 'string' && content.trim().startsWith('http')) {
           resultUrls = [content.trim()];
         }
+      }
+
+      // 提取可能存在的远程任务 ID 并判定是否需要异步轮询
+      let remoteTaskId = body.id || body.task_id || body.data?.[0]?.task_id || body.data?.[0]?.id;
+      if (!remoteTaskId && resultUrls.length === 1) {
+        const potentialId = resultUrls[0].trim();
+        if (potentialId && !potentialId.startsWith('http') && !potentialId.startsWith('data:')) {
+          remoteTaskId = potentialId;
+        }
+      }
+
+      const isAsyncTask = !!remoteTaskId && (
+        resultUrls.length === 0 || 
+        (resultUrls.length === 1 && resultUrls[0] === remoteTaskId) ||
+        ['submitted', 'processing', 'in_progress', 'pending'].includes(String(body.status || '').toLowerCase())
+      );
+
+      if (isAsyncTask) {
+        const taskId = String(remoteTaskId);
+        const status = 'processing';
+        console.log('[MediaGeneration] OneAPI generate request accepted as async task:', {
+          mediaType,
+          taskId,
+          status,
+          model,
+        });
+
+        // 注册到后台轮询
+        if (sessionId) {
+          registerMediaTaskForPolling({
+            taskId,
+            sessionId,
+            mediaType,
+            model,
+            startedAt: Date.now(),
+            pollCount: 0,
+            timeoutMs: MEDIA_TASK_DEFAULT_TIMEOUT_MS,
+          });
+        }
+
+        const lines = [
+          `${mediaType === 'image' ? '图片' : '视频'}生成任务已提交，正在生成中，请耐心等待...`,
+          `任务 ID: ${taskId}`,
+          `模型: ${model}`,
+        ];
+
+        return {
+          content: [{ type: 'text', text: lines.join('\n') }],
+          details: {
+            taskId,
+            status,
+            model,
+          },
+        };
       }
 
       if (resultUrls.length === 0) {
@@ -4145,10 +4293,13 @@ if (!gotTheLock) {
           ...(detailsAssets.length > 0 ? { assets: detailsAssets } : {}),
         },
       };
-    } catch (error) {
+    } catch (error: any) {
+      console.error('[MediaGeneration] media generation request failed details:', error instanceof Error ? error.stack || error.message : JSON.stringify(error));
       const msg = error instanceof Error ? error.message : String(error);
-      console.error('[MediaGeneration] media generation request failed:', error);
-      return { content: [{ type: 'text', text: `多媒体生成出错: ${msg}` }], isError: true };
+      return { 
+        content: [{ type: 'text', text: `多媒体生成出错: ${msg}` }], 
+        isError: true 
+      };
     }
   };
 
@@ -4213,13 +4364,12 @@ if (!gotTheLock) {
       tracker.lastPollAt = now;
 
       try {
-        const endpoint = tracker.mediaType === 'video' ? 'videos' : 'images';
-        const resp = await fetchWithAuth(`${serverBaseUrl}/api/media/${endpoint}/tasks/${taskId}`);
-        const body = await resp.json() as { code: number; data?: Record<string, unknown>; message?: string };
+        const taskResult = await fetchOneApiTaskStatus(taskId, tracker.mediaType);
+        if (!taskResult.success) continue;
 
-        if (body.code !== 0) continue;
-        const task = body.data!;
-        const status = task.status as string;
+        const status = taskResult.status;
+        const resultUrls = taskResult.resultUrls;
+
         if (isMediaTaskHandledByStatusPolling(tracker.sessionId, taskId)) {
           tasksToRemove.push(taskId);
           continue;
@@ -4227,7 +4377,6 @@ if (!gotTheLock) {
 
         if (TERMINAL_MEDIA_TASK_STATUSES.has(status)) {
           tasksToRemove.push(taskId);
-          const resultUrls = (task.resultUrls as string[]) || [];
           const assets = resultUrls.map(url => ({
             type: tracker.mediaType,
             url,
@@ -4254,7 +4403,7 @@ if (!gotTheLock) {
                 `Task ID: ${taskId}`,
                 `Model: ${tracker.model}`,
                 ...(resultUrls.length > 0 ? [`Results:\n${resultLines.join('\n')}`] : []),
-                ...(task.errorMessage ? [`Error: ${task.errorMessage}`] : []),
+                ...(taskResult.errorMessage ? [`Error: ${taskResult.errorMessage}`] : []),
               ].join('\n'));
             }
           } else if (status === 'succeeded' && tracker.mediaType === 'video') {
@@ -4278,7 +4427,7 @@ if (!gotTheLock) {
                 `Task ID: ${taskId}`,
                 `Model: ${tracker.model}`,
                 ...(resultUrls.length > 0 ? [`Results:\n${resultLines.join('\n')}`] : []),
-                ...(task.errorMessage ? [`Error: ${task.errorMessage}`] : []),
+                ...(taskResult.errorMessage ? [`Error: ${taskResult.errorMessage}`] : []),
               ].join('\n'));
             }
           } else {
@@ -4290,7 +4439,7 @@ if (!gotTheLock) {
               `Task ID: ${taskId}`,
               `Model: ${tracker.model}`,
               ...(resultUrls.length > 0 ? [`Results:\n${resultLines.join('\n')}`] : []),
-              ...(task.errorMessage ? [`Error: ${task.errorMessage}`] : []),
+              ...(taskResult.errorMessage ? [`Error: ${taskResult.errorMessage}`] : []),
             ];
             emitMediaTaskMessage(tracker.sessionId, lines.join('\n'));
           }
@@ -5142,7 +5291,10 @@ if (!gotTheLock) {
     const appConfig = sqliteStore?.get<any>('app_config');
     const oneapiConfig = appConfig?.providers?.['oneapi'];
     const oneapiKey = oneapiConfig?.apiKey?.trim();
-    const oneapiBaseUrl = oneapiConfig?.baseUrl?.trim() || 'https://api.openai.com/v1';
+    let oneapiBaseUrl = oneapiConfig?.baseUrl?.trim() || 'https://api.openai.com/v1';
+    if (oneapiBaseUrl && !/^https?:\/\//i.test(oneapiBaseUrl)) {
+      oneapiBaseUrl = `http://${oneapiBaseUrl}`;
+    }
 
     if (!oneapiKey) {
       return { success: false, error: 'No API key' };
