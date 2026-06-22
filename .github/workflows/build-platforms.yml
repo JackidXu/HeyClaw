@@ -100,7 +100,9 @@ jobs:
           node-version: '24.x'
       - uses: actions/cache@v4
         with:
-          path: ~\AppData\Local\npm-cache
+          path: |
+            ~\AppData\Local\npm-cache
+            vendor/openclaw-runtime
           key: npm-${{ runner.os }}-${{ hashFiles('package.json') }}
           restore-keys: npm-${{ runner.os }}-
       
@@ -147,7 +149,9 @@ jobs:
           node-version: '24.x'
       - uses: actions/cache@v4
         with:
-          path: ~/.npm
+          path: |
+            ~/.npm
+            vendor/openclaw-runtime
           key: npm-${{ runner.os }}-${{ hashFiles('package.json') }}
           restore-keys: npm-${{ runner.os }}-
       
