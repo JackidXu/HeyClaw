@@ -81,7 +81,14 @@ jobs:
             export APPLE_APP_SPECIFIC_PASSWORD="${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}"
             export APPLE_TEAM_ID="${{ secrets.APPLE_TEAM_ID }}"
           fi
-          npm run dist:mac:${{ matrix.arch }} -- --publish never
+           npm run dist:mac:${{ matrix.arch }} -- --publish never
+      
+      - name: List Release Files (Debug)
+        run: |
+          echo "=== Root Directory Contents ==="
+          ls -la
+          echo "=== Release Directory Contents ==="
+          ls -la release/ || echo "release directory not found"
       
       - uses: actions/upload-artifact@v4
         with:
@@ -131,6 +138,14 @@ jobs:
         env:
           CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
           CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+      
+      - name: List Release Files (Debug)
+        shell: bash
+        run: |
+          echo "=== Root Directory Contents ==="
+          ls -la
+          echo "=== Release Directory Contents ==="
+          ls -la release/ || echo "release directory not found"
       
       - uses: actions/upload-artifact@v4
         with:
