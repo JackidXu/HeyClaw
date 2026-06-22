@@ -124,7 +124,7 @@ const translations: Record<LanguageType, Record<string, string>> = {
     imageVisionHint:
       '当前模型未启用图片输入，图片将以文件路径形式发送。若该模型本身支持图片理解，可在模型配置中开启图片输入选项。',
     copied: '已复制',
-    copyrightHolder: '网易有道 版权所有',
+    copyrightHolder: 'HeyClaw 版权所有',
     noModelsAvailable: '暂无可用模型',
     addFirstModel: '添加第一个模型',
     testConnection: '测试连接',
@@ -2401,9 +2401,9 @@ const translations: Record<LanguageType, Record<string, string>> = {
       '定时任务「{name}」存在异常数据，已自动修正显示，建议重新编辑该任务',
 
     // 隐私协议弹窗
-    privacyDialogTitle: '网易有道HeyClaw服务协议',
-    privacyDialogDesc: '在使用网易有道HeyClaw之前，请您仔细阅读{link}内容，并进行确认。',
-    privacyDialogLinkText: '网易有道HeyClaw服务协议',
+    privacyDialogTitle: 'HeyClaw服务协议',
+    privacyDialogDesc: '在使用HeyClaw之前，请您仔细阅读{link}内容，并进行确认。',
+    privacyDialogLinkText: 'HeyClaw服务协议',
     privacyDialogAccept: '我已阅读并同意',
     privacyDialogReject: '拒绝',
     welcomeTitle: '欢迎使用HeyClaw',
@@ -2624,7 +2624,7 @@ const translations: Record<LanguageType, Record<string, string>> = {
     imageVisionHint:
       'Image input is not enabled for the current model. Images will be sent as file paths. If the model supports vision, you can enable image input in the model configuration.',
     copied: 'Copied',
-    copyrightHolder: 'NetEase Youdao. All rights reserved.',
+    copyrightHolder: 'HeyClaw. All rights reserved.',
     noModelsAvailable: 'No models available',
     addFirstModel: 'Add First Model',
     testConnection: 'Test Connection',
@@ -5022,10 +5022,10 @@ const translations: Record<LanguageType, Record<string, string>> = {
       'Scheduled task "{name}" has abnormal data. Display has been auto-corrected. Consider re-editing this task',
 
     // Privacy dialog
-    privacyDialogTitle: 'NetEase Youdao HeyClaw Terms of Service',
+    privacyDialogTitle: 'HeyClaw Terms of Service',
     privacyDialogDesc:
-      'Before using NetEase Youdao HeyClaw, please carefully read the {link} and confirm.',
-    privacyDialogLinkText: 'NetEase Youdao HeyClaw Terms of Service',
+      'Before using HeyClaw, please carefully read the {link} and confirm.',
+    privacyDialogLinkText: 'HeyClaw Terms of Service',
     privacyDialogAccept: 'I have read and agree',
     privacyDialogReject: 'Decline',
     welcomeTitle: 'Welcome to HeyClaw',
