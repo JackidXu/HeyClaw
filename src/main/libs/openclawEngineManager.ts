@@ -486,6 +486,8 @@ export class OpenClawEngineManager extends EventEmitter {
 
     const env: NodeJS.ProcessEnv = {
       ...process.env,
+      ELECTRON_APP_NAME: 'HeyClaw',
+      LOBSTERAI_APP_NAME: 'HeyClaw',
       SKILLS_ROOT: skillsRoot,
       LOBSTERAI_SKILLS_ROOT: skillsRoot,
       OPENCLAW_HOME: this.baseDir,
