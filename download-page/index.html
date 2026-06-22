@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HeyClaw 客户端下载 - 智能协作与开发助手</title>
+  <!-- Google 字体 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg-color: #08080c;
+      --card-bg: rgba(17, 17, 24, 0.65);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --accent-purple: #a855f7;
+      --accent-blue: #3b82f6;
+      --accent-green: #10b981;
+      --glow-color: rgba(99, 102, 241, 0.15);
+      --font-outfit: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-inter: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      font-family: var(--font-inter);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* 背景炫光装饰 */
+    .bg-glows {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      overflow: hidden;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .glow {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(120px);
+      opacity: 0.4;
+      animation: float 20s infinite alternate ease-in-out;
+    }
+
+    .glow-1 {
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, var(--primary) 0%, rgba(0,0,0,0) 70%);
+      top: -100px;
+      left: -100px;
+    }
+
+    .glow-2 {
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, var(--accent-purple) 0%, rgba(0,0,0,0) 70%);
+      bottom: -150px;
+      right: -100px;
+      animation-delay: -5s;
+    }
+
+    .glow-3 {
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, var(--accent-blue) 0%, rgba(0,0,0,0) 70%);
+      top: 40%;
+      left: 60%;
+      animation-duration: 25s;
+    }
+
+    @keyframes float {
+      0% {
+        transform: translate(0, 0) scale(1);
+      }
+      100% {
+        transform: translate(50px, 30px) scale(1.1);
+      }
+    }
+
+    /* 容器布局 */
+    .container {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 720px;
+      padding: 40px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* Logo 和头部 */
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+      opacity: 0;
+      transform: translateY(-20px);
+      animation: fadeInDown 0.8s forwards ease-out;
+    }
+
+    .logo-container {
+      position: relative;
+      display: inline-block;
+      margin-bottom: 16px;
+    }
+
+    .logo-glow {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 100px;
+      height: 100px;
+      background: radial-gradient(circle, rgba(99, 102, 241, 0.4) 0%, rgba(0,0,0,0) 70%);
+      filter: blur(8px);
+      z-index: -1;
+    }
+
+    .logo {
+      width: 80px;
+      height: 80px;
+      border-radius: 20px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      border: 1.5px solid rgba(255, 255, 255, 0.1);
+      transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .logo:hover {
+      transform: rotate(10deg) scale(1.08);
+    }
+
+    h1 {
+      font-family: var(--font-outfit);
+      font-size: 2.8rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #ffffff 40%, #a5b4fc 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+      letter-spacing: -0.5px;
+    }
+
+    .subtitle {
+      font-size: 1.1rem;
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+
+    /* 下载主卡片 */
+    .download-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      width: 100%;
+      padding: 40px;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeInUp 0.8s 0.2s forwards ease-out;
+      position: relative;
+    }
+
+    /* 卡片顶部的流光条 */
+    .download-card::before {
+      content: '';
+      position: absolute;
+      top: -1px;
+      left: 10%;
+      right: 10%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.5), rgba(168, 85, 247, 0.5), transparent);
+    }
+
+    /* 版本状态条 */
+    .version-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 24px;
+      margin-bottom: 32px;
+    }
+
+    .version-tag {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .tag-label {
+      font-family: var(--font-outfit);
+      font-size: 1.6rem;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .tag-badge {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1.5px solid rgba(16, 185, 129, 0.3);
+      color: var(--accent-green);
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .tag-badge::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      background-color: var(--accent-green);
+      border-radius: 50%;
+      display: inline-block;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(0.9); opacity: 0.6; }
+      50% { transform: scale(1.2); opacity: 1; }
+      100% { transform: scale(0.9); opacity: 0.6; }
+    }
+
+    .update-date {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+
+    /* 骨架屏加载样式 */
+    .skeleton {
+      background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 75%);
+      background-size: 200% 100%;
+      animation: loading 1.5s infinite;
+      border-radius: 4px;
+    }
+
+    .skeleton-text {
+      width: 100px;
+      height: 24px;
+    }
+
+    .skeleton-button {
+      width: 100%;
+      height: 64px;
+      border-radius: 16px;
+      margin-bottom: 16px;
+    }
+
+    @keyframes loading {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* 下载选项列表 */
+    .download-options {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .download-btn {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      padding: 18px 24px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 16px;
+      color: #fff;
+      text-decoration: none;
+      font-weight: 500;
+      transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .download-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0) 100%);
+      transform: translateX(-100%);
+      transition: transform 0.6s ease;
+    }
+
+    .download-btn:hover::before {
+      transform: translateX(100%);
+    }
+
+    .download-btn:hover {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(255, 255, 255, 0.15);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    }
+
+    .download-btn.primary-btn {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--accent-purple) 100%);
+      border: none;
+      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.25);
+    }
+
+    .download-btn.primary-btn:hover {
+      box-shadow: 0 8px 25px rgba(99, 102, 241, 0.45);
+      transform: translateY(-2px);
+    }
+
+    .btn-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .btn-icon {
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-icon svg {
+      width: 100%;
+      height: 100%;
+      fill: currentColor;
+    }
+
+    .btn-info {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 2px;
+    }
+
+    .btn-title {
+      font-size: 1.05rem;
+      font-weight: 600;
+    }
+
+    .btn-desc {
+      font-size: 0.8rem;
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .primary-btn .btn-desc {
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .btn-right {
+      display: flex;
+      align-items: center;
+      opacity: 0.7;
+      transition: transform 0.3s ease, opacity 0.3s ease;
+    }
+
+    .download-btn:hover .btn-right {
+      transform: translateX(4px);
+      opacity: 1;
+    }
+
+    .arrow-icon {
+      width: 20px;
+      height: 20px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    /* 底部声明 */
+    .footer {
+      margin-top: 40px;
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      opacity: 0;
+      animation: fadeIn 1s 0.5s forwards ease-out;
+    }
+
+    .footer a {
+      color: var(--primary);
+      text-decoration: none;
+      transition: color 0.3s ease;
+    }
+
+    .footer a:hover {
+      color: var(--accent-purple);
+      text-decoration: underline;
+    }
+
+    /* 动画定义 */
+    @keyframes fadeInDown {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fadeInUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fadeIn {
+      to {
+        opacity: 1;
+      }
+    }
+
+    /* 移动端适配 */
+    @media (max-width: 640px) {
+      .download-card {
+        padding: 30px 20px;
+      }
+      h1 {
+        font-size: 2.2rem;
+      }
+      .logo {
+        width: 64px;
+        height: 64px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 背景粒子/流光效果 -->
+  <div class="bg-glows">
+    <div class="glow glow-1"></div>
+    <div class="glow glow-2"></div>
+    <div class="glow glow-3"></div>
+  </div>
+
+  <div class="container">
+    
+    <!-- 头部信息 -->
+    <header class="header">
+      <div class="logo-container">
+        <div class="logo-glow"></div>
+        <img class="logo" src="https://raw.githubusercontent.com/JackidXu/HeyClaw/main/build/icons/png/512x512.png" alt="HeyClaw Logo" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'80\' height=\'80\' viewBox=\'0 0 80 80\'><rect width=\'80\' height=\'80\' rx=\'20\' fill=\'%236366f1\'/><path d=\'M25 40l10 10 20-20\' stroke=\'white\' stroke-width=\'5\' stroke-linecap=\'round\' stroke-linejoin=\'round\' fill=\'none\'/></svg>'">
+      </div>
+      <h1>HeyClaw</h1>
+      <p class="subtitle">AI 智能协同与开发助手</p>
+    </header>
+
+    <!-- 下载卡片 -->
+    <main class="download-card">
+      
+      <!-- 版本信息 (默认为骨架屏) -->
+      <div class="version-info" id="version-container">
+        <div class="version-tag">
+          <div class="tag-label skeleton skeleton-text" id="version-val">&nbsp;</div>
+          <span class="tag-badge" id="latest-badge" style="display: none;">最新版</span>
+        </div>
+        <div class="update-date skeleton skeleton-text" id="date-val" style="width: 80px;">&nbsp;</div>
+      </div>
+
+      <!-- 下载按钮区 -->
+      <div class="download-options" id="options-container">
+        <!-- 默认骨架屏 -->
+        <div class="skeleton skeleton-button"></div>
+        <div class="skeleton skeleton-button"></div>
+        <div class="skeleton skeleton-button"></div>
+      </div>
+      
+    </main>
+
+    <!-- 底部 -->
+    <footer class="footer">
+      <p>© 2026 HeyClaw. 保留所有权利。</p>
+      <p style="margin-top: 4px;">由 AI 赋能的开发工具 | <a href="heyclaw://">打开已安装客户端</a></p>
+    </footer>
+
+  </div>
+
+  <script>
+    // 定义默认回退逻辑与包名称 (用于 version.json 不存在时的降级方案)
+    const DEFAULT_VERSION = "最新版本";
+    
+    // SVG 图标定义
+    const SVG_ICONS = {
+      windows: `<svg viewBox="0 0 88 88"><path d="M0 12.402l35.688-4.854v34.28H0V12.402zM39.63 7.009L88 0v41.792H39.63V7.009zM88 46.06L39.63 46v41.972L88 81.18V46.06zM35.688 46.002H0v29.458l35.688-4.87v-24.588z"/></svg>`,
+      macos: `<svg viewBox="0 0 24 24"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm1.002 16.035c-.886.06-1.579-.475-2.222-.475-.658 0-1.285.452-2.115.452-.977 0-1.895-.61-2.474-1.614-1.173-2.03-.301-6.027 1.632-8.81 1.053-1.511 2.398-2.316 3.632-2.316 1.03 0 1.767.586 2.474.586.692 0 1.256-.586 2.436-.586 1.218 0 2.391.752 3.105 1.774-2.511 1.481-2.105 4.887.489 5.94-1.045 2.504-2.398 4.992-4.46 5.049zM12.03 5.462c-.068-1.526.85-2.91 2.218-3.462.195 1.579-.812 3.015-2.218 3.462z"/></svg>`,
+      arrow: `<svg class="arrow-icon" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>`
+    };
+
+    // 页面初始化加载数据
+    document.addEventListener("DOMContentLoaded", () => {
+      fetch("./version.json")
+        .then(response => {
+          if (!response.ok) {
+            throw new Error("Failed to load version info");
+          }
+          return response.json();
+        })
+        .then(data => {
+          renderPage(data);
+        })
+        .catch(err => {
+          console.warn("读取 version.json 失败，应用默认降级渲染:", err);
+          renderPage({
+            version: DEFAULT_VERSION,
+            date: new Date().toISOString().split('T')[0],
+            files: {
+              windows: "HeyClaw Setup.exe",
+              mac_x64: "HeyClaw-x64.dmg",
+              mac_arm64: "HeyClaw-arm64.dmg"
+            }
+          });
+        });
+    });
+
+    // 渲染下载页面
+    function renderPage(data) {
+      const versionContainer = document.getElementById("version-container");
+      const optionsContainer = document.getElementById("options-container");
+
+      // 1. 渲染版本信息
+      const versionVal = document.getElementById("version-val");
+      versionVal.textContent = data.version || DEFAULT_VERSION;
+      versionVal.classList.remove("skeleton", "skeleton-text");
+
+      const latestBadge = document.getElementById("latest-badge");
+      latestBadge.style.display = "inline-flex";
+
+      const dateVal = document.getElementById("date-val");
+      dateVal.textContent = data.date ? `发布于 ${data.date}` : "";
+      dateVal.classList.remove("skeleton", "skeleton-text");
+      dateVal.style.width = "auto";
+
+      // 2. 渲染下载按钮
+      let html = "";
+      
+      // Windows 按钮 (主推荐按钮)
+      if (data.files && data.files.windows) {
+        html += `
+          <a href="./${data.files.windows}" class="download-btn primary-btn" download>
+            <div class="btn-left">
+              <span class="btn-icon">${SVG_ICONS.windows}</span>
+              <div class="btn-info">
+                <span class="btn-title">下载 Windows 客户端</span>
+                <span class="btn-desc">适用于 Windows 10 / 11 系统的 x64 架构</span>
+              </div>
+            </div>
+            <div class="btn-right">${SVG_ICONS.arrow}</div>
+          </a>
+        `;
+      }
+
+      // macOS Apple Silicon (M1/M2/M3) 按钮
+      if (data.files && data.files.mac_arm64) {
+        html += `
+          <a href="./${data.files.mac_arm64}" class="download-btn" download>
+            <div class="btn-left">
+              <span class="btn-icon" style="color: #a5b4fc;">${SVG_ICONS.macos}</span>
+              <div class="btn-info">
+                <span class="btn-title">下载 macOS 客户端 (Apple 芯片)</span>
+                <span class="btn-desc">适用于 M1 / M2 / M3 等 Apple Silicon 芯片的 Mac</span>
+              </div>
+            </div>
+            <div class="btn-right">${SVG_ICONS.arrow}</div>
+          </a>
+        `;
+      }
+
+      // macOS Intel 芯片按钮
+      if (data.files && data.files.mac_x64) {
+        html += `
+          <a href="./${data.files.mac_x64}" class="download-btn" download>
+            <div class="btn-left">
+              <span class="btn-icon" style="color: #a5b4fc;">${SVG_ICONS.macos}</span>
+              <div class="btn-info">
+                <span class="btn-title">下载 macOS 客户端 (Intel 芯片)</span>
+                <span class="btn-desc">适用于 Intel 处理器架构的 Mac</span>
+              </div>
+            </div>
+            <div class="btn-right">${SVG_ICONS.arrow}</div>
+          </a>
+        `;
+      }
+
+      if (!html) {
+        html = `<div style="text-align: center; color: var(--text-muted); padding: 20px;">暂无可用的安装包，请稍后再试。</div>`;
+      }
+
+      optionsContainer.innerHTML = html;
+    }
+  </script>
+</body>
+</html>

@@ -31,6 +31,9 @@ jobs:
   build-macos:
     if: ${{ github.event_name == 'push' || inputs.build_macos }}
     runs-on: macos-latest
+    strategy:
+      matrix:
+        arch: [arm64, x64]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -42,11 +45,19 @@ jobs:
             ~/.npm
             ~/Library/Caches/pnpm
             vendor/openclaw-runtime
-          key: npm-${{ runner.os }}-${{ hashFiles('package.json') }}
-          restore-keys: npm-${{ runner.os }}-
+          key: npm-${{ runner.os }}-${{ matrix.arch }}-${{ hashFiles('package.json') }}
+          restore-keys: npm-${{ runner.os }}-${{ matrix.arch }}-
       
       - name: Install pnpm
         run: npm install -g pnpm@10
+      
+      # 若是 tag 触发，则在安装依赖前动态修改 package.json 的版本，确保打包后的版本与 tag 统一
+      - name: Sync version to package.json
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+          VERSION=${TAG_NAME#v}
+          npm version $VERSION --no-git-tag-version
       
       - run: npm install
       
@@ -70,11 +81,11 @@ jobs:
             export APPLE_APP_SPECIFIC_PASSWORD="${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}"
             export APPLE_TEAM_ID="${{ secrets.APPLE_TEAM_ID }}"
           fi
-          npm run dist:mac -- --publish never
+          npm run dist:mac:${{ matrix.arch }} -- --publish never
       
       - uses: actions/upload-artifact@v4
         with:
-          name: macos-build
+          name: macos-build-${{ matrix.arch }}
           path: release/*.dmg
           retention-days: 7
 
@@ -95,6 +106,15 @@ jobs:
       
       - name: Install pnpm
         run: npm install -g pnpm@10
+      
+      # 若是 tag 触发，则在安装依赖前动态修改 package.json 的版本，确保打包后的版本与 tag 统一
+      - name: Sync version to package.json
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        run: |
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+          VERSION=${TAG_NAME#v}
+          npm version $VERSION --no-git-version-keyword --no-git-tag-version || npm version $VERSION --no-git-tag-version
       
       - run: npm install
       
@@ -169,7 +189,8 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            artifacts/macos-build/*.dmg
+            artifacts/macos-build-arm64/*.dmg
+            artifacts/macos-build-x64/*.dmg
             artifacts/windows-build/*.exe
             artifacts/linux-build/*
           draft: true
@@ -177,3 +198,63 @@ jobs:
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ========== 自动部署到宝塔服务器 ==========
+  deploy-to-bt:
+    needs: [build-macos, build-windows]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Download All Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist-files
+
+      - name: Flatten Dist Directory & Generate version.json
+        run: |
+          mkdir -p final-dist
+          # 复制所有的 dmg 和 exe 到 final-dist 目录
+          find dist-files/ -type f -name "*.dmg" -exec cp {} final-dist/ \;
+          find dist-files/ -type f -name "*.exe" -exec cp {} final-dist/ \;
+          
+          # 提取当前 tag 的版本号
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+          
+          # 寻找对应的包文件名
+          WIN_FILE=$(cd final-dist && ls *.exe | head -n 1)
+          MAC_ARM64_FILE=$(cd final-dist && ls *arm64.dmg | head -n 1)
+          MAC_X64_FILE=$(cd final-dist && ls *x64.dmg | head -n 1)
+          
+          # 写入 version.json
+          cat <<EOF > final-dist/version.json
+          {
+            "version": "${TAG_NAME}",
+            "date": "$(date +'%Y-%m-%d')",
+            "files": {
+              "windows": "${WIN_FILE}",
+              "mac_x64": "${MAC_X64_FILE}",
+              "mac_arm64": "${MAC_ARM64_FILE}"
+            }
+          }
+          EOF
+          
+          # 复制下载页 index.html 到 final-dist 目录
+          cp download-page/index.html final-dist/index.html
+          
+          # 打印 final-dist 目录下的内容进行验证
+          echo "=== Files to deploy ==="
+          ls -la final-dist/
+
+      - name: Deploy to Baota Server via Rsync
+        uses: easingthemes/ssh-deploy@main
+        with:
+          SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_KEY }}
+          REMOTE_HOST: ${{ secrets.SERVER_HOST }}
+          REMOTE_USER: ${{ secrets.SERVER_USER }}
+          REMOTE_PORT: ${{ secrets.SERVER_PORT || 22 }}
+          SOURCE: "final-dist/"
+          TARGET: ${{ secrets.SERVER_DOWNLOAD_DIR }}
+          ARGS: "-rlgoDzvO"
