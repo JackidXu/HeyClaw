@@ -39,9 +39,16 @@ const logCommons = {
 } as const;
 
 export interface BuildLogUrlOptions {
+  appVersion?: string;
+  arch?: string;
+  language?: string;
+  platform?: string;
   userId?: string;
   timestamp?: number;
 }
+
+let cachedAppVersion = '';
+let appVersionPromise: Promise<string> | null = null;
 
 const writeReporterLog = (level: 'debug' | 'warn', message: string, error?: unknown): void => {
   if (level === 'warn') {
@@ -56,15 +63,58 @@ const writeReporterLog = (level: 'debug' | 'warn', message: string, error?: unkn
   window.electron?.log?.fromRenderer?.(level, 'LogReporter', message);
 };
 
+const getWindowAppVersion = async (): Promise<string> => {
+  if (cachedAppVersion) {
+    return cachedAppVersion;
+  }
+  if (typeof window === 'undefined' || !window.electron?.appInfo?.getVersion) {
+    return '';
+  }
+  if (!appVersionPromise) {
+    appVersionPromise = window.electron.appInfo.getVersion()
+      .then(version => {
+        cachedAppVersion = version || '';
+        return cachedAppVersion;
+      })
+      .catch(error => {
+        appVersionPromise = null;
+        writeReporterLog('warn', 'failed to load app version for analytics', error);
+        return '';
+      });
+  }
+  return appVersionPromise;
+};
+
+const getWindowPlatform = (): string => {
+  if (typeof window === 'undefined') {
+    return '';
+  }
+  return window.electron?.platform || '';
+};
+
+const getWindowArch = (): string => {
+  if (typeof window === 'undefined') {
+    return '';
+  }
+  return window.electron?.arch || '';
+};
+
 export const buildLogUrl = (
   params: LogEventParams,
   options: BuildLogUrlOptions = {},
 ): string => {
   const url = new URL(LogReporterEndpoint.YoudaoAnalyzer);
+  const config = configService.getConfig();
+  const userId = options.userId ?? store.getState().auth.user?.yid ?? '';
   const logParams: Record<string, LogParamValue> = {
     ...params,
     ...logCommons,
-    log_Usid: options.userId ?? store.getState().auth.user?.yid ?? '',
+    app_version: options.appVersion ?? cachedAppVersion,
+    os_platform: options.platform ?? getWindowPlatform(),
+    os_arch: options.arch ?? getWindowArch(),
+    language: options.language ?? config.language,
+    is_logged_in: userId.trim().length > 0,
+    log_Usid: userId,
     uts: options.timestamp ?? Date.now(),
   };
 
@@ -94,6 +144,7 @@ export const reportYdAnalyzer = async (params: LogEventParams): Promise<boolean>
   }
 
   try {
+    await getWindowAppVersion();
     writeReporterLog('debug', `sending event ${params.action}`);
     const response = await window.electron.api.fetch({
       url: buildLogUrl(params),

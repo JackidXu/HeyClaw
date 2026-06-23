@@ -15,6 +15,7 @@ vi.mock('../store', () => ({
 vi.mock('./config', () => ({
   configService: {
     getConfig: vi.fn(() => ({
+      language: 'zh',
       usageAnalyticsEnabled: true,
     })),
   },
@@ -45,6 +46,10 @@ test('builds a Youdao Analyzer URL with common action parameters', () => {
       enabled: true,
     },
     {
+      appVersion: '2026.6.18',
+      arch: 'arm64',
+      language: 'en',
+      platform: 'darwin',
       userId: 'test-user',
       timestamp: 123456789,
     },
@@ -53,6 +58,11 @@ test('builds a Youdao Analyzer URL with common action parameters', () => {
   expect(result.origin + result.pathname).toBe(LogReporterEndpoint.YoudaoAnalyzer);
   expect(result.searchParams.get('_npid')).toBe(LogReporterProduct.LobsterAI);
   expect(result.searchParams.get('_ncat')).toBe(LogReporterCategory.Actions);
+  expect(result.searchParams.get('app_version')).toBe('2026.6.18');
+  expect(result.searchParams.get('os_platform')).toBe('darwin');
+  expect(result.searchParams.get('os_arch')).toBe('arm64');
+  expect(result.searchParams.get('language')).toBe('en');
+  expect(result.searchParams.get('is_logged_in')).toBe('true');
   expect(result.searchParams.get('action')).toBe('lobsterai_skill_enabled');
   expect(result.searchParams.get('skillId')).toBe('xlsx');
   expect(result.searchParams.get('enabled')).toBe('true');
@@ -66,10 +76,19 @@ test('does not allow event parameters to override common parameters', () => {
       action: 'lobsterai_app_started',
       _npid: 'unexpected-product',
       _ncat: 'unexpected-category',
+      app_version: 'unexpected-version',
+      os_platform: 'unexpected-platform',
+      os_arch: 'unexpected-arch',
+      language: 'unexpected-language',
+      is_logged_in: false,
       log_Usid: 'unexpected-user',
       uts: 1,
     },
     {
+      appVersion: 'trusted-version',
+      arch: 'trusted-arch',
+      language: 'trusted-language',
+      platform: 'trusted-platform',
       userId: 'trusted-user',
       timestamp: 2,
     },
@@ -77,6 +96,11 @@ test('does not allow event parameters to override common parameters', () => {
 
   expect(result.searchParams.get('_npid')).toBe(LogReporterProduct.LobsterAI);
   expect(result.searchParams.get('_ncat')).toBe(LogReporterCategory.Actions);
+  expect(result.searchParams.get('app_version')).toBe('trusted-version');
+  expect(result.searchParams.get('os_platform')).toBe('trusted-platform');
+  expect(result.searchParams.get('os_arch')).toBe('trusted-arch');
+  expect(result.searchParams.get('language')).toBe('trusted-language');
+  expect(result.searchParams.get('is_logged_in')).toBe('true');
   expect(result.searchParams.get('log_Usid')).toBe('trusted-user');
   expect(result.searchParams.get('uts')).toBe('2');
 });
@@ -94,14 +118,40 @@ test('uses the logged-in user and omits empty optional parameters', () => {
   ));
 
   expect(result.searchParams.get('log_Usid')).toBe('stored-user');
+  expect(result.searchParams.get('language')).toBe('zh');
+  expect(result.searchParams.get('is_logged_in')).toBe('true');
   expect(result.searchParams.has('optionalValue')).toBe(false);
   expect(result.searchParams.has('nullableValue')).toBe(false);
+});
+
+test('marks anonymous events when no user is logged in', () => {
+  vi.mocked(configService.getConfig).mockReturnValue({
+    language: 'zh',
+    usageAnalyticsEnabled: true,
+  } as ReturnType<typeof configService.getConfig>);
+  const result = new URL(buildLogUrl(
+    {
+      action: `${LogReporterActionPrefix.LobsterAI}app_started`,
+    },
+    {
+      userId: '',
+      timestamp: 987654321,
+    },
+  ));
+
+  expect(result.searchParams.get('log_Usid')).toBe('');
+  expect(result.searchParams.get('is_logged_in')).toBe('false');
 });
 
 test('reports an event through the Electron API bridge', async () => {
   const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200 });
   vi.stubGlobal('window', {
     electron: {
+      platform: 'darwin',
+      arch: 'arm64',
+      appInfo: {
+        getVersion: vi.fn().mockResolvedValue('2026.6.18'),
+      },
       api: {
         fetch: fetchMock,
       },
@@ -120,6 +170,9 @@ test('reports an event through the Electron API bridge', async () => {
   expect(request.method).toBe('GET');
   expect(requestUrl.searchParams.get('action')).toBe('lobsterai_plan_mode_enabled');
   expect(requestUrl.searchParams.get('entry')).toBe('prompt_tools_menu');
+  expect(requestUrl.searchParams.get('app_version')).toBe('2026.6.18');
+  expect(requestUrl.searchParams.get('os_platform')).toBe('darwin');
+  expect(requestUrl.searchParams.get('os_arch')).toBe('arm64');
 });
 
 test('returns false when the event request is rejected', async () => {
