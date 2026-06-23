@@ -1,0 +1,23 @@
+/* 针对 Antd 主题的微调覆盖 */
+.ant-layout-header {
+  line-height: normal !important;
+}
+
+/* 卡片悬停轻微向上浮动的动效，呼应 premium 质感 */
+.ant-card {
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.ant-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.04), 0 2px 8px rgba(0, 0, 0, 0.02) !important;
+}
+
+/* 保证 Modal Body 有优雅的过渡滚动条 */
+.ant-modal-body::-webkit-scrollbar {
+  width: 6px;
+}
+.ant-modal-body::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.15);
+  border-radius: 3px;
+}
