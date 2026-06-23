@@ -78,6 +78,20 @@ const PromptPanel: React.FC<PromptPanelProps> = ({ action, onPromptSelect }) => 
                   {prompt.description}
                 </p>
               )}
+
+              {/* 推荐技能标签 */}
+              {prompt.tags && prompt.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-1.5">
+                  {prompt.tags.map((tag, idx) => (
+                    <span
+                      key={idx}
+                      className="px-1.5 py-0.5 text-[10px] font-normal leading-none text-secondary bg-surface-raised border border-border-subtle rounded"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
             </button>
           );
         })}

@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "actions": [
+    {
+      "id": "ai-search",
+      "icon": "MagnifyingGlassIcon",
+      "color": "#3B82F6",
+      "skillMapping": "web-search",
+      "prompts": [
+        { "id": "geo-content-optimization" },
+        { "id": "long-tail-keyword-strategy" },
+        { "id": "ai-search-ranking-analysis" },
+        { "id": "competitor-geo-benchmarking" }
+      ]
+    },
+    {
+      "id": "video-image",
+      "icon": "DevicePhoneMobileIcon",
+      "color": "#8B5CF6",
+      "skillMapping": "web-search",
+      "prompts": [
+        { "id": "short-video-script-creation" },
+        { "id": "graphic-content-creation" },
+        { "id": "viral-topic-planning" },
+        { "id": "content-data-diagnosis" }
+      ]
+    },
+    {
+      "id": "boss-ip",
+      "icon": "UserIcon",
+      "color": "#F59E0B",
+      "skillMapping": "web-search",
+      "prompts": [
+        { "id": "ip-persona-positioning" },
+        { "id": "90-day-content-calendar" },
+        { "id": "customer-acquisition-copywriting" },
+        { "id": "ip-visual-system-setup" }
+      ]
+    },
+    {
+      "id": "private-domain",
+      "icon": "ArrowPathIcon",
+      "color": "#10B981",
+      "skillMapping": "web-search",
+      "prompts": [
+        { "id": "community-ops-sop" },
+        { "id": "moments-content-matrix" },
+        { "id": "1v1-conversion-playbook" },
+        { "id": "private-domain-data-dashboard" }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,238 @@
+{
+  "zh": {
+    "ai-search": {
+      "label": "AI 搜索优化",
+      "prompts": {
+        "geo-content-optimization": {
+          "label": "GEO 内容优化",
+          "description": "优化文章结构、关键词密度，让 AI 搜索引擎优先引用你的内容",
+          "prompt": "请帮我做一次 GEO（生成式引擎优化）内容优化。针对以下内容，请从文章结构、信息密度、问答形式匹配、关键词分布等维度进行调整，提升其在 AI 搜索引擎（如 Perplexity, SearchGPT 等）中的引用和展现概率：\n\n[在此输入需要优化的内容]",
+          "tags": ["文案炼金术士", "数据翻译官"]
+        },
+        "long-tail-keyword-strategy": {
+          "label": "长尾关键词策略",
+          "description": "挖掘高价值长尾词，制定 AI 搜索占位策略",
+          "prompt": "请针对 [在此输入你的行业/产品] 进行高价值长尾关键词挖掘，并制定一份针对 AI 搜索引擎（GEO）的搜索占位策略。要求包含：用户搜索意图分析、长尾词列表（按流量和竞争度排序）、推荐的内容创作方向。",
+          "tags": ["老板IP选题王"]
+        },
+        "ai-search-ranking-analysis": {
+          "label": "AI 搜索排名分析",
+          "description": "追踪内容在 AI 搜索引擎中的引用率和排名变化",
+          "prompt": "我想分析我的品牌/产品 [在此输入品牌或产品名] 在主流 AI 搜索引擎（如 ChatGPT, Perplexity 等）中的可见度和排名表现。请帮我设计一套分析框架，说明我该如何追踪引用率、分析提及趋势，以及如何对比竞品。",
+          "tags": ["数据翻译官"]
+        },
+        "competitor-geo-benchmarking": {
+          "label": "竞品 GEO 对标",
+          "description": "分析同类竞品在 AI 搜索中的表现，拆解优化策略",
+          "prompt": "请帮我对比分析 [在此输入你的品牌/产品] 与竞品 [在此输入竞品名称] 在 AI 搜索引擎中的品牌心智表现。我们需要分析竞品为什么会被 AI 优先推荐，并拆解出我们可以借鉴的 GEO 优化策略。",
+          "tags": ["追热点达人", "数据翻译官"]
+        }
+      }
+    },
+    "video-image": {
+      "label": "短视频 / 图文",
+      "prompts": {
+        "short-video-script-creation": {
+          "label": "短视频脚本创作",
+          "description": "从钩子到节奏，生成可直接录制口播的脚本",
+          "prompt": "请帮我写一份短视频口播脚本。主题是：[在此输入主题]，目标观众为：[在此输入人群/画像]。要求：\n1. 黄金3秒黄金钩子（Hook）吸引注意力。\n2. 节奏紧凑，痛点分析透彻，给出一个明确的解决方案。\n3. 结尾有行动号召（CTA）。\n4. 适合 60 秒内的口播时长。",
+          "tags": ["口播脚本导演"]
+        },
+        "graphic-content-creation": {
+          "label": "图文内容制作",
+          "description": "公众号长图文、小红书卡片，统一风格批量产出",
+          "prompt": "请帮我制作一份小红书图文笔记的排版大纲与内容文案。主题是：[在此输入主题]。要求包括：\n1. 爆款小红书标题（提供3-5个备选）。\n2. 每一张卡片的视觉排版建议与核心文案。\n3. 正文文案（多用 emoji、分段清晰、带话题标签）。",
+          "tags": ["封面设计师", "排版强迫症"]
+        },
+        "viral-topic-planning": {
+          "label": "爆款选题策划",
+          "description": "针对多平台特征，生成高潜选题方案",
+          "prompt": "请帮我为我的账号（定位是：[在此输入你的账号定位]）策划 5 个爆款选题。要求分析每个选题的流量密码、适合发布的平台（如抖音、小红书、视频号），并给出大致的脚本切入点。",
+          "tags": ["老板IP选题王", "追热点达人"]
+        },
+        "content-data-diagnosis": {
+          "label": "内容数据诊断",
+          "description": "分析完播率、互动率，输出「停什么/改什么」清单",
+          "prompt": "我目前的内容遇到了瓶颈。这是我最近发布内容的数据情况：[在此输入或上传完播率、互动率、新增关注等数据]。请帮我诊断数据背后的原因，并生成一份清晰的“停止做什么”和“开始改做什么”的优化清单。",
+          "tags": ["数据翻译官"]
+        }
+      }
+    },
+    "boss-ip": {
+      "label": "老板IP营销",
+      "prompts": {
+        "ip-persona-positioning": {
+          "label": "IP 人设定位",
+          "description": "基于行业经验、性格特质，精准定位 IP 人设和内容赛道",
+          "prompt": "我是一名 [在此输入职业/背景]，我的核心优势有：[在此输入核心优势]。我想打造个人 IP。请帮我进行 IP 人设定位分析，为我规划最适合的内容赛道、人设标签、标志性话术，以及商业化路径。",
+          "tags": ["老板IP选题王"]
+        },
+        "90-day-content-calendar": {
+          "label": "90 天内容日历",
+          "description": "从 IP 定位出发，规划整个季度的内容排期",
+          "prompt": "请帮我规划一份个人 IP 90天（一个季度）的内容日历大纲。我的定位是：[在此输入定位]，周更频率为：[在此输入每周发布几条]。要求内容日历合理分配科普干货、日常随笔、成功案例以及营销节点。",
+          "tags": ["老板IP选题王", "文案炼金术士"]
+        },
+        "customer-acquisition-copywriting": {
+          "label": "获客型文案输出",
+          "description": "让客户看完想找你聊的获客文案，批量产出",
+          "prompt": "请帮我撰写一篇用于个人 IP 朋友圈/社群的获客型文案。目标是推广我的产品/服务：[在此输入推广内容]。文案要真诚、不显得生硬推销，同时能直击客户痛点，引导他们主动评论或私信我进行咨询。",
+          "tags": ["文案炼金术士"]
+        },
+        "ip-visual-system-setup": {
+          "label": "IP 视觉体系搭建",
+          "description": "统一的头像、封面模板、排版风格，全平台一致",
+          "prompt": "我想统一我所有社交媒体平台（微信、抖音、小红书等）的 IP 视觉形象。请帮我策划一套视觉体系方案，包括：适合我人设的配色方案、头像风格方向、视频封面排版版式设计建议，以及排版规范。",
+          "tags": ["封面设计师", "排版强迫症"]
+        }
+      }
+    },
+    "private-domain": {
+      "label": "私域流量运营",
+      "prompts": {
+        "community-ops-sop": {
+          "label": "社群运营 SOP",
+          "description": "设计欢迎语、日常话术、活动节奏，标准化流程",
+          "prompt": "请帮我设计一套私域社群（主题是：[在此输入社群定位，如产品内测群、行业交流群]）的运营 SOP 流程。包含：新成员进群的欢迎语、群规、群内每日互动的话术，以及每周的固定活动节奏。",
+          "tags": ["文案炼金术士"]
+        },
+        "moments-content-matrix": {
+          "label": "朋友圈内容矩阵",
+          "description": "生活/干货/观点/成交四类内容，高频触达不招人烦",
+          "prompt": "请帮我设计一个朋友圈内容矩阵规划。我的目标是建立信任并转化客户，请帮我规划如何分配“生活随笔”、“干货分享”、“深度观点”、“成交见证/广告”这四类内容的发布比例，并给出一周 7 天的示例内容模版。",
+          "tags": ["老板IP选题王", "文案炼金术士"]
+        },
+        "1v1-conversion-playbook": {
+          "label": "1v1 转化话术",
+          "description": "针对不同客户画像 and 阶段，设计个性化沟通话术",
+          "prompt": "请帮我写一套 1v1 私域沟通转化话术。产品/服务是：[在此输入]，目标客户此时处于 [在此输入客户所处阶段，如：咨询了价格但没购买，或：刚加微信的新粉]。请给出破冰话术、探寻需求话术、解决异议话术和临门一脚成交话术。",
+          "tags": ["文案炼金术士"]
+        },
+        "private-domain-data-dashboard": {
+          "label": "私域数据看板",
+          "description": "新增、活跃、转化、流失，核心指标一目了然",
+          "prompt": "为了监控我的私域运营效果，我想设计一个私域运营数据分析看板。请帮我梳理：我必须追踪的核心指标（如日新增、社群互动率、转化率、流失率等），以及每个指标代表的业务意义和分析维度。",
+          "tags": ["数据翻译官"]
+        }
+      }
+    }
+  },
+  "en": {
+    "ai-search": {
+      "label": "AI Search Optimization",
+      "prompts": {
+        "geo-content-optimization": {
+          "label": "GEO Content Optimization",
+          "description": "Optimize article structure and keyword density to prioritize references by AI search engines",
+          "prompt": "Please help me perform a GEO (Generative Engine Optimization) content optimization. For the following content, please adjust from dimensions such as article structure, information density, Q&A format matching, and keyword distribution to improve its citation and visibility probability in AI search engines (like Perplexity, SearchGPT, etc.):\n\n[Enter content to optimize here]",
+          "tags": ["Copywriter", "Data Translator"]
+        },
+        "long-tail-keyword-strategy": {
+          "label": "Long-tail Keyword Strategy",
+          "description": "Dig high-value long-tail keywords and formulate AI search occupancy strategy",
+          "prompt": "Please mine high-value long-tail keywords for [Enter your industry/product here] and formulate a search occupancy strategy targeted at AI search engines (GEO). Requirements include: user search intent analysis, long-tail keyword list (sorted by volume and competitiveness), and recommended content direction.",
+          "tags": ["Topic Planner"]
+        },
+        "ai-search-ranking-analysis": {
+          "label": "AI Search Ranking Analysis",
+          "description": "Track the citation rate and ranking changes of content in AI search engines",
+          "prompt": "I want to analyze the visibility and ranking performance of my brand/product [Enter brand or product name] in major AI search engines (like ChatGPT, Perplexity, etc.). Please help me design an analysis framework explaining how I can track citation rates, analyze mention trends, and benchmark against competitors.",
+          "tags": ["Data Translator"]
+        },
+        "competitor-geo-benchmarking": {
+          "label": "Competitor GEO Benchmarking",
+          "description": "Analyze performance of similar competitors in AI search and extract optimization strategies",
+          "prompt": "Please help me compare and analyze the brand mindshare performance of [Enter your brand/product] vs competitor [Enter competitor name] in AI search engines. We need to analyze why competitors are preferred by AI and extract GEO optimization strategies we can adopt.",
+          "tags": ["Trend Tracker", "Data Translator"]
+        }
+      }
+    },
+    "video-image": {
+      "label": "Video & Graphic Content",
+      "prompts": {
+        "short-video-script-creation": {
+          "label": "Short Video Script",
+          "description": "Generate scripts directly ready for recording from hook to rhythm",
+          "prompt": "Please help me write a short video spoken script. The theme is: [Enter theme here], target audience: [Enter audience/persona]. Requirements:\n1. 3-second hook to grab attention.\n2. Fast pace, solid pain points analysis, and clear solution.\n3. Call to Action (CTA) at the end.\n4. Suitable for under 60 seconds duration.",
+          "tags": ["Script Director"]
+        },
+        "graphic-content-creation": {
+          "label": "Graphic Content Creation",
+          "description": "Mass production of official accounts long articles and RED cards with unified style",
+          "prompt": "Please help me create a layout outline and copy draft for a Xiaohongshu (RED) post. The theme is: [Enter theme here]. Requirements include:\n1. Viral Xiaohongshu titles (provide 3-5 options).\n2. Visual layout suggestions and core copy for each card.\n3. Content copy (use emojis, clear paragraphs, hashtags).",
+          "tags": ["Cover Designer", "Format Perfectionist"]
+        },
+        "viral-topic-planning": {
+          "label": "Viral Topic Planning",
+          "description": "Generate high-potential topic schemes targeting multiple platforms features",
+          "prompt": "Please help me plan 5 viral topics for my account (focused on: [Enter account positioning]). Analyze the traffic formula for each topic, suitable platforms (e.g. Douyin, RED, Channels), and general script entry points.",
+          "tags": ["Topic Planner", "Trend Tracker"]
+        },
+        "content-data-diagnosis": {
+          "label": "Content Data Diagnosis",
+          "description": "Analyze completion and engagement rate, output 'what to stop/what to change' list",
+          "prompt": "My content growth has hit a bottleneck. Here is data from my recent posts: [Enter or upload retention rate, engagement rate, new followers, etc.]. Please help me diagnose the reasons behind the data and generate a clear 'what to stop' and 'what to change' optimization list.",
+          "tags": ["Data Translator"]
+        }
+      }
+    },
+    "boss-ip": {
+      "label": "Boss IP Marketing",
+      "prompts": {
+        "ip-persona-positioning": {
+          "label": "IP Persona Positioning",
+          "description": "Accurately position IP persona and content track based on industry experience and personality traits",
+          "prompt": "I am a [Enter profession/background], my core strengths are: [Enter core strengths]. I want to build a personal IP. Please perform an IP persona positioning analysis for me, planning the most suitable content track, persona tags, sign-off catchphrases, and monetization path.",
+          "tags": ["Topic Planner"]
+        },
+        "90-day-content-calendar": {
+          "label": "90-day Content Calendar",
+          "description": "Plan content schedules for the entire quarter starting from IP positioning",
+          "prompt": "Please help me plan a personal IP 90-day (one quarter) content calendar outline. My positioning is: [Enter positioning], update frequency is: [Enter posts per week]. The calendar should distribute educational content, daily thoughts, success cases, and marketing milestones.",
+          "tags": ["Topic Planner", "Copywriter"]
+        },
+        "customer-acquisition-copywriting": {
+          "label": "Acquisition Copywriting",
+          "description": "Generate customer acquisition copywriting in bulk that makes clients want to chat with you",
+          "prompt": "Please help me write a customer acquisition copy for personal IP Moments/communities. The goal is to promote my product/service: [Enter promotion details]. The copy should feel authentic, not pushy, directly hit customer pain points, and encourage them to comment or private message for consultation.",
+          "tags": ["Copywriter"]
+        },
+        "ip-visual-system-setup": {
+          "label": "IP Visual System Setup",
+          "description": "Unified avatars, cover templates, layout styles, consistent across all platforms",
+          "prompt": "I want to unify my IP visual identity across all social media platforms (WeChat, Douyin, RED, etc.). Please help me plan a visual system scheme, including: color palette matching my persona, avatar style, video cover layout templates, and formatting specs.",
+          "tags": ["Cover Designer", "Format Perfectionist"]
+        }
+      }
+    },
+    "private-domain": {
+      "label": "Private Traffic Operations",
+      "prompts": {
+        "community-ops-sop": {
+          "label": "Community SOP",
+          "description": "Design welcome messages, daily talk scripts, activity rhythm, standardized processes",
+          "prompt": "Please help me design a set of operations SOP for my private domain community (focused on: [Enter community positioning, e.g. beta test group, industry group]). Include: welcome message for new members, group rules, daily interaction scripts, and weekly activities.",
+          "tags": ["Copywriter"]
+        },
+        "moments-content-matrix": {
+          "label": "Moments Content Matrix",
+          "description": "Distribute life/insights/opinions/promotion contents high frequency without being annoying",
+          "prompt": "Please help me design a content matrix for Moments. My goal is to build trust and convert. Please plan how to allocate ratios of 'daily life', 'valuable tips', 'in-depth opinions', and 'success showcases/ads', and provide a 7-day sample template.",
+          "tags": ["Topic Planner", "Copywriter"]
+        },
+        "1v1-conversion-playbook": {
+          "label": "1v1 Conversion Script",
+          "description": "Design personalized communication script targeting different customer personas and stages",
+          "prompt": "Please help me write a 1v1 private domain communication script. The product/service is: [Enter], target customer is at [Enter customer stage, e.g. asked about price but didn't buy, or newly added follower]. Provide icebreakers, need exploration scripts, objection handling, and closing scripts.",
+          "tags": ["Copywriter"]
+        },
+        "private-domain-data-dashboard": {
+          "label": "Private Domain Dashboard",
+          "description": "New, active, conversion, churn, key metrics at a glance",
+          "prompt": "To monitor my private domain operations, I want to design a dashboard. Please help me list: core metrics I must track (like daily new, community interaction rate, conversion rate, churn rate, etc.), their business meanings, and analysis dimensions.",
+          "tags": ["Data Translator"]
+        }
+      }
+    }
+  }
+}

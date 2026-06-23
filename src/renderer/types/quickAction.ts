@@ -23,6 +23,8 @@ export interface LocalizedPrompt {
   description?: string;
   /** 完整提示词内容 */
   prompt: string;
+  /** 关联技能标签 */
+  tags?: string[];
 }
 
 /**
@@ -85,6 +87,7 @@ export interface QuickActionsI18nData {
         label: string;
         description?: string;
         prompt: string;
+        tags?: string[];
       };
     };
   };

@@ -1,8 +1,12 @@
-import type { QuickActionsConfig, QuickAction, Prompt, LocalizedQuickAction, QuickActionsI18n } from '../types/quickAction';
+import type {
+  LocalizedQuickAction,
+  Prompt,
+  QuickAction,
+  QuickActionsConfig,
+  QuickActionsI18n,
+} from '../types/quickAction';
+import { getQuickActionsI18nUrl, getQuickActionsUrl } from './endpoints';
 import { i18nService } from './i18n';
-
-const CONFIG_PATH = './quick-actions.json';
-const I18N_PATH = './quick-actions-i18n.json';
 
 class QuickActionService {
   private config: QuickActionsConfig | null = null;
@@ -18,7 +22,7 @@ class QuickActionService {
     }
 
     try {
-      const response = await fetch(CONFIG_PATH);
+      const response = await fetch(getQuickActionsUrl());
       if (!response.ok) {
         throw new Error(`Failed to load quick actions config: ${response.status}`);
       }
@@ -27,7 +31,7 @@ class QuickActionService {
       return this.config;
     } catch (error) {
       console.error('Failed to load quick actions config:', error);
-      // 返回空配置作为降级
+      // 返回空配置作为降级，从而在加载失败时不显示任何卡片
       return { version: 1, actions: [] };
     }
   }
@@ -41,7 +45,7 @@ class QuickActionService {
     }
 
     try {
-      const response = await fetch(I18N_PATH);
+      const response = await fetch(getQuickActionsI18nUrl());
       if (!response.ok) {
         throw new Error(`Failed to load quick actions i18n: ${response.status}`);
       }
@@ -76,9 +80,10 @@ class QuickActionService {
             id: prompt.id,
             label: promptI18n?.label || prompt.id,
             description: promptI18n?.description,
-            prompt: promptI18n?.prompt || ''
+            prompt: promptI18n?.prompt || '',
+            tags: promptI18n?.tags,
           };
-        })
+        }),
       };
     });
   }
@@ -119,7 +124,9 @@ class QuickActionService {
   /**
    * 根据 skillMapping 获取对应的快捷操作（已本地化）
    */
-  async getLocalizedActionBySkillMapping(skillMapping: string): Promise<LocalizedQuickAction | undefined> {
+  async getLocalizedActionBySkillMapping(
+    skillMapping: string,
+  ): Promise<LocalizedQuickAction | undefined> {
     const actions = await this.getLocalizedActions();
     return actions.find(action => action.skillMapping === skillMapping);
   }

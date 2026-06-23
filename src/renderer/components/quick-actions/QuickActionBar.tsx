@@ -1,3 +1,4 @@
+import { ArrowPathIcon,MagnifyingGlassIcon, UserIcon } from '@heroicons/react/24/outline';
 import React from 'react';
 
 import type { LocalizedQuickAction } from '../../types/quickAction';
@@ -19,6 +20,9 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   DevicePhoneMobileIcon,
   ChartBarIcon,
   AcademicCapIcon,
+  MagnifyingGlassIcon,
+  UserIcon,
+  ArrowPathIcon,
 };
 
 const QuickActionBar: React.FC<QuickActionBarProps> = ({ actions, onActionSelect }) => {

@@ -29,6 +29,10 @@ export const getSkillStoreUrl = () => 'http://101.96.234.167:8081/skill-store.js
 // Kit 商店
 export const getKitStoreUrl = () => 'http://101.96.234.167:8081/kit-store.json';
 
+// 快速发问
+export const getQuickActionsUrl = () => 'http://101.96.234.167:8081/quick-actions.json';
+export const getQuickActionsI18nUrl = () => 'http://101.96.234.167:8081/quick-actions-i18n.json';
+
 // 登录地址
 export const getLoginOvermindUrl = () => isTestModeEnabled()
   ? 'https://api-overmind.heyclaw.com/openapi/get/luna/hardware/lobsterai/test/login-url'
