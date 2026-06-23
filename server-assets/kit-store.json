@@ -113,8 +113,11 @@
             "bundle": "https://ydhardwarebusiness.nosdn.127.net/8201efaf99a7343fbee2e99a9b95b338.zip"
           },
           "author": "LobsterAI",
-          "name": { "en": "Engineering", "zh": "工程" },
-          "icon": "https://ydhardwarecommon.nosdn.127.net/df7f3ccddedc45e206087354cc15bfc0.png",
+          "name": {
+            "en": "Engineering",
+            "zh": "工程"
+          },
+          "icon": "avatar:layoutocd",
           "tryAsking": [
             {
               "en": "Review these code changes for correctness and risk",
@@ -147,7 +150,39 @@
           },
           "id": "engineering",
           "version": "1.2.0",
-          "downloadCount": "0"
+          "downloadCount": "0",
+          "tagline": {
+            "zh": "代码编写 · 系统架构",
+            "en": "Code Writing · System Architecture"
+          },
+          "motto": {
+            "zh": "别家还在找 bug，我已重构完成",
+            "en": "Others are debugging, I've refactored."
+          },
+          "avatarBg": "sky",
+          "tags": [
+            {
+              "text": {
+                "zh": "架构决策",
+                "en": "ADR"
+              },
+              "color": "sky"
+            },
+            {
+              "text": {
+                "zh": "代码审查",
+                "en": "Review"
+              },
+              "color": "slate"
+            },
+            {
+              "text": {
+                "zh": "快速调试",
+                "en": "Debug"
+              },
+              "color": "purple"
+            }
+          ]
         },
         {
           "skills": {
@@ -212,8 +247,11 @@
             "bundle": "https://ydhardwarebusiness.nosdn.127.net/a3c5595a8a1a57fef82e04d9c5dc37a6.zip"
           },
           "author": "LobsterAI",
-          "name": { "en": "Design", "zh": "设计" },
-          "icon": "https://ydhardwarecommon.nosdn.127.net/5ed9e5cbd1b3232bc2e688c33d6d7549.png",
+          "name": {
+            "en": "Design",
+            "zh": "设计"
+          },
+          "icon": "avatar:coverdesign",
           "tryAsking": [
             {
               "en": "Give structured feedback on this product design",
@@ -227,7 +265,10 @@
               "en": "Prepare developer handoff notes for this screen",
               "zh": "为这个界面准备开发交接说明"
             },
-            { "en": "Run an accessibility review for this flow", "zh": "对这个流程做无障碍审查" },
+            {
+              "en": "Run an accessibility review for this flow",
+              "zh": "对这个流程做无障碍审查"
+            },
             {
               "en": "Write UX copy for these empty and error states",
               "zh": "为这些空状态和错误状态编写 UX 文案"
@@ -243,7 +284,39 @@
           },
           "id": "design",
           "version": "1.2.0",
-          "downloadCount": "0"
+          "downloadCount": "0",
+          "tagline": {
+            "zh": "界面设计 · 视觉创意",
+            "en": "UI Design · Visual Creativity"
+          },
+          "motto": {
+            "zh": "像素级的精细，只为极致体验",
+            "en": "Pixel-perfect refinement for ultimate UX."
+          },
+          "avatarBg": "rose",
+          "tags": [
+            {
+              "text": {
+                "zh": "交互设计",
+                "en": "Interaction"
+              },
+              "color": "rose"
+            },
+            {
+              "text": {
+                "zh": "无障碍",
+                "en": "A11y"
+              },
+              "color": "mint"
+            },
+            {
+              "text": {
+                "zh": "交接规范",
+                "en": "Handoff"
+              },
+              "color": "amber"
+            }
+          ]
         },
         {
           "skills": {
@@ -324,8 +397,11 @@
             "bundle": "https://ydhardwarebusiness.nosdn.127.net/64d6d25557a37c3c0430b38f8e5b3ec3.zip"
           },
           "author": "LobsterAI",
-          "name": { "en": "Operations", "zh": "运营" },
-          "icon": "https://ydhardwarecommon.nosdn.127.net/8633fce664b311769e04cbdf2cf33e40.png",
+          "name": {
+            "en": "Operations",
+            "zh": "运营"
+          },
+          "icon": "avatar:layoutocd",
           "tryAsking": [
             {
               "en": "Create a runbook for this monthly process",
@@ -343,8 +419,14 @@
               "en": "Document this process with owners and handoffs",
               "zh": "记录这个流程的负责人和交接点"
             },
-            { "en": "Build a capacity plan for next quarter", "zh": "制定下季度容量规划" },
-            { "en": "Create a compliance tracking report", "zh": "创建合规跟踪报告" }
+            {
+              "en": "Build a capacity plan for next quarter",
+              "zh": "制定下季度容量规划"
+            },
+            {
+              "en": "Create a compliance tracking report",
+              "zh": "创建合规跟踪报告"
+            }
           ],
           "description": {
             "en": "Handle vendor review, process documentation, change requests, capacity planning, compliance tracking, and runbooks.",
@@ -352,7 +434,39 @@
           },
           "id": "operations",
           "version": "1.2.0",
-          "downloadCount": "0"
+          "downloadCount": "0",
+          "tagline": {
+            "zh": "业务流程 · 效率优化",
+            "en": "Business Process · Efficiency"
+          },
+          "motto": {
+            "zh": "优化每一个环节，让效率飞起来",
+            "en": "Optimizing workflows to boost efficiency."
+          },
+          "avatarBg": "lavender",
+          "tags": [
+            {
+              "text": {
+                "zh": "流程文档",
+                "en": "Process"
+              },
+              "color": "purple"
+            },
+            {
+              "text": {
+                "zh": "风险评估",
+                "en": "Risk"
+              },
+              "color": "rose"
+            },
+            {
+              "text": {
+                "zh": "容量规划",
+                "en": "Capacity"
+              },
+              "color": "sky"
+            }
+          ]
         },
         {
           "skills": {
@@ -425,10 +539,16 @@
             "bundle": "https://ydhardwarebusiness.nosdn.127.net/07c4ac3964e8c84f25422e5de48be7df.zip"
           },
           "author": "LobsterAI",
-          "name": { "en": "Product Manager", "zh": "产品经理" },
-          "icon": "https://ydhardwarecommon.nosdn.127.net/4340f2a511f295493c83294d8a0de835.png",
+          "name": {
+            "en": "Product Manager",
+            "zh": "产品经理"
+          },
+          "icon": "avatar:hotspot",
           "tryAsking": [
-            { "en": "Write a feature spec for enterprise SSO", "zh": "为企业 SSO 编写功能规格" },
+            {
+              "en": "Write a feature spec for enterprise SSO",
+              "zh": "为企业 SSO 编写功能规格"
+            },
             {
               "en": "Update the roadmap based on these new constraints",
               "zh": "根据这些新约束更新路线图"
@@ -456,7 +576,39 @@
           },
           "id": "product-management",
           "version": "1.2.0",
-          "downloadCount": "0"
+          "downloadCount": "0",
+          "tagline": {
+            "zh": "产品定义 · 规划执行",
+            "en": "Product Def · Execution"
+          },
+          "motto": {
+            "zh": "把杂乱的想法，梳理成清晰的路线图",
+            "en": "Turning chaotic ideas into a clear roadmap."
+          },
+          "avatarBg": "amber",
+          "tags": [
+            {
+              "text": {
+                "zh": "路线图",
+                "en": "Roadmap"
+              },
+              "color": "amber"
+            },
+            {
+              "text": {
+                "zh": "需求文档",
+                "en": "PRD"
+              },
+              "color": "mint"
+            },
+            {
+              "text": {
+                "zh": "指标分析",
+                "en": "Metrics"
+              },
+              "color": "slate"
+            }
+          ]
         },
         {
           "skills": {
@@ -537,8 +689,11 @@
             "bundle": "https://ydhardwarebusiness.nosdn.127.net/0c116a075ea33761d27fb2c2e1da5b1d.zip"
           },
           "author": "LobsterAI",
-          "name": { "en": "Human Resources", "zh": "人力资源" },
-          "icon": "https://ydhardwarecommon.nosdn.127.net/bcc656a585493bea60cfd27f48c79c57.png",
+          "name": {
+            "en": "Human Resources",
+            "zh": "人力资源"
+          },
+          "icon": "avatar:scriptdirector",
           "tryAsking": [
             {
               "en": "Draft an offer letter for this candidate",
@@ -552,9 +707,18 @@
               "en": "Summarize the risks in this performance review",
               "zh": "总结这份绩效评估中的风险点"
             },
-            { "en": "Prepare interview questions for this role", "zh": "为这个岗位准备面试问题" },
-            { "en": "Analyze compensation bands for this team", "zh": "分析这个团队的薪酬区间" },
-            { "en": "Create a recruiting pipeline status report", "zh": "创建一份招聘漏斗状态报告" }
+            {
+              "en": "Prepare interview questions for this role",
+              "zh": "为这个岗位准备面试问题"
+            },
+            {
+              "en": "Analyze compensation bands for this team",
+              "zh": "分析这个团队的薪酬区间"
+            },
+            {
+              "en": "Create a recruiting pipeline status report",
+              "zh": "创建一份招聘漏斗状态报告"
+            }
           ],
           "description": {
             "en": "Help with recruiting, onboarding, performance reviews, policy lookup, compensation analysis, and people reporting.",
@@ -562,7 +726,39 @@
           },
           "id": "human-resources",
           "version": "1.2.0",
-          "downloadCount": "0"
+          "downloadCount": "0",
+          "tagline": {
+            "zh": "招聘管理 · 团队规划",
+            "en": "Recruiting · Team Planning"
+          },
+          "motto": {
+            "zh": "找对的人，做对的事，成就团队",
+            "en": "Finding right people for the right things."
+          },
+          "avatarBg": "mint",
+          "tags": [
+            {
+              "text": {
+                "zh": "招聘漏斗",
+                "en": "Pipeline"
+              },
+              "color": "mint"
+            },
+            {
+              "text": {
+                "zh": "录用通知",
+                "en": "Offer"
+              },
+              "color": "purple"
+            },
+            {
+              "text": {
+                "zh": "绩效评估",
+                "en": "Performance"
+              },
+              "color": "slate"
+            }
+          ]
         },
         {
           "skills": {
@@ -635,8 +831,11 @@
             "bundle": "https://ydhardwarebusiness.nosdn.127.net/c8183beace5d83ef7340920807dade22.zip"
           },
           "author": "LobsterAI",
-          "name": { "en": "Marketing", "zh": "营销" },
-          "icon": "https://ydhardwarecommon.nosdn.127.net/810fe306525f41333d6a3de1d6451b61.png",
+          "name": {
+            "en": "Marketing",
+            "zh": "营销"
+          },
+          "icon": "avatar:alchemist",
           "tryAsking": [
             {
               "en": "Draft a launch campaign plan for our new product",
@@ -669,7 +868,39 @@
           },
           "id": "marketing",
           "version": "1.2.0",
-          "downloadCount": "0"
+          "downloadCount": "0",
+          "tagline": {
+            "zh": "内容创作 · 渠道策略",
+            "en": "Content Creation · Strategy"
+          },
+          "motto": {
+            "zh": "讲好每一个故事，触达百万用户",
+            "en": "Telling stories to reach millions."
+          },
+          "avatarBg": "coral",
+          "tags": [
+            {
+              "text": {
+                "zh": "文案创作",
+                "en": "Copywriting"
+              },
+              "color": "coral"
+            },
+            {
+              "text": {
+                "zh": "活动策划",
+                "en": "Campaign"
+              },
+              "color": "amber"
+            },
+            {
+              "text": {
+                "zh": "竞品对比",
+                "en": "Competitor"
+              },
+              "color": "sky"
+            }
+          ]
         },
         {
           "skills": {
@@ -742,8 +973,11 @@
             "bundle": "https://ydhardwarebusiness.nosdn.127.net/fa6cddf1a1dbeee9834fe2413025fdcf.zip"
           },
           "author": "LobsterAI",
-          "name": { "en": "Finance", "zh": "财务" },
-          "icon": "https://ydhardwarecommon.nosdn.127.net/9f0066e9510b59e2c3b66447dff3bd49.png",
+          "name": {
+            "en": "Finance",
+            "zh": "财务"
+          },
+          "icon": "avatar:datatrans",
           "tryAsking": [
             {
               "en": "Prepare month-end journal entries for these accruals",
@@ -776,7 +1010,39 @@
           },
           "id": "finance",
           "version": "1.2.0",
-          "downloadCount": "0"
+          "downloadCount": "0",
+          "tagline": {
+            "zh": "财务规划 · 预算管理",
+            "en": "Financial Planning · Budgeting"
+          },
+          "motto": {
+            "zh": "看懂数字背后的商业脉络",
+            "en": "Understanding the logic behind numbers."
+          },
+          "avatarBg": "amber",
+          "tags": [
+            {
+              "text": {
+                "zh": "预算分析",
+                "en": "Budgeting"
+              },
+              "color": "amber"
+            },
+            {
+              "text": {
+                "zh": "账目审计",
+                "en": "Audit"
+              },
+              "color": "slate"
+            },
+            {
+              "text": {
+                "zh": "财务报表",
+                "en": "Statements"
+              },
+              "color": "mint"
+            }
+          ]
         },
         {
           "skills": {
@@ -857,10 +1123,16 @@
             "bundle": "https://ydhardwarebusiness.nosdn.127.net/bfc15adb11af230842d938393ceb02c8.zip"
           },
           "author": "LobsterAI",
-          "name": { "en": "Sales", "zh": "销售" },
-          "icon": "https://ydhardwarecommon.nosdn.127.net/c4f9d44796df431ad4e416b770e28868.png",
+          "name": {
+            "en": "Sales",
+            "zh": "销售"
+          },
+          "icon": "avatar:hotspot",
           "tryAsking": [
-            { "en": "Prepare me for a call with this account", "zh": "帮我准备与这个客户的通话" },
+            {
+              "en": "Prepare me for a call with this account",
+              "zh": "帮我准备与这个客户的通话"
+            },
             {
               "en": "Draft a personalized outbound email for this prospect",
               "zh": "为这个潜在客户起草个性化触达邮件"
@@ -888,7 +1160,39 @@
           },
           "id": "sales",
           "version": "1.2.0",
-          "downloadCount": "0"
+          "downloadCount": "0",
+          "tagline": {
+            "zh": "客户开发 · 业绩达成",
+            "en": "Lead Generation · Deal Closing"
+          },
+          "motto": {
+            "zh": "用最合适的方案打动每一位客户",
+            "en": "Impressing clients with perfect solutions."
+          },
+          "avatarBg": "sky",
+          "tags": [
+            {
+              "text": {
+                "zh": "客户开发",
+                "en": "Leads"
+              },
+              "color": "sky"
+            },
+            {
+              "text": {
+                "zh": "销售话术",
+                "en": "Scripts"
+              },
+              "color": "purple"
+            },
+            {
+              "text": {
+                "zh": "商机跟进",
+                "en": "Pipeline"
+              },
+              "color": "rose"
+            }
+          ]
         },
         {
           "skills": {
@@ -977,16 +1281,28 @@
             "bundle": "https://ydhardwarebusiness.nosdn.127.net/82406148b9dbd36efe6334af69c2b9e2.zip"
           },
           "author": "LobsterAI",
-          "name": { "en": "Data", "zh": "数据" },
-          "icon": "https://ydhardwarecommon.nosdn.127.net/3d649986d06dc752fdb03275d4f63099.png",
+          "name": {
+            "en": "Data",
+            "zh": "数据"
+          },
+          "icon": "avatar:datatrans",
           "tryAsking": [
-            { "en": "Write a cohort retention SQL query", "zh": "编写同期群留存分析 SQL" },
+            {
+              "en": "Write a cohort retention SQL query",
+              "zh": "编写同期群留存分析 SQL"
+            },
             {
               "en": "Explore this table for data quality issues",
               "zh": "检查这张表的数据质量问题"
             },
-            { "en": "Build a dashboard outline for these KPIs", "zh": "为这些 KPI 设计仪表盘结构" },
-            { "en": "Validate this analysis before I share it", "zh": "在我分享前验证这份分析" },
+            {
+              "en": "Build a dashboard outline for these KPIs",
+              "zh": "为这些 KPI 设计仪表盘结构"
+            },
+            {
+              "en": "Validate this analysis before I share it",
+              "zh": "在我分享前验证这份分析"
+            },
             {
               "en": "Create a visualization for monthly revenue trends",
               "zh": "创建月度收入趋势图"
@@ -1002,7 +1318,39 @@
           },
           "id": "data",
           "version": "1.1.0",
-          "downloadCount": "0"
+          "downloadCount": "0",
+          "tagline": {
+            "zh": "数据清洗 · 统计分析",
+            "en": "Data Wrangling · Statistics"
+          },
+          "motto": {
+            "zh": "从海量数据中，淘沙见金",
+            "en": "Mining gold from massive data lakes."
+          },
+          "avatarBg": "mint",
+          "tags": [
+            {
+              "text": {
+                "zh": "数据提取",
+                "en": "Extraction"
+              },
+              "color": "mint"
+            },
+            {
+              "text": {
+                "zh": "数据分析",
+                "en": "Analysis"
+              },
+              "color": "sky"
+            },
+            {
+              "text": {
+                "zh": "可视化",
+                "en": "Visualization"
+              },
+              "color": "purple"
+            }
+          ]
         },
         {
           "skills": {
@@ -1051,8 +1399,11 @@
             "bundle": "https://ydhardwarebusiness.nosdn.127.net/052229d934c4043de8711c7fe68fe7c0.zip"
           },
           "author": "LobsterAI",
-          "name": { "en": "Customer Support", "zh": "客户支持" },
-          "icon": "https://ydhardwarecommon.nosdn.127.net/0dbbb32316faca5676ed112b01f61379.png",
+          "name": {
+            "en": "Customer Support",
+            "zh": "客户支持"
+          },
+          "icon": "avatar:scriptdirector",
           "tryAsking": [
             {
               "en": "Triage this customer ticket and suggest priority",
@@ -1085,7 +1436,39 @@
           },
           "id": "customer-support",
           "version": "1.2.0",
-          "downloadCount": "0"
+          "downloadCount": "0",
+          "tagline": {
+            "zh": "客诉解决 · 用户满意",
+            "en": "Issue Resolution · Satisfaction"
+          },
+          "motto": {
+            "zh": "倾听每个声音，解决每个痛点",
+            "en": "Listening to voice, solving pain points."
+          },
+          "avatarBg": "lavender",
+          "tags": [
+            {
+              "text": {
+                "zh": "客诉处理",
+                "en": "Tickets"
+              },
+              "color": "purple"
+            },
+            {
+              "text": {
+                "zh": "满意度",
+                "en": "CSAT"
+              },
+              "color": "mint"
+            },
+            {
+              "text": {
+                "zh": "知识库",
+                "en": "FAQ"
+              },
+              "color": "slate"
+            }
+          ]
         },
         {
           "skills": {
@@ -1166,8 +1549,11 @@
             "bundle": "https://ydhardwarebusiness.nosdn.127.net/31b783a641cc49380782d6b6bcb0766e.zip"
           },
           "author": "LobsterAI",
-          "name": { "en": "Legal", "zh": "法务" },
-          "icon": "https://ydhardwarecommon.nosdn.127.net/e6e3f252f4ee3861aa1f948abc0103f9.png",
+          "name": {
+            "en": "Legal",
+            "zh": "法务"
+          },
+          "icon": "avatar:layoutocd",
           "tryAsking": [
             {
               "en": "Review this contract and flag material risks",
@@ -1177,7 +1563,10 @@
               "en": "Triage this NDA against our fallback positions",
               "zh": "根据我方可接受底线，快速审查这份 NDA"
             },
-            { "en": "Prepare a legal briefing for this meeting", "zh": "为这次会议准备法务简报" },
+            {
+              "en": "Prepare a legal briefing for this meeting",
+              "zh": "为这次会议准备法务简报"
+            },
             {
               "en": "Check this policy against compliance requirements",
               "zh": "根据合规要求检查这项政策"
@@ -1197,7 +1586,39 @@
           },
           "id": "legal",
           "version": "1.2.0",
-          "downloadCount": "0"
+          "downloadCount": "0",
+          "tagline": {
+            "zh": "合同审查 · 合规评估",
+            "en": "Contract Review · Compliance"
+          },
+          "motto": {
+            "zh": "严守规则底线，规避每一处风险",
+            "en": "Guarding rules and avoiding risks."
+          },
+          "avatarBg": "slate",
+          "tags": [
+            {
+              "text": {
+                "zh": "合同审核",
+                "en": "Contract"
+              },
+              "color": "slate"
+            },
+            {
+              "text": {
+                "zh": "合规扫描",
+                "en": "Compliance"
+              },
+              "color": "rose"
+            },
+            {
+              "text": {
+                "zh": "条款解析",
+                "en": "Clauses"
+              },
+              "color": "amber"
+            }
+          ]
         },
         {
           "skills": {
@@ -1254,8 +1675,11 @@
             "bundle": "https://ydhardwarebusiness.nosdn.127.net/296d38bbc3a6ccef1e375c50bf26b62c.zip"
           },
           "author": "LobsterAI",
-          "name": { "en": "Bio Research", "zh": "生物研究" },
-          "icon": "https://ydhardwarecommon.nosdn.127.net/3452ac74ae9b73ea5f7a611fc13397d8.png",
+          "name": {
+            "en": "Bio Research",
+            "zh": "生物研究"
+          },
+          "icon": "avatar:alchemist",
           "tryAsking": [
             {
               "en": "Find relevant literature for this target hypothesis",
@@ -1288,7 +1712,39 @@
           },
           "id": "bio-research",
           "version": "1.2.0",
-          "downloadCount": "0"
+          "downloadCount": "0",
+          "tagline": {
+            "zh": "文献检索 · 学术解读",
+            "en": "Literature Search · Academic"
+          },
+          "motto": {
+            "zh": "深入学术前沿，洞察科学奥秘",
+            "en": "Exploring frontier science."
+          },
+          "avatarBg": "sky",
+          "tags": [
+            {
+              "text": {
+                "zh": "文献检索",
+                "en": "Search"
+              },
+              "color": "sky"
+            },
+            {
+              "text": {
+                "zh": "学术分析",
+                "en": "Analysis"
+              },
+              "color": "mint"
+            },
+            {
+              "text": {
+                "zh": "前沿追踪",
+                "en": "Trends"
+              },
+              "color": "purple"
+            }
+          ]
         },
         {
           "skills": {
@@ -1313,8 +1769,11 @@
             "bundle": "https://ydhardwarebusiness.nosdn.127.net/8201efaf99a7343fbee2e99a9b95b338.zip"
           },
           "author": "LobsterAI",
-          "name": { "en": "IP Marketing", "zh": "IP营销" },
-          "icon": "https://ydhardwarecommon.nosdn.127.net/8633fce664b311769e04cbdf2cf33e40.png",
+          "name": {
+            "en": "IP Marketing",
+            "zh": "IP营销"
+          },
+          "icon": "avatar:iptopic",
           "tryAsking": [
             {
               "en": "Review this post for brand voice alignment",
@@ -1332,7 +1791,39 @@
           "id": "ip-marketing",
           "version": "1.2.0",
           "downloadCount": "0",
-          "category": "marketing"
+          "category": "marketing",
+          "tagline": {
+            "zh": "IP定位 · 选题规划",
+            "en": "IP Positioning · Topic Planning"
+          },
+          "motto": {
+            "zh": "打造超级IP，精准触达人群",
+            "en": "Building super IP to target audience."
+          },
+          "avatarBg": "rose",
+          "tags": [
+            {
+              "text": {
+                "zh": "选题王",
+                "en": "Topics"
+              },
+              "color": "rose"
+            },
+            {
+              "text": {
+                "zh": "爆款分析",
+                "en": "Viral"
+              },
+              "color": "amber"
+            },
+            {
+              "text": {
+                "zh": "IP定位",
+                "en": "Positioning"
+              },
+              "color": "purple"
+            }
+          ]
         },
         {
           "skills": {
@@ -1357,8 +1848,11 @@
             "bundle": "https://ydhardwarebusiness.nosdn.127.net/a3c5595a8a1a57fef82e04d9c5dc37a6.zip"
           },
           "author": "LobsterAI",
-          "name": { "en": "Image Production", "zh": "图片制作" },
-          "icon": "https://ydhardwarecommon.nosdn.127.net/5ed9e5cbd1b3232bc2e688c33d6d7549.png",
+          "name": {
+            "en": "Image Production",
+            "zh": "图片制作"
+          },
+          "icon": "avatar:coverdesign",
           "tryAsking": [
             {
               "en": "Give feedback on this banner design",
@@ -1376,7 +1870,39 @@
           "id": "image-production",
           "version": "1.2.0",
           "downloadCount": "0",
-          "category": "image"
+          "category": "image",
+          "tagline": {
+            "zh": "视觉创作 · 风格排版",
+            "en": "Visual Design · Typography"
+          },
+          "motto": {
+            "zh": "一张好图，胜过千言万语",
+            "en": "One image is worth a thousand words."
+          },
+          "avatarBg": "coral",
+          "tags": [
+            {
+              "text": {
+                "zh": "封面设计",
+                "en": "Cover"
+              },
+              "color": "coral"
+            },
+            {
+              "text": {
+                "zh": "视觉风格",
+                "en": "Style"
+              },
+              "color": "sky"
+            },
+            {
+              "text": {
+                "zh": "多端适配",
+                "en": "Responsive"
+              },
+              "color": "lavender"
+            }
+          ]
         }
       ]
     }

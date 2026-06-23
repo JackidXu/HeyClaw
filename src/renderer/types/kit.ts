@@ -11,6 +11,11 @@ export interface KitSkillBundle {
   list: KitSkillRef[];
 }
 
+export interface KitTag {
+  text: string | LocalizedText;
+  color?: string;
+}
+
 export interface MarketplaceKit {
   id: string;
   name: string | LocalizedText;
@@ -24,6 +29,10 @@ export interface MarketplaceKit {
   mcpServers?: unknown[] | null;
   connectors?: unknown[] | null;
   category?: string;
+  tagline?: string | LocalizedText;
+  motto?: string | LocalizedText;
+  tags?: KitTag[];
+  avatarBg?: string;
 }
 
 export interface KitCategory {

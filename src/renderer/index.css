@@ -643,3 +643,18 @@ select::-ms-expand {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Expert avatar float animation */
+@keyframes avatarFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+.animate-avatar-float {
+  animation: avatarFloat 3s ease-in-out infinite;
+}
+
