@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
-import dreamingLobsterSrc from '../../assets/dreaming-lobster.png';
 import { i18nService } from '../../services/i18n';
 import type { DreamDiaryData, DreamingEntry, DreamingPhaseInfo, DreamingStatusData } from '../../types/cowork';
 
@@ -186,17 +185,7 @@ function DreamingStarsLayer() {
   );
 }
 
-function DreamingMascot() {
-  return (
-    <div className="dreaming-mascot" aria-label={i18nService.t('coworkDreamingHeaderTitle')}>
-      <div className="dreaming-mascot-glow" aria-hidden="true" />
-      <img className="dreaming-mascot-image" src={dreamingLobsterSrc} alt="" draggable={false} />
-      <span className="dreaming-z dreaming-z-one" aria-hidden="true">z</span>
-      <span className="dreaming-z dreaming-z-two" aria-hidden="true">Z</span>
-      <span className="dreaming-z dreaming-z-three" aria-hidden="true">Z</span>
-    </div>
-  );
-}
+
 
 function SceneTab({ status, fallbackCron }: { status: DreamingStatusData; fallbackCron: string }) {
   const currentLanguage = i18nService.getLanguage();
@@ -238,9 +227,7 @@ function SceneTab({ status, fallbackCron }: { status: DreamingStatusData; fallba
         </div>
       )}
 
-      <div className="absolute left-1/2 top-[41%] z-10 -translate-x-1/2 -translate-y-1/2">
-        <DreamingMascot />
-      </div>
+
 
       <div className="absolute bottom-[62px] left-0 right-0 z-10 flex flex-col items-center text-center">
         <div className="dreaming-scene-title text-xs font-semibold uppercase tracking-[0.18em]">
