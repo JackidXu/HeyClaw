@@ -54,11 +54,7 @@ export const getFallbackDownloadUrl = (): string => (
     : 'https://lobsterai.youdao.com/#/download-list'
 );
 
-export const getSkillStoreUrl = (): string => (
-  isTestModeEnabled()
-    ? 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/test/skill-store'
-    : 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/prod/skill-store'
-);
+export const getSkillStoreUrl = (): string => 'http://101.96.234.167:8081/skill-store.json';
 
 // Portal 页面
 const PORTAL_BASE_TEST = 'https://lobsterai.inner.youdao.com/portal#';

@@ -1,4 +1,4 @@
-import { ipcMain } from 'electron';
+import { app, ipcMain } from 'electron';
 import fs from 'fs';
 import path from 'path';
 
@@ -145,25 +145,46 @@ export function registerSkillHandlers(deps: SkillHandlerDeps): void {
     const url = getSkillStoreUrl();
     console.log(`[SkillMarketplace] fetching from: ${url}`);
     try {
-      const https = await import('https');
-      const data = await new Promise<string>((resolve, reject) => {
-        const req = https.get(url, { timeout: 10000 }, (res) => {
-          if (res.statusCode !== 200) {
-            reject(new Error(`HTTP ${res.statusCode}`));
-            res.resume();
-            return;
+      let data = '';
+      if (!app.isPackaged) {
+        const pathsToTry = [
+          path.join(process.cwd(), 'server-assets/skill-store.json'),
+          path.join(app.getAppPath(), 'server-assets/skill-store.json'),
+          path.join(app.getAppPath(), '../server-assets/skill-store.json'),
+        ];
+        for (const p of pathsToTry) {
+          if (fs.existsSync(p)) {
+            console.log(`[SkillMarketplace] local mode: reading from ${p}`);
+            data = fs.readFileSync(p, 'utf8');
+            break;
           }
-          let body = '';
-          res.setEncoding('utf8');
-          res.on('data', (chunk: string) => { body += chunk; });
-          res.on('end', () => resolve(body));
-          res.on('error', reject);
+        }
+      }
+
+      if (!data) {
+        const http = await import('http');
+        const https = await import('https');
+        const mod = url.startsWith('https:') ? https : http;
+        data = await new Promise<string>((resolve, reject) => {
+          const req = mod.get(url, { timeout: 10000 }, (res) => {
+            if (res.statusCode !== 200) {
+              reject(new Error(`HTTP ${res.statusCode}`));
+              res.resume();
+              return;
+            }
+            let body = '';
+            res.setEncoding('utf8');
+            res.on('data', (chunk: string) => { body += chunk; });
+            res.on('end', () => resolve(body));
+            res.on('error', reject);
+          });
+          req.on('error', reject);
+          req.on('timeout', () => { req.destroy(); reject(new Error('Request timeout')); });
         });
-        req.on('error', reject);
-        req.on('timeout', () => { req.destroy(); reject(new Error('Request timeout')); });
-      });
+      }
       return { success: true, data };
     } catch (error) {
+      console.error('[SkillMarketplace] fetch failed:', error);
       return { success: false, error: error instanceof Error ? error.message : 'Failed to fetch skill marketplace' };
     }
   });

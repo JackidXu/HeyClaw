@@ -24,9 +24,7 @@ export const getFallbackDownloadUrl = () => isTestModeEnabled()
   : 'https://portal.heyclaw.com/#/download-list';
 
 // Skill 商店
-export const getSkillStoreUrl = () => isTestModeEnabled()
-  ? 'https://api-overmind.heyclaw.com/openapi/get/luna/hardware/lobsterai/test/skill-store'
-  : 'https://api-overmind.heyclaw.com/openapi/get/luna/hardware/lobsterai/prod/skill-store';
+export const getSkillStoreUrl = () => 'http://101.96.234.167:8081/skill-store.json';
 
 // Kit 商店
 export const getKitStoreUrl = () => 'http://101.96.234.167:8081/kit-store.json';
