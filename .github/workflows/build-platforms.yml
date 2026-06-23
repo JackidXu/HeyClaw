@@ -256,12 +256,11 @@ jobs:
           ls -la oss-dist/
 
       - name: Setup OSSUTIL
-        uses: manyuanrong/setup-oss@v2.0.0
+        uses: manyuanrong/setup-ossutil@master
         with:
-          key-id: ${{ secrets.OSS_ACCESS_KEY_ID }}
-          key-secret: ${{ secrets.OSS_ACCESS_KEY_SECRET }}
-          bucket: ${{ secrets.OSS_BUCKET }}
           endpoint: ${{ secrets.OSS_ENDPOINT }}
+          access-key-id: ${{ secrets.OSS_ACCESS_KEY_ID }}
+          access-key-secret: ${{ secrets.OSS_ACCESS_KEY_SECRET }}
 
       - name: Upload Artifacts to Aliyun OSS
         run: ossutil cp -r oss-dist/ oss://${{ secrets.OSS_BUCKET }}/downloads/
