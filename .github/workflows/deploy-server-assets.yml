@@ -1,4 +1,4 @@
-name: Deploy Server Assets to BT Server
+name: Deploy Server Assets to Aliyun OSS
 
 on:
   push:
@@ -14,13 +14,13 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Deploy to Baota Server via Rsync
-        uses: easingthemes/ssh-deploy@main
+      - name: Upload Server Assets to Aliyun OSS
+        uses: aliyun/oss-action@v1.0.2
         with:
-          SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_KEY }}
-          REMOTE_HOST: ${{ secrets.SERVER_HOST }}
-          REMOTE_USER: ${{ secrets.SERVER_USER }}
-          REMOTE_PORT: ${{ secrets.SERVER_PORT || 22 }}
-          SOURCE: "server-assets/"
-          TARGET: ${{ secrets.SERVER_TARGET_DIR }}
-          ARGS: "-rlgoDzvO" # 仅复制目录下的内容，不带 server-assets 文件夹本身
+          key-id: ${{ secrets.OSS_ACCESS_KEY_ID }}
+          key-secret: ${{ secrets.OSS_ACCESS_KEY_SECRET }}
+          bucket: ${{ secrets.OSS_BUCKET }}
+          endpoint: ${{ secrets.OSS_ENDPOINT }}
+          assets-dir: server-assets/
+          target-dir: heyclaw/server-assets/
+
