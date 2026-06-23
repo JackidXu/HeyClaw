@@ -182,6 +182,17 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Configure SSH KeepAlive
+        run: |
+          mkdir -p ~/.ssh
+          cat <<EOF >> ~/.ssh/config
+          Host *
+            ServerAliveInterval 15
+            ServerAliveCountMax 3
+            ConnectTimeout 30
+          EOF
+          chmod 600 ~/.ssh/config
+
       - name: Download All Artifacts
         uses: actions/download-artifact@v4
         with:
@@ -189,38 +200,70 @@ jobs:
 
       - name: Flatten Dist Directory & Generate version.json
         run: |
-          mkdir -p final-dist
-          # 复制所有的 dmg 和 exe 到 final-dist 目录
-          find dist-files/ -type f -name "*.dmg" -exec cp {} final-dist/ \;
-          find dist-files/ -type f -name "*.exe" -exec cp {} final-dist/ \;
+          # 创建准备 OSS 上传和大文件寻找的临时目录
+          mkdir -p oss-dist
+          find dist-files/ -type f -name "*.dmg" -exec cp {} oss-dist/ \;
+          find dist-files/ -type f -name "*.exe" -exec cp {} oss-dist/ \;
           
           # 提取当前 tag 的版本号
           TAG_NAME=${GITHUB_REF#refs/tags/}
           
           # 寻找对应的包文件名
-          WIN_FILE=$(cd final-dist && ls *.exe | head -n 1)
-          MAC_ARM64_FILE=$(cd final-dist && ls *arm64.dmg | head -n 1)
-          MAC_X64_FILE=$(cd final-dist && ls *x64.dmg | head -n 1)
+          WIN_FILE=$(cd oss-dist && ls *.exe | head -n 1)
+          MAC_ARM64_FILE=$(cd oss-dist && ls *arm64.dmg | head -n 1)
+          MAC_X64_FILE=$(cd oss-dist && ls *x64.dmg | head -n 1)
+          
+          # 从 Secrets 读取 CDN 前缀
+          CDN_PREFIX="${{ secrets.CDN_URL_PREFIX }}"
+          
+          # 如果配置了 CDN 前缀，就使用绝对链接；否则回退为相对路径文件名
+          if [ -n "$CDN_PREFIX" ]; then
+            # 去除末尾斜杠
+            CDN_PREFIX="${CDN_PREFIX%/}"
+            # 假定文件在 OSS 存储桶中的目录是 downloads/
+            WIN_URL="${CDN_PREFIX}/downloads/${WIN_FILE}"
+            MAC_ARM64_URL="${CDN_PREFIX}/downloads/${MAC_ARM64_FILE}"
+            MAC_X64_URL="${CDN_PREFIX}/downloads/${MAC_X64_FILE}"
+          else
+            WIN_URL="${WIN_FILE}"
+            MAC_ARM64_URL="${MAC_ARM64_FILE}"
+            MAC_X64_URL="${MAC_X64_FILE}"
+          fi
+          
+          # 创建用于同步到宝塔的目录
+          mkdir -p bt-dist
           
           # 写入 version.json
-          cat <<EOF > final-dist/version.json
+          cat <<EOF > bt-dist/version.json
           {
             "version": "${TAG_NAME}",
             "date": "$(date +'%Y-%m-%d')",
             "files": {
-              "windows": "${WIN_FILE}",
-              "mac_x64": "${MAC_X64_FILE}",
-              "mac_arm64": "${MAC_ARM64_FILE}"
+              "windows": "${WIN_URL}",
+              "mac_x64": "${MAC_X64_URL}",
+              "mac_arm64": "${MAC_ARM64_URL}"
             }
           }
           EOF
           
-          # 复制下载页 index.html 到 final-dist 目录
-          cp download-page/index.html final-dist/index.html
+          # 复制下载页 index.html 到 bt-dist 目录
+          cp download-page/index.html bt-dist/index.html
           
-          # 打印 final-dist 目录下的内容进行验证
-          echo "=== Files to deploy ==="
-          ls -la final-dist/
+          # 打印 bt-dist 和 oss-dist 目录下的内容进行验证
+          echo "=== Files to deploy to Baota (bt-dist) ==="
+          ls -la bt-dist/
+          echo "=== Files to upload to OSS (oss-dist) ==="
+          ls -la oss-dist/
+
+      - name: Upload Artifacts to Aliyun OSS
+        uses: aliyun/oss-action@v1.0.2
+        with:
+          key-id: ${{ secrets.OSS_ACCESS_KEY_ID }}
+          key-secret: ${{ secrets.OSS_ACCESS_KEY_SECRET }}
+          bucket: ${{ secrets.OSS_BUCKET }}
+          endpoint: ${{ secrets.OSS_ENDPOINT }}
+          assets-dir: oss-dist/
+          target-dir: downloads/
 
       - name: Deploy to Baota Server via Rsync
         uses: easingthemes/ssh-deploy@main
@@ -229,6 +272,6 @@ jobs:
           REMOTE_HOST: ${{ secrets.SERVER_HOST }}
           REMOTE_USER: ${{ secrets.SERVER_USER }}
           REMOTE_PORT: ${{ secrets.SERVER_PORT || 22 }}
-          SOURCE: "final-dist/"
+          SOURCE: "bt-dist/"
           TARGET: ${{ secrets.SERVER_DOWNLOAD_DIR }}
           ARGS: "-rlgoDzvO"

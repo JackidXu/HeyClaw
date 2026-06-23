@@ -569,9 +569,12 @@
       const options = [];
       
       if (data.files && data.files.windows) {
+        const fileUrl = data.files.windows.startsWith("http://") || data.files.windows.startsWith("https://")
+          ? data.files.windows
+          : `./${data.files.windows}`;
         options.push({
           key: "windows",
-          href: `./${data.files.windows}`,
+          href: fileUrl,
           title: "下载 Windows 客户端",
           desc: "适用于 Windows 10 / 11 系统的 x64 架构",
           icon: SVG_ICONS.windows,
@@ -580,9 +583,12 @@
       }
       
       if (data.files && data.files.mac_arm64) {
+        const fileUrl = data.files.mac_arm64.startsWith("http://") || data.files.mac_arm64.startsWith("https://")
+          ? data.files.mac_arm64
+          : `./${data.files.mac_arm64}`;
         options.push({
           key: "mac_arm64",
-          href: `./${data.files.mac_arm64}`,
+          href: fileUrl,
           title: "下载 macOS 客户端 (Apple 芯片)",
           desc: "适用于 M1 / M2 / M3 等 Apple Silicon 芯片的 Mac",
           icon: SVG_ICONS.macos,
@@ -591,9 +597,12 @@
       }
       
       if (data.files && data.files.mac_x64) {
+        const fileUrl = data.files.mac_x64.startsWith("http://") || data.files.mac_x64.startsWith("https://")
+          ? data.files.mac_x64
+          : `./${data.files.mac_x64}`;
         options.push({
           key: "mac_x64",
-          href: `./${data.files.mac_x64}`,
+          href: fileUrl,
           title: "下载 macOS 客户端 (Intel 芯片)",
           desc: "适用于 Intel 处理器架构的 Mac",
           icon: SVG_ICONS.macos,
