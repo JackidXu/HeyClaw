@@ -22,12 +22,15 @@ class QuickActionService {
     }
 
     try {
-      const response = await fetch(getQuickActionsUrl());
+      const response = await window.electron.api.fetch({
+        url: getQuickActionsUrl(),
+        method: 'GET',
+        headers: {},
+      });
       if (!response.ok) {
-        throw new Error(`Failed to load quick actions config: ${response.status}`);
+        throw new Error(`Failed to load quick actions config: ${response.statusText}`);
       }
-      const data = await response.json();
-      this.config = data as QuickActionsConfig;
+      this.config = response.data as QuickActionsConfig;
       return this.config;
     } catch (error) {
       console.error('Failed to load quick actions config:', error);
@@ -45,12 +48,15 @@ class QuickActionService {
     }
 
     try {
-      const response = await fetch(getQuickActionsI18nUrl());
+      const response = await window.electron.api.fetch({
+        url: getQuickActionsI18nUrl(),
+        method: 'GET',
+        headers: {},
+      });
       if (!response.ok) {
-        throw new Error(`Failed to load quick actions i18n: ${response.status}`);
+        throw new Error(`Failed to load quick actions i18n: ${response.statusText}`);
       }
-      const data = await response.json();
-      this.i18nData = data as QuickActionsI18n;
+      this.i18nData = response.data as QuickActionsI18n;
       return this.i18nData;
     } catch (error) {
       console.error('Failed to load quick actions i18n:', error);
@@ -82,6 +88,7 @@ class QuickActionService {
             description: promptI18n?.description,
             prompt: promptI18n?.prompt || '',
             tags: promptI18n?.tags,
+            icon: prompt.icon,
           };
         }),
       };

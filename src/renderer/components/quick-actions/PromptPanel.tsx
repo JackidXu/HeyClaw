@@ -55,6 +55,11 @@ const PromptPanel: React.FC<PromptPanelProps> = ({ action, onPromptSelect }) => 
                 }
               `}
             >
+              {/* 图标 */}
+              {prompt.icon && (
+                <span className="text-lg leading-none mb-0.5">{prompt.icon}</span>
+              )}
+
               {/* 标题 */}
               <div className="flex items-center justify-between w-full">
                 <span className={`text-sm font-medium ${isPromptSelected ? 'text-primary' : 'text-foreground'}`}>

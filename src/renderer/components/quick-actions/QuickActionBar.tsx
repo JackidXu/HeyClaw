@@ -42,9 +42,11 @@ const QuickActionBar: React.FC<QuickActionBarProps> = ({ actions, onActionSelect
             onClick={() => onActionSelect(action.id)}
             className="flex items-center gap-1.5 rounded-lg border border-border-subtle bg-surface px-3 py-1.5 text-[13px] font-normal leading-5 text-secondary transition-all duration-200 ease-out hover:bg-surface-raised hover:border-primary/30 hover:text-foreground"
           >
-            {IconComponent && (
+            {IconComponent ? (
               <IconComponent className="h-3.5 w-3.5 text-secondary" />
-            )}
+            ) : action.icon ? (
+              <span className="text-sm leading-none">{action.icon}</span>
+            ) : null}
             <span>{action.label}</span>
           </button>
         );

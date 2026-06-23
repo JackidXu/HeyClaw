@@ -3,50 +3,50 @@
   "actions": [
     {
       "id": "ai-search",
-      "icon": "MagnifyingGlassIcon",
+      "icon": "🔍",
       "color": "#3B82F6",
       "skillMapping": "web-search",
       "prompts": [
-        { "id": "geo-content-optimization" },
-        { "id": "long-tail-keyword-strategy" },
-        { "id": "ai-search-ranking-analysis" },
-        { "id": "competitor-geo-benchmarking" }
+        { "id": "geo-content-optimization", "icon": "📝" },
+        { "id": "long-tail-keyword-strategy", "icon": "🎯" },
+        { "id": "ai-search-ranking-analysis", "icon": "📊" },
+        { "id": "competitor-geo-benchmarking", "icon": "🔄" }
       ]
     },
     {
       "id": "video-image",
-      "icon": "DevicePhoneMobileIcon",
+      "icon": "📱",
       "color": "#8B5CF6",
       "skillMapping": "web-search",
       "prompts": [
-        { "id": "short-video-script-creation" },
-        { "id": "graphic-content-creation" },
-        { "id": "viral-topic-planning" },
-        { "id": "content-data-diagnosis" }
+        { "id": "short-video-script-creation", "icon": "🎬" },
+        { "id": "graphic-content-creation", "icon": "📸" },
+        { "id": "viral-topic-planning", "icon": "🎯" },
+        { "id": "content-data-diagnosis", "icon": "📊" }
       ]
     },
     {
       "id": "boss-ip",
-      "icon": "UserIcon",
+      "icon": "👔",
       "color": "#F59E0B",
       "skillMapping": "web-search",
       "prompts": [
-        { "id": "ip-persona-positioning" },
-        { "id": "90-day-content-calendar" },
-        { "id": "customer-acquisition-copywriting" },
-        { "id": "ip-visual-system-setup" }
+        { "id": "ip-persona-positioning", "icon": "🎯" },
+        { "id": "90-day-content-calendar", "icon": "📅" },
+        { "id": "customer-acquisition-copywriting", "icon": "📣" },
+        { "id": "ip-visual-system-setup", "icon": "🖼️" }
       ]
     },
     {
       "id": "private-domain",
-      "icon": "ArrowPathIcon",
+      "icon": "🔄",
       "color": "#10B981",
       "skillMapping": "web-search",
       "prompts": [
-        { "id": "community-ops-sop" },
-        { "id": "moments-content-matrix" },
-        { "id": "1v1-conversion-playbook" },
-        { "id": "private-domain-data-dashboard" }
+        { "id": "community-ops-sop", "icon": "👥" },
+        { "id": "moments-content-matrix", "icon": "📧" },
+        { "id": "1v1-conversion-playbook", "icon": "💬" },
+        { "id": "private-domain-data-dashboard", "icon": "📊" }
       ]
     }
   ]

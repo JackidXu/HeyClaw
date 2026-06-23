@@ -9,6 +9,8 @@
 export interface Prompt {
   /** 唯一标识 */
   id: string;
+  /** 图标（如 emoji） */
+  icon?: string;
 }
 
 /**
@@ -25,6 +27,8 @@ export interface LocalizedPrompt {
   prompt: string;
   /** 关联技能标签 */
   tags?: string[];
+  /** 图标（如 emoji） */
+  icon?: string;
 }
 
 /**
