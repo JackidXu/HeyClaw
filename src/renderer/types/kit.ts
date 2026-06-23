@@ -26,4 +26,9 @@ export interface MarketplaceKit {
   category?: string;
 }
 
+export interface KitCategory {
+  id: string;
+  name: LocalizedText;
+}
+
 export type InstalledKit = InstalledKitRecord;

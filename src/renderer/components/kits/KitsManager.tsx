@@ -6,7 +6,7 @@ import { i18nService } from '../../services/i18n';
 import { kitService } from '../../services/kit';
 import { compareVersions, resolveLocalizedText } from '../../services/skill';
 import { setInstalledKits as setInstalledKitsAction, setMarketplaceKits } from '../../store/slices/kitSlice';
-import type { InstalledKit, KitSkillRef, MarketplaceKit } from '../../types/kit';
+import type { InstalledKit, KitCategory, KitSkillRef, MarketplaceKit } from '../../types/kit';
 import Modal from '../common/Modal';
 import SearchIcon from '../icons/SearchIcon';
 import KitIcon from './KitIcon';
@@ -148,7 +148,8 @@ const KitsManager: React.FC<KitsManagerProps> = ({ onTryAsking }) => {
   const [installedKits, setInstalledKits] = useState<Record<string, InstalledKit>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<'market' | 'marketing' | 'image'>('market');
+  const [activeTab, setActiveTab] = useState<string>('market');
+  const [categories, setCategories] = useState<KitCategory[]>([]);
   const [selectedKit, setSelectedKit] = useState<MarketplaceKit | null>(null);
   const [operatingKitId, setOperatingKitId] = useState<string | null>(null);
   const [operationType, setOperationType] = useState<KitOperationType | null>(null);
@@ -157,12 +158,22 @@ const KitsManager: React.FC<KitsManagerProps> = ({ onTryAsking }) => {
 
   const loadData = useCallback(async () => {
     setIsLoading(true);
-    const [marketKits, installed] = await Promise.all([
+    const [marketKits, installed, marketCategories] = await Promise.all([
       kitService.fetchMarketplaceKits(),
       kitService.getInstalledKits(),
+      kitService.fetchMarketplaceCategories(),
     ]);
     setKits(marketKits);
     setInstalledKits(installed);
+    setCategories(marketCategories);
+
+    if (marketCategories.length > 0) {
+      setActiveTab((prev) => {
+        const exists = marketCategories.some((cat) => cat.id === prev);
+        return exists ? prev : marketCategories[0].id;
+      });
+    }
+
     dispatch(setMarketplaceKits(marketKits));
     dispatch(setInstalledKitsAction(installed));
     setIsLoading(false);
@@ -175,8 +186,9 @@ const KitsManager: React.FC<KitsManagerProps> = ({ onTryAsking }) => {
   const filteredKits = useMemo(() => {
     let results = kits;
     // Tab filtering
-    if (activeTab === 'market') {
-      results = results.filter((kit) => !kit.category || kit.category === 'market');
+    const firstCategoryId = categories[0]?.id;
+    if (activeTab === firstCategoryId) {
+      results = results.filter((kit) => !kit.category || kit.category === activeTab);
     } else {
       results = results.filter((kit) => kit.category === activeTab);
     }
@@ -190,7 +202,7 @@ const KitsManager: React.FC<KitsManagerProps> = ({ onTryAsking }) => {
       });
     }
     return results;
-  }, [kits, activeTab, searchQuery]);
+  }, [kits, activeTab, categories, searchQuery]);
 
   const handleInstall = async (kit: MarketplaceKit) => {
     setOperatingKitId(kit.id);
@@ -506,42 +518,21 @@ const KitsManager: React.FC<KitsManagerProps> = ({ onTryAsking }) => {
 
         {/* Market section */}
         <div className="flex items-center gap-6 border-b border-border">
-          <button
-            type="button"
-            onClick={() => setActiveTab('market')}
-            className={`relative px-2.5 pb-2.5 pt-0.5 text-[13px] font-semibold transition-colors focus:outline-none ${
-              activeTab === 'market' ? 'text-foreground font-semibold' : 'text-secondary hover:text-foreground'
-            }`}
-          >
-            {i18nService.t('kitMarketplace')}
-            {activeTab === 'market' && (
-              <div className="absolute bottom-[-1px] left-0 right-0 h-0.5 rounded-full bg-primary" />
-            )}
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('marketing')}
-            className={`relative px-2.5 pb-2.5 pt-0.5 text-[13px] font-semibold transition-colors focus:outline-none ${
-              activeTab === 'marketing' ? 'text-foreground font-semibold' : 'text-secondary hover:text-foreground'
-            }`}
-          >
-            {i18nService.t('kitIPMarketing')}
-            {activeTab === 'marketing' && (
-              <div className="absolute bottom-[-1px] left-0 right-0 h-0.5 rounded-full bg-primary" />
-            )}
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('image')}
-            className={`relative px-2.5 pb-2.5 pt-0.5 text-[13px] font-semibold transition-colors focus:outline-none ${
-              activeTab === 'image' ? 'text-foreground font-semibold' : 'text-secondary hover:text-foreground'
-            }`}
-          >
-            {i18nService.t('kitImageProduction')}
-            {activeTab === 'image' && (
-              <div className="absolute bottom-[-1px] left-0 right-0 h-0.5 rounded-full bg-primary" />
-            )}
-          </button>
+          {categories.map((cat) => (
+            <button
+              key={cat.id}
+              type="button"
+              onClick={() => setActiveTab(cat.id)}
+              className={`relative px-2.5 pb-2.5 pt-0.5 text-[13px] font-semibold transition-colors focus:outline-none ${
+                activeTab === cat.id ? 'text-foreground font-semibold' : 'text-secondary hover:text-foreground'
+              }`}
+            >
+              {resolveLocalizedText(cat.name)}
+              {activeTab === cat.id && (
+                <div className="absolute bottom-[-1px] left-0 right-0 h-0.5 rounded-full bg-primary" />
+              )}
+            </button>
+          ))}
         </div>
       </div>
 

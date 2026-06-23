@@ -1,28 +1,42 @@
-import type { InstalledKit, MarketplaceKit } from '../types/kit';
+import type { InstalledKit, KitCategory, MarketplaceKit } from '../types/kit';
 
 class KitService {
   private marketplaceCache: MarketplaceKit[] | null = null;
-  private fetchPromise: Promise<MarketplaceKit[]> | null = null;
+  private categoriesCache: KitCategory[] | null = null;
+  private fetchPromise: Promise<{ kits: MarketplaceKit[]; categories: KitCategory[] }> | null = null;
 
   async fetchMarketplaceKits(): Promise<MarketplaceKit[]> {
     if (this.marketplaceCache) {
       return this.marketplaceCache;
     }
-    if (this.fetchPromise) {
-      return this.fetchPromise;
-    }
-    this.fetchPromise = this.loadMarketplaceKits();
-    const result = await this.fetchPromise;
-    this.fetchPromise = null;
-    return result;
+    await this.fetchStoreData();
+    return this.marketplaceCache ?? [];
   }
 
-  private async loadMarketplaceKits(): Promise<MarketplaceKit[]> {
+  async fetchMarketplaceCategories(): Promise<KitCategory[]> {
+    if (this.categoriesCache) {
+      return this.categoriesCache;
+    }
+    await this.fetchStoreData();
+    return this.categoriesCache ?? [];
+  }
+
+  private async fetchStoreData(): Promise<void> {
+    if (this.fetchPromise) {
+      await this.fetchPromise;
+      return;
+    }
+    this.fetchPromise = this.loadMarketplaceData();
+    await this.fetchPromise;
+    this.fetchPromise = null;
+  }
+
+  private async loadMarketplaceData(): Promise<{ kits: MarketplaceKit[]; categories: KitCategory[] }> {
     try {
       const result = await window.electron.kits.fetchStore();
       if (!result.success || !result.data) {
         console.warn('[KitService] Failed to fetch kit store:', result.error);
-        return [];
+        return { kits: [], categories: [] };
       }
 
       const parsed = JSON.parse(result.data);
@@ -30,15 +44,17 @@ class KitService {
       const value = parsed?.data?.value;
       if (!value) {
         console.warn('[KitService] Unexpected kit store response structure');
-        return [];
+        return { kits: [], categories: [] };
       }
 
       const kits: MarketplaceKit[] = value.kits ?? [];
+      const categories: KitCategory[] = value.categories ?? [];
       this.marketplaceCache = kits;
-      return kits;
+      this.categoriesCache = categories;
+      return { kits, categories };
     } catch (error) {
       console.error('[KitService] Error loading marketplace kits:', error);
-      return [];
+      return { kits: [], categories: [] };
     }
   }
 

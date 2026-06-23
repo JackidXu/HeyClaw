@@ -2,6 +2,29 @@
   "data": {
     "value": {
       "version": 1,
+      "categories": [
+        {
+          "id": "market",
+          "name": {
+            "zh": "市场",
+            "en": "Market"
+          }
+        },
+        {
+          "id": "marketing",
+          "name": {
+            "zh": "IP营销",
+            "en": "IP Marketing"
+          }
+        },
+        {
+          "id": "image",
+          "name": {
+            "zh": "图片制作",
+            "en": "Image Production"
+          }
+        }
+      ],
       "kits": [
         {
           "skills": {
