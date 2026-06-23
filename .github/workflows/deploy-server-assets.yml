@@ -15,13 +15,14 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Upload Server Assets to Aliyun OSS
-        uses: aliyun/oss-action@v1.0.2
+      - name: Setup OSSUTIL
+        uses: manyuanrong/setup-oss@v2.0.0
         with:
           key-id: ${{ secrets.OSS_ACCESS_KEY_ID }}
           key-secret: ${{ secrets.OSS_ACCESS_KEY_SECRET }}
           bucket: ${{ secrets.OSS_BUCKET }}
           endpoint: ${{ secrets.OSS_ENDPOINT }}
-          assets-dir: server-assets/
-          target-dir: heyclaw/server-assets/
+
+      - name: Upload Server Assets to Aliyun OSS
+        run: ossutil cp -r server-assets/ oss://${{ secrets.OSS_BUCKET }}/heyclaw/server-assets/
 
