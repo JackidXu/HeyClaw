@@ -824,6 +824,7 @@ const Settings: React.FC<SettingsProps> = ({
   const [testMode, setTestMode] = useState(false);
   const [logoClickCount, setLogoClickCount] = useState(0);
   const [testModeUnlocked, setTestModeUnlocked] = useState(false);
+  const [showThirdPartyLicense, setShowThirdPartyLicense] = useState(false);
   const [updateCheckStatus, setUpdateCheckStatus] = useState<'idle' | 'checking' | 'upToDate' | 'error' | 'downloading' | 'ready'>('idle');
   const [appUpdateState, setAppUpdateState] = useState<AppUpdateRuntimeState | null>(null);
 
@@ -4124,9 +4125,16 @@ const Settings: React.FC<SettingsProps> = ({
               <p className="mt-5 text-center text-xs text-secondary">
                 {i18nService.t('copyrightHolder')}
               </p>
-              <p className="mt-1 text-center text-xs text-secondary">
-                Copyright &copy; {new Date().getFullYear()} NetEase Youdao. All Rights Reserved.
+              <p className="mt-1 text-center text-[10px] text-secondary opacity-60">
+                Copyright &copy; {new Date().getFullYear()} HeyClaw. All Rights Reserved.
               </p>
+              <button
+                type="button"
+                onClick={() => setShowThirdPartyLicense(true)}
+                className="mt-3 text-[10px] text-secondary/40 hover:text-primary transition-colors bg-transparent border-none cursor-pointer"
+              >
+                {i18nService.t('aboutThirdPartyLicenses')}
+              </button>
             </div>
           </div>
         );
@@ -4441,9 +4449,79 @@ const Settings: React.FC<SettingsProps> = ({
             </div>
           )}
 
+          {showThirdPartyLicense && (
+            <Modal
+              onClose={() => setShowThirdPartyLicense(false)}
+              overlayClassName="fixed inset-0 z-[9999] modal-backdrop flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+              className="w-full max-w-lg rounded-2xl border border-border bg-surface shadow-modal overflow-hidden modal-content"
+            >
+              <div className="px-6 py-5 flex flex-col h-[70vh] max-h-[500px]">
+                <div className="flex justify-between items-center pb-3 border-b border-border shrink-0">
+                  <h3 className="text-sm font-semibold text-foreground">
+                    {i18nService.t('aboutThirdPartyLicenses')}
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => setShowThirdPartyLicense(false)}
+                    className="text-secondary hover:text-foreground p-1 hover:bg-surface-raised rounded-lg transition-colors"
+                  >
+                    <XMarkIcon className="h-4 w-4" />
+                  </button>
+                </div>
+                <div className="flex-1 overflow-y-auto pt-4 text-xs text-secondary font-mono leading-relaxed space-y-4 [scrollbar-gutter:stable]">
+                  <p className="font-sans font-medium text-foreground text-[13px]">
+                    本软件客户端基于开源项目 LobsterAI (MIT License) 二次开发构建。
+                  </p>
+                  <p className="font-sans">
+                    开源仓库：
+                    <a
+                      href="https://github.com/netease-youdao/LobsterAI"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline ml-1"
+                    >
+                      https://github.com/netease-youdao/LobsterAI
+                    </a>
+                  </p>
+                  <div className="border-t border-border/40 pt-3">
+                    <div className="text-foreground font-semibold mb-1 text-[13px]">Copyright (c) 2026 NetEase Youdao</div>
+                    <pre className="whitespace-pre-wrap bg-surface-raised p-3 rounded-lg text-[10px] text-secondary font-mono leading-normal border border-border/30 max-h-[220px] overflow-y-auto select-text">
+                      {MIT_LICENSE_TEXT}
+                    </pre>
+                  </div>
+                  <p className="font-sans text-[10px] text-secondary/60">
+                    完整许可文件已包含于软件安装根目录下的 resources/LICENSE-upstream.txt 文件中。
+                  </p>
+                </div>
+              </div>
+            </Modal>
+          )}
+
       </div>
     </Modal>
   );
 };
+
+const MIT_LICENSE_TEXT = `MIT License
+
+Copyright (c) 2026 NetEase Youdao
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.`;
 
 export default Settings;
