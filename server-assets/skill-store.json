@@ -1,0 +1,1481 @@
+{
+  "data": {
+    "value": {
+      "localSkill": [
+        {
+          "name": "canvas-design",
+          "description": {
+            "en": "Create beautiful visual art in .png and .pdf documents using design philosophy. You should use this skill when the user asks to create a poster, piece of art, design, or other static piece. Create original visual designs, never copying existing artists' work to avoid copyright violations.",
+            "zh": "使用设计哲学在 .png 和 .pdf 文档中创建精美的视觉艺术。当用户要求创建海报、艺术作品、设计或其他静态作品时使用此技能。创建原创视觉设计，绝不抄袭现有艺术家的作品以避免版权侵权。"
+          },
+          "id": "canvas-design",
+          "version": "1.0.0"
+        },
+        {
+          "name": "create-plan",
+          "description": {
+            "en": "Create a concise plan. Use when a user explicitly asks for a plan related to a coding task.",
+            "zh": "创建简洁的计划。当用户明确要求制定与编码任务相关的计划时使用。"
+          },
+          "id": "create-plan",
+          "version": "1.0.0"
+        },
+        {
+          "name": "develop-web-game",
+          "description": {
+            "en": "Use when Codex is building or iterating on a web game (HTML/JS) and needs a reliable development + testing loop: implement small changes, run a Playwright-based test script with short input bursts and intentional pauses, inspect screenshots/text, and review console errors with render_game_to_text.",
+            "zh": "当 Codex 构建或迭代网页游戏（HTML/JS）并需要可靠的开发+测试循环时使用：实现小的更改，运行基于 Playwright 的测试脚本，进行短输入脉冲和有意的暂停，检查截图/文本，并使用 render_game_to_text 查看控制台错误。"
+          },
+          "id": "develop-web-game",
+          "version": ""
+        },
+        {
+          "name": "docx",
+          "description": {
+            "en": "Comprehensive document creation, editing, and analysis with support for tracked changes, comments, formatting preservation, and text extraction. When Claude needs to work with professional documents (.docx files) for: (1) Creating new documents, (2) Modifying or editing content, (3) Working with tracked changes, (4) Adding comments, or any other document tasks",
+            "zh": "全面的文档创建、编辑和分析工具，支持修订跟踪、批注、格式保留和文本提取。当 Claude 需要处理专业文档（.docx 文件）时用于：（1）创建新文档，（2）修改或编辑内容，（3）处理修订跟踪，（4）添加批注，或任何其他文档任务"
+          },
+          "id": "docx",
+          "version": "1.0.0"
+        },
+        {
+          "name": "films-search",
+          "description": {
+            "en": "Search cloud drives for downloadable film and TV resources (movies, TV series, anime). Use this skill when the user wants to download a specific movie or TV show. Do NOT use for general movie information, schedules, reviews, or recommendations.",
+            "zh": "搜索网盘中的可下载影视资源（电影、电视剧、动漫）。当用户想要下载特定电影或电视节目时使用此技能。不用于一般的电影信息、排期、评论或推荐。"
+          },
+          "id": "films-search",
+          "version": "1.0.2"
+        },
+        {
+          "name": "frontend-design",
+          "description": {
+            "en": "Create distinctive, production-grade frontend interfaces with high design quality. Use this skill when the user asks to build web components, pages, artifacts, posters, or applications (examples include websites, landing页, dashboards, React components, HTML/CSS layouts, or when styling/beautifying any web UI). Generates creative, polished code and UI design that avoids generic AI aesthetics.",
+            "zh": "创建独特、生产级的前端界面，具有高品质设计。当用户要求构建网页组件、页面、作品、海报或应用程序时使用此技能（示例包括网站、落地页、仪表板、React 组件、HTML/CSS 布局，或为任何网页 UI 进行样式美化/美化）。生成富有创意、精致的代码和 UI 设计，避免通用 AI 美学。"
+          },
+          "id": "frontend-design",
+          "version": "1.0.0"
+        },
+        {
+          "name": "imap-smtp-email",
+          "description": {
+            "en": "Read and send email via IMAP/SMTP. Check for new/unread messages, fetch content, search mailboxes, mark as read/unread, and send emails with attachments. Works with any IMAP/SMTP server including Gmail, Outlook, 163.com, vip.163.com, 126.com, vip.126.com, 188.com, and vip.188.com.",
+            "zh": "通过 IMAP/SMTP 收发邮件。检查新邮件/未读邮件、获取内容、搜索邮箱、标记已读/未读，并发送带附件的邮件。适用于任何 IMAP/SMTP 服务器，包括 Gmail、Outlook、163.com、vip.163.com、126.com、vip.126.com、188.com 和 vip.188.com。"
+          },
+          "id": "imap-smtp-email",
+          "version": "1.0.1"
+        },
+        {
+          "name": "local-tools",
+          "description": {
+            "en": "Access local system resources including Calendar on macOS and Windows. Use this skill when you need to manage user's schedule directly on their device.",
+            "zh": "访问本地系统资源，包括 macOS 和 Windows 上的日历。当您需要直接在用户设备上管理用户日程安排时使用此技能。"
+          },
+          "id": "local-tools",
+          "version": ""
+        },
+        {
+          "name": "music-search",
+          "description": {
+            "en": "Search cloud drives for downloadable music resources (songs, albums, lossless audio). Use this skill when the user wants to download a specific song or album. Do NOT use for general music information, lyrics, or recommendations.",
+            "zh": "搜索网盘中的可下载音乐资源（歌曲、专辑、无损音频）。当用户想要下载特定歌曲或专辑时使用此技能。不用于一般的音乐信息、歌词或推荐。"
+          },
+          "id": "music-search",
+          "version": "1.0.2"
+        },
+        {
+          "name": "pdf",
+          "description": {
+            "en": "Comprehensive PDF manipulation toolkit for extracting text and tables, creating new PDFs, merging/splitting documents, and handling forms. When Claude needs to fill in a PDF form or programmatically process, generate, or analyze PDF documents at scale.",
+            "zh": "全面的 PDF 操作工具包，用于提取文本和表格、创建新 PDF、合并/拆分文档和处理表单。当 Claude 需要填写 PDF 表单或以编程方式大规模处理、生成或分析 PDF 文档时使用。"
+          },
+          "id": "pdf",
+          "version": "1.0.0"
+        },
+        {
+          "name": "playwright",
+          "description": {
+            "en": "Use when the task requires automating a real browser from the terminal (navigation, form filling, snapshots, screenshots, data extraction, UI-flow debugging) via `playwright-cli` or the bundled wrapper script.",
+            "zh": "当任务需要从终端自动化真实浏览器（导航、表单填写、快照、截图、数据提取、UI 流程调试）时使用，通过 `playwright-cli` 或捆绑的包装脚本执行。"
+          },
+          "id": "playwright",
+          "version": ""
+        },
+        {
+          "name": "pptx",
+          "description": {
+            "en": "Presentation creation, editing, and analysis. When Claude needs to work with presentations (.pptx files) for: (1) Creating new presentations, (2) Modifying or editing content, (3) Working with layouts, (4) Adding comments or speaker notes, or any other presentation tasks",
+            "zh": "演示文稿创建、编辑和分析。当 Claude 需要处理演示文稿（.pptx 文件）时用于：（1）创建新演示文稿，（2）修改或编辑内容，（3）处理布局，（4）添加批注或演讲者备注，或任何其他演示文稿任务"
+          },
+          "id": "pptx",
+          "version": "1.0.0"
+        },
+        {
+          "name": "remotion",
+          "description": {
+            "en": "Best practices for Remotion - Video creation in React",
+            "zh": "Remotion 最佳实践 - 在 React 中创建视频"
+          },
+          "id": "remotion",
+          "version": ""
+        },
+        {
+          "name": "scheduled-task",
+          "description": {
+            "en": "Create and manage scheduled tasks for recurring or one-time automated execution. Supports viewing, modifying, enabling/disabling, deleting, and creating scheduled tasks. Use this skill when users want to set up, modify, or manage tasks that execute automatically at specified intervals.",
+            "zh": "创建和管理定时任务，支持查看、修改、启用/禁用、删除及创建定时任务。当用户想设置、修改或管理定期自动执行的任务时使用。"
+          },
+          "id": "scheduled-task",
+          "version": ""
+        },
+        {
+          "name": "seedance",
+          "description": {
+            "en": "Generate AI videos using Volcengine Seedance model. Supports text-to-video (T2V), image-to-video (I2V), and audio-synced video generation. Use this skill when the user wants to create or generate videos.",
+            "zh": "使用火山引擎 Seedance 模型生成 AI 视频。支持文本生成视频（T2V）、图像生成视频（I2V）和音频同步视频生成。当用户想要创建或生成视频时使用此技能。"
+          },
+          "id": "seedance",
+          "version": "1.0.1"
+        },
+        {
+          "name": "seedream",
+          "description": {
+            "en": "Generate AI images using Volcengine Seedream model. Supports text-to-image (T2I), image editing (I2I), multi-image fusion, and web-search-based generation. Use this skill when the user wants to create, generate, or edit images.",
+            "zh": "使用火山引擎 Seedream 模型生成 AI 图像。支持文本生成图像（T2I）、图像编辑（I2I）、多图像融合和基于网络搜索的生成。当用户想要创建、生成或编辑图像时使用此技能。"
+          },
+          "id": "seedream",
+          "version": "1.0.1"
+        },
+        {
+          "name": "skill-creator",
+          "description": {
+            "en": "Create new skills, modify and improve existing skills, and measure skill performance. Use when users want to create a skill from scratch, update or optimize an existing skill, run evals to test a skill, benchmark skill performance with variance analysis, or optimize a skill's description for better triggering accuracy.",
+            "zh": "创建新技能、修改和改进现有技能，并衡量技能性能。当用户想要从零开始创建技能、更新或优化现有技能、运行评估测试技能、通过方差分析对技能性能进行基准测试，或优化技能描述以提高触发准确性时使用。"
+          },
+          "id": "skill-creator",
+          "version": "1.0.1"
+        },
+        {
+          "name": "technology-search",
+          "description": {
+            "en": "Search tech blogs, developer forums, and IT media (TechCrunch, Hacker News, 36氪, etc.) for software and hardware industry updates with heat ranking and EN↔CN translation. Use this skill only when the topic is clearly about programming, software, hardware, AI, or IT infrastructure.",
+            "zh": "搜索科技博客、开发者论坛和 IT 媒体（TechCrunch、Hacker News、36氪等）获取软件和硬件行业动态，支持热度排名和中英互译。仅当主题明确涉及编程、软件、硬件、AI 或 IT 基础设施时使用此技能。"
+          },
+          "id": "technology-search",
+          "version": "1.0.2"
+        },
+        {
+          "name": "skill-vetter",
+          "description": {
+            "en": "Security-first skill vetting for AI agents. Use before installing any skill from ClawdHub, GitHub, or other sources. Checks for red flags, permission scope, and suspicious patterns.",
+            "zh": "安全优先的 AI 代理技能审查工具。在安装来自 ClawdHub、GitHub 或其他来源的技能前使用，用于检查危险信号、权限范围和可疑模式。"
+          },
+          "id": "skill-vetter",
+          "version": "1.0.0"
+        },
+        {
+          "name": "weather",
+          "description": {
+            "en": "Get current weather and forecasts (no API key required).",
+            "zh": "获取当前天气和天气预报（无需 API 密钥）。"
+          },
+          "id": "weather",
+          "version": ""
+        },
+        {
+          "name": "web-search",
+          "description": {
+            "en": "Real-time web search using Playwright-controlled browser. Use this skill when you need current information, latest documentation, recent news, or any data beyond your knowledge cutoff (January 2025).",
+            "zh": "使用 Playwright 控制的浏览器进行实时网页搜索。当您需要获取当前信息、最新文档、近期新闻或任何超出知识截止日期（2025年1月）的数据时使用此技能。"
+          },
+          "id": "web-search",
+          "version": "1.0.1"
+        },
+        {
+          "name": "xlsx",
+          "description": {
+            "en": "Comprehensive spreadsheet creation, editing, and analysis with support for formulas, formatting, data analysis, and visualization. When Claude needs to work with spreadsheets (.xlsx, .xlsm, .csv, .tsv, etc) for: (1) Creating new spreadsheets with formulas and formatting, (2) Reading or analyzing data, (3) Modify existing spreadsheets while preserving formulas, (4) Data analysis and visualization in spreadsheets, or (5) Recalculating formulas",
+            "zh": "全面的电子表格创建、编辑和分析工具，支持公式、格式设置、数据分析和可视化。当 Claude 需要处理电子表格（.xlsx、.xlsm、.csv、.tsv 等）时用于：（1）使用公式和格式创建新电子表格，（2）读取或分析数据，（3）在保留公式的同时修改现有电子表格，（4）电子表格中的数据分析和可视化，或（5）重新计算公式"
+          },
+          "id": "xlsx",
+          "version": "1.0.0"
+        }
+      ],
+      "marketTags": [
+        {
+          "en": "Lifestyle",
+          "id": "lifestyle",
+          "zh": "生活"
+        },
+        {
+          "en": "Document",
+          "id": "document",
+          "zh": "文档"
+        },
+        {
+          "en": "Productivity",
+          "id": "utility",
+          "zh": "效率工具"
+        },
+        {
+          "en": "Image & Media",
+          "id": "media",
+          "zh": "图像与影音"
+        },
+        {
+          "en": "System",
+          "id": "system",
+          "zh": "系统"
+        },
+        {
+          "en": "Marketing",
+          "id": "marketing",
+          "zh": "营销"
+        },
+        {
+          "en": "Finance",
+          "id": "finance",
+          "zh": "金融"
+        },
+        {
+          "en": "Academic",
+          "id": "academic",
+          "zh": "学术"
+        },
+        {
+          "en": "Development",
+          "id": "development",
+          "zh": "开发"
+        }
+      ],
+      "marketplace": [
+        {
+          "name": "find-skills",
+          "description": {
+            "en": "Helps users discover and install agent skills when they ask questions like \"how do I do X\", \"find a skill for X\", \"is there a skill that can...\", or express interest in extending capabilities. This skill should be used when the user is looking for functionality that might exist as an installable skill.",
+            "zh": "当用户问\"我如何做X\"、\"找一个X的技能\"、\"有没有可以...的技能\"或表达扩展功能的兴趣时，帮助用户发现和安装智能体技能。当用户寻找可能作为可安装技能存在的功能时应使用此技能。"
+          },
+          "id": "find-skills",
+          "source": {
+            "author": "bytedance",
+            "from": "Github",
+            "url": "https://github.com/bytedance/deer-flow/tree/main/skills/public/find-skills"
+          },
+          "version": "1.0.1",
+          "url": "https://ydschool-video.nosdn.127.net/1774951463868find-skills.zip",
+          "tags": [
+            "utility"
+          ]
+        },
+        {
+          "name": "hr-recruitment",
+          "description": {
+            "en": "This skill is an intelligent recruitment efficiency tool designed specifically for HR to efficiently screen resumes in bulk. skill can automatically break down job descriptions (JDs), benchmark against industry recruitment trends, and generate hiring requirement documents. It deeply analyzes the actual output and matching degree of work experiences across various fields, accurately identifies the risks of inflated or falsified resumes, autonomously learns the genuine hiring preferences of the business based on interview results and feedback, continuously optimizes the talent-to-job matching standards, and comprehensively empowers and enhances the efficiency of the recruitment process.",
+            "zh": "该技能是专为HR打造、可高效批量筛选简历的智能招聘效率工具。skill可自动拆解岗位JD、对标行业招聘趋势并生成招聘需求文档。深度解析各领域岗位经历的真实产出与匹配度，精准识别简历注水与造假风险，基于面试结果及反馈自主学习业务真实用人偏好，持续优化人岗匹配标准，全方位为招聘工作提效赋能。"
+          },
+          "id": "hr-recruitment",
+          "source": {
+            "author": "",
+            "from": "youdao",
+            "url": "https://lobsterai.youdao.com"
+          },
+          "version": "1.0.0",
+          "url": "https://ydhardwarecommon.nosdn.127.net/307ea0972000df796712728021fb4733.zip",
+          "tags": [
+            "utility"
+          ]
+        },
+        {
+          "name": "clawhub",
+          "description": {
+            "en": "Use the ClawHub CLI to search, install, update, and publish agent skills from clawhub.com. Use when you need to fetch new skills on the fly, sync installed skills to latest or a specific version, or publish new/updated skill folders with the npm-installed clawhub CLI.",
+            "zh": "使用ClawHub CLI从clawhub.com搜索、安装、更新和发布智能体技能。用于即时获取新技能、将已安装技能同步到最新版本或特定版本，或使用npm安装的clawhub CLI发布新/更新的技能文件夹。"
+          },
+          "id": "clawhub",
+          "source": {
+            "author": "openclaw",
+            "from": "Github",
+            "url": "https://github.com/openclaw/openclaw/tree/main/skills/clawhub"
+          },
+          "version": "1.0.0",
+          "url": "https://ydschool-video.nosdn.127.net/1775027171883clawhub.zip",
+          "tags": [
+            "development"
+          ]
+        },
+        {
+          "name": "wecom-unified",
+          "description": {
+            "en": "WeCom CLI all-in-one suite covering 6 major business domains: contacts, messaging, documents (including docs, smart tables, and smart docs), calendar, meetings, and tasks. Supports finding contacts by name/alias, sending/receiving messages (text/image/file/voice/video), creating/reading/editing docs in Markdown format, managing smart table structures and records, creating smart docs and exporting to Markdown, creating/modifying/canceling calendar events and checking availability, booking/managing meetings, creating/tracking/assigning tasks. Trigger this skill even if user doesn't explicitly mention 'WeCom' when涉及 messaging/calendar/tasks scenarios.",
+            "zh": "企业微信 CLI 全能套件，覆盖通讯录、消息、文档（含文档/智能表格/智能文档（原名智能主页）三种品类）、日程、会议、待办 6 大业务域。支持按姓名/别名查找联系人、收发消息（文本/图片/文件/语音/视频）、以 Markdown 格式创建/读取/编辑文档、管理智能表格结构与记录、创建智能文档并导出智能文档内容为 Markdown、创建/修改/取消日程并查询闲忙、预约/管理会议、创建/跟踪/分派待办任务。即使用户未明确提到'企业微信'，只要涉及消息/日程/待办等场景也应触发本技能"
+          },
+          "id": "wecom-unified",
+          "source": {
+            "author": "WecomTeam",
+            "from": "Github",
+            "url": "https://github.com/WecomTeam/wecom-unified"
+          },
+          "version": "1.0.1",
+          "url": "https://ydhardwarecommon.nosdn.127.net/ea1c1dbddbd2e2224a34f998ff73f932.zip",
+          "tags": [
+            "utility"
+          ]
+        },
+        {
+          "name": "video-frames",
+          "description": {
+            "en": "Extract frames or short clips from videos using ffmpeg.",
+            "zh": "使用 ffmpeg 从视频中提取帧或短片段。"
+          },
+          "id": "video-frames",
+          "source": {
+            "author": "openclaw",
+            "from": "Github",
+            "url": "https://github.com/openclaw/openclaw/tree/main/skills/video-frames"
+          },
+          "version": "1.0.0",
+          "url": "https://ydschool-video.nosdn.127.net/1775027171974video-frames.zip",
+          "tags": [
+            "media"
+          ]
+        },
+        {
+          "name": "agent-browser",
+          "description": {
+            "en": "Browser automation CLI for AI agents. Use when the user needs to interact with websites, including navigating pages, filling forms, clicking buttons, taking screenshots, extracting data, testing web apps, or automating any browser task. Triggers include requests to \"open a website\", \"fill out a form\", \"click a button\", \"take a screenshot\", \"scrape data from a page\", \"test this web app\", \"login to a site\", \"automate browser actions\", or any task requiring programmatic web interaction.",
+            "zh": "浏览器自动化CLI用于AI智能体。当用户需要与网站交互时使用，包括页面导航、表单填写、按钮点击、截图、数据提取、测试网页应用或自动化任何浏览器任务。触发器包括请求\"打开网站\"、\"填写表单\"、\"点击按钮\"、\"截图\"、\"从页面抓取数据\"、\"测试此网页应用\"、\"登录网站\"、\"自动化浏览器操作\"或任何需要程序化网页交互的任务。"
+          },
+          "id": "agent-browser",
+          "source": {
+            "author": "vercel-labs",
+            "from": "Github",
+            "url": "https://github.com/vercel-labs/agent-browser/tree/main/skills/agent-browser"
+          },
+          "version": "1.0.0",
+          "url": "https://ydschool-video.nosdn.127.net/1775027171868agent-browser.zip",
+          "tags": [
+            "utility"
+          ]
+        },
+        {
+          "name": "scholarclaw",
+          "description": {
+            "en": "Academic paper search & analysis service. When users are involved in the following academic scenarios, this skill must be used instead of web-search: searching papers, finding ArXiv/PubMed/PapersWithCode papers, querying SOTA leaderboards and benchmark results, citation analysis, generating paper interpretation blogs, finding paper-related GitHub repositories, getting trending paper recommendations. Keywords: arxiv, paper, papers, academic, scholar, research, SOTA, benchmark, MMLU, citation, blog, PapersWithCode, HuggingFace.",
+            "zh": "学术论文搜索与分析服务 (Academic paper search & analysis)。当用户涉及以下学术场景时，必须使用本 skill 而非 web-search：搜索论文、查找 ArXiv/PubMed/PapersWithCode 论文、查询 SOTA 榜单与 benchmark 结果、引用分析、生成论文解读博客、查找论文相关 GitHub 仓库、获取热门论文推荐。Keywords: arxiv, paper, papers, academic, scholar, research, 论文, 学术, 搜索论文, 找论文, SOTA, benchmark, MMLU, citation, 引用, 博客, blog, PapersWithCode, HuggingFace."
+          },
+          "id": "scholarclaw",
+          "source": {
+            "author": "netease-youdao",
+            "from": "Github",
+            "url": "https://github.com/netease-youdao/ScholarClaw"
+          },
+          "version": "1.4.1",
+          "url": "https://ydschool-video.nosdn.127.net/1774448833803scholarclaw.zip",
+          "tags": [
+            "academic"
+          ]
+        },
+        {
+          "name": "youdaonote",
+          "description": {
+            "en": "Official Youdao Note skill supporting note CRUD (Create/Read/Update/Delete), todo management, web clipping, note search, folder management, and other basic operations. For building knowledge bases or Wiki, please use the youdaonote-llm-wiki skill instead of this one.",
+            "zh": "有道云笔记官方 skill，支持笔记 CRUD（创建/读取/更新/删除）、待办管理、网页剪藏、笔记搜索、文件夹管理等基础操作。如需构建知识库或 Wiki，请使用 youdaonote-llm-wiki skill 而非本 skill。"
+          },
+          "id": "youdaonote",
+          "source": {
+            "author": "netease-youdao",
+            "from": "youdaonote",
+            "url": "https://note.youdao.com/"
+          },
+          "version": "1.0.9",
+          "url": "https://ydschool-video.nosdn.127.net/1778470606968youdaonote.zip",
+          "tags": [
+            "document"
+          ]
+        },
+        {
+          "name": "youdao-baoku",
+          "description": {
+            "en": "Youdao Baoku is an online knowledge base management and AI content generation platform that provides the following capabilities through the baoku CLI: create, view, list, query, delete, and manage knowledge bases; upload, view, and delete documents and sources; generate PPTs/slides, podcast audio, mind maps/brain diagrams, infographics, and document translations; ask questions and query knowledge bases; configure and log in to accounts. Applicable scenarios include but are not limited to: checking how many knowledge bases I have, listing all knowledge bases, creating a PPT for me, summarizing an article, translating a file to English, asking what a document is about, and checking what's in the knowledge base. Prioritize using this skill when users mention '宝库' (Baoku), '有道宝库' (Youdao Baoku), '知识库' (knowledge base), 'baoku', or 'notebook'.",
+            "zh": "有道宝库（Youdao Baoku）是一个在线知识库管理与AI内容生成平台，通过 baoku CLI 提供以下能力：创建、查看、列出、查询、删除和管理知识库；上传、查看和删除文档与来源；生成PPT/幻灯片、播客音频、思维导图/脑图、信息图、文档翻译；对知识库进行问答和提问；配置和登录账号。适用场景包括但不限于：查看我有多少个知识库、列出所有知识库、帮我做个PPT、总结一下这篇文章、把文件翻译成英文、这个文档讲了什么、宝库里有什么。当用户提到「宝库」「有道宝库」「知识库」「baoku」或「notebook」时优先使用本skill。"
+          },
+          "id": "youdao-baoku",
+          "source": {
+            "author": "netease-youdao",
+            "from": "netease-youdao",
+            "url": "https://baoku.youdao.com/"
+          },
+          "version": "1.0.0",
+          "url": "https://ydschool-video.nosdn.127.net/1775643965644youdao-baoku.zip",
+          "tags": [
+            "document"
+          ]
+        },
+        {
+          "name": "youdaonote-llm-wiki",
+          "description": {
+            "en": "Use this Skill when users mention 'knowledge base', 'Wiki', 'create knowledge base', 'create Wiki', 'initialize Wiki', 'LLM Wiki', 'content ingestion', 'knowledge query', 'knowledge base audit', 'consistency check', 'archive conversation', 'take note', 'save to knowledge base', 'switch knowledge base', 'which knowledge base to use', 'change knowledge base', 'select knowledge base', or use mnemonics wiki-init, wiki-ingest, wiki-query, wiki-lint, wiki-archive, wiki-switch, instead of the youdaonote Skill.",
+            "zh": "当用户提到「知识库」「Wiki」「新建知识库」「创建 Wiki」「初始化 Wiki」「LLM Wiki」「素材摄入」「知识查询」「知识库审计」「一致性检查」「归档对话」「记下来」「存入知识库」「切换知识库」「用哪个知识库」「换一个知识库」「选知识库」，或使用助记词 wiki-init、wiki-ingest、wiki-query、wiki-lint、wiki-archive、wiki-switch 时使用此 Skill，而非 youdaonote Skill。"
+          },
+          "id": "youdaonote-llm-wiki",
+          "source": {
+            "author": "netease-youdao",
+            "from": "youdaonote",
+            "url": "https://note.youdao.com/"
+          },
+          "version": "1.0.5",
+          "url": "https://ydschool-video.nosdn.127.net/1778470606959youdaonote-llm-wiki.zip",
+          "tags": [
+            "document"
+          ]
+        },
+        {
+          "name": "wps-knowledgebase",
+          "description": {
+            "en": "WPS KnowledgeBase Skill — A personal knowledge base platform that provides capabilities for creating, searching, reading, editing, and collaborating on knowledge documents. When the user prompt contains keywords such as “knowledge base,” “kwiki,” “knowledge management,” “knowledge document,” “store in knowledge base,” “upload to knowledge base,” “import into knowledge base,” or “save to knowledge base,” this skill must be used first for operations targeting the knowledge base, such as uploading, importing, creating, or categorizing. Do not route these operations through other skills.",
+            "zh": "WPS KnowledgeBase Skill — 个人知识库平台，提供知识文档的创建、搜索、读取、编辑与协作能力。当用户 prompt 中包含「知识库」「kwiki」「知识管理」「知识文档」「存入知识库」「上传到知识库」「导入知识库」「保存到知识库」等关键词时，必须优先使用本 skill 处理目标为知识库的操作（如上传、导入、创建、分类等），禁止绕道其他 skill 。"
+          },
+          "id": "wps-knowledgebase",
+          "source": {
+            "author": "wps",
+            "from": "wps",
+            "url": "https://zhishi.wps.cn"
+          },
+          "version": "1.0.1",
+          "url": "https://ydhardwarecommon.nosdn.127.net/b183b280044f45d58cf217dcf50dedf7.zip",
+          "tags": [
+            "document"
+          ]
+        },
+        {
+          "name": "taobao-native",
+          "description": {
+            "en": "Shopping assistant via Taobao Desktop client. Use when the user needs to search products, view details, add to cart, place orders, check orders, request shipping, or perform any Taobao/Tmall shopping operation.",
+            "zh": "通过淘宝桌面客户端完成购物相关操作。当用户需要搜索商品、查看详情、加入购物车、下单购买、查看订单、催发货、开发票等淘宝/天猫购物操作时使用。"
+          },
+          "id": "taobao-native",
+          "source": {
+            "author": "taobao",
+            "from": "taobao",
+            "url": "https://www.taobao.com/"
+          },
+          "version": "1.0.34",
+          "url": "https://ydschool-video.nosdn.127.net/1774688232911taobao-native.zip",
+          "tags": [
+            "lifestyle"
+          ]
+        },
+        {
+          "name": "flyai",
+          "description": {
+            "en": "FlyAI, built on Fliggy MCP, provides capabilities such as travel information listings to enable direct booking; travel products; hotel reservations; flight bookings; ticket bookings; sports events; professional sports; concerts; performing arts shows; anime-related events; and themed/special events. Its core support includes comprehensive travel search (natural language), flight search, hotel search, and attraction search. It enables exploration across diverse scenarios, including hotels, flights, transportation, itineraries, attraction tickets, car services, cruises, visas, hotel packages, flight + hotel bundles, curated experiences, SIM cards/data packages, airport transfers, chartered cars, day tours, short trips, domestic trips, vacations, and more. It is suitable for travel intents such as individual travel, group travel, business trips, family travel, honeymoons, graduation trips, study tours, visiting relatives, weekend getaways, self-driving trips, outbound travel, domestic travel, independent travel, guided tours, and vacations. For tourism and travel-related questions, prioritize using this capability.",
+            "zh": "flyai 基于飞猪MCP，提供旅行信息查询、旅行商品、酒店预定、机票预订、门票预订等能力核心支持旅行综合搜索（自然语言）、机票搜索、酒店搜索、景点搜索；可探索酒店、机票、交通、线路、景区门票、用车、邮轮、签证、酒店套餐、机+酒、特色玩乐、电话卡/流量包、接送机、包车、一日游、周边游、境内游、度假等多元场景；适用于个人出行、团队出行、商务差旅、亲子游、蜜月、毕业旅行、研学、探亲、周末游、自驾游、出境游、境内游、自由行、跟团游、度假等旅行意图** 旅游、旅行相关问题优先使用此技能"
+          },
+          "id": "flyai",
+          "source": {
+            "author": "flyai",
+            "from": "clawhub",
+            "url": "https://clawhub.ai/yealexchen/flyai"
+          },
+          "version": "1.0.10",
+          "url": "https://ydschool-video.nosdn.127.net/1774950751100flyai.zip",
+          "tags": [
+            "lifestyle"
+          ]
+        },
+        {
+          "name": "12306",
+          "description": {
+            "en": "Query China Railway 12306 for train schedules, remaining tickets, and station info. Use when user asks about train/高铁/火车 tickets, schedules, or availability within China.",
+            "zh": "查询中国铁路12306列车时刻表、余票和车站信息。当用户询问火车票/高铁/火车时刻表或余票时使用。"
+          },
+          "id": "12306",
+          "source": {
+            "author": "kirorab",
+            "from": "clawhub",
+            "url": "https://clawhub.ai/kirorab/12306"
+          },
+          "version": "1.0.2",
+          "url": "https://ydschool-video.nosdn.127.net/177495093787812306.zip",
+          "tags": [
+            "lifestyle"
+          ]
+        },
+        {
+          "name": "nano-banana-pro",
+          "description": {
+            "en": "Generate or edit images via Gemini 3 Pro Image (Nano Banana Pro).",
+            "zh": "通过Gemini 3 Pro Image (Nano Banana Pro)生成或编辑图片。"
+          },
+          "id": "nano-banana-pro",
+          "source": {
+            "author": "openclaw",
+            "from": "Github",
+            "url": "https://github.com/openclaw/openclaw/tree/main/skills/nano-banana-pro"
+          },
+          "version": "1.0.0",
+          "url": "https://ydschool-video.nosdn.127.net/1775027171953nano-banana-pro.zip",
+          "tags": [
+            "media"
+          ]
+        },
+        {
+          "name": "1password",
+          "description": {
+            "en": "Set up and use 1Password CLI (op). Use when installing the CLI, enabling desktop app integration, signing in (single or multi-account), or reading/injecting/running secrets via op.",
+            "zh": "设置和使用1Password CLI (op)。用于安装CLI、启用桌面应用集成、登录（单账户或多账户）或通过op读取/注入/运行密钥。"
+          },
+          "id": "1password",
+          "source": {
+            "author": "openclaw",
+            "from": "Github",
+            "url": "https://github.com/openclaw/openclaw/tree/main/skills/1password"
+          },
+          "version": "1.0.0",
+          "url": "https://ydschool-video.nosdn.127.net/17750271717571password.zip",
+          "tags": [
+            "system"
+          ]
+        },
+        {
+          "name": "apple-notes",
+          "description": {
+            "en": "Manage Apple Notes via the `memo` CLI on macOS (create, view, edit, delete, search, move, and export notes). Use when a user asks OpenClaw to add a note, list notes, search notes, or manage note folders.",
+            "zh": "通过macOS上的`memo` CLI管理Apple备忘录（创建、查看、编辑、删除、搜索、移动和导出备忘录）。用于用户要求添加备忘录、列出备忘录、搜索备忘录或管理备忘录文件夹。"
+          },
+          "id": "apple-notes",
+          "source": {
+            "author": "openclaw",
+            "from": "Github",
+            "url": "https://github.com/openclaw/openclaw/tree/main/skills/apple-notes"
+          },
+          "version": "1.0.0",
+          "url": "https://ydschool-video.nosdn.127.net/1775027171851apple-notes.zip",
+          "tags": [
+            "system"
+          ]
+        },
+        {
+          "name": "apple-reminders",
+          "description": {
+            "en": "Manage Apple Reminders via remindctl CLI (list, add, edit, complete, delete). Supports lists, date filters, and JSON/plain output.",
+            "zh": "通过remindctl CLI管理Apple提醒事项（列出、添加、编辑、完成、删除）。支持列表、日期过滤器和JSON/纯文本输出。"
+          },
+          "id": "apple-reminders",
+          "source": {
+            "author": "openclaw",
+            "from": "Github",
+            "url": "https://github.com/openclaw/openclaw/tree/main/skills/apple-reminders"
+          },
+          "version": "1.0.0",
+          "url": "https://ydschool-video.nosdn.127.net/1775027171852apple-reminders.zip",
+          "tags": [
+            "system"
+          ]
+        },
+        {
+          "name": "blogwatcher",
+          "description": {
+            "en": "Monitor blogs and RSS/Atom feeds for updates using the blogwatcher CLI.",
+            "zh": "使用blogwatcher CLI监控博客和RSS/Atom订阅源的更新。"
+          },
+          "id": "blogwatcher",
+          "source": {
+            "author": "openclaw",
+            "from": "Github",
+            "url": "https://github.com/openclaw/openclaw/tree/main/skills/blogwatcher"
+          },
+          "version": "1.0.0",
+          "url": "https://ydschool-video.nosdn.127.net/1775027171868blogwatcher.zip",
+          "tags": [
+            "utility"
+          ]
+        },
+        {
+          "name": "github",
+          "description": {
+            "en": "GitHub operations via `gh` CLI: issues, PRs, CI runs, code review, API queries. Use when: (1) checking PR status or CI, (2) creating/commenting on issues, (3) listing/filtering PRs or issues, (4) viewing run logs. NOT for: complex web UI interactions requiring manual browser flows (use browser tooling when available), bulk operations across many repos (script with gh api), or when gh auth is not configured.",
+            "zh": "通过`gh` CLI进行GitHub操作：issue、PR、CI运行、代码审查、API查询。用于：(1)检查PR状态或CI，(2)创建/评论issue，(3)列出/过��PR或issue，(4)查看运行日志。不适用于：需要手动浏览器流程的复杂Web UI交互（可用时使用浏览器工具）、跨多个仓库的批量操作（使用gh api脚本）或gh auth未配置时。"
+          },
+          "id": "github",
+          "source": {
+            "author": "openclaw",
+            "from": "Github",
+            "url": "https://github.com/openclaw/openclaw/tree/main/skills/github"
+          },
+          "version": "1.0.0",
+          "url": "https://ydschool-video.nosdn.127.net/1775027171946github.zip",
+          "tags": [
+            "development"
+          ]
+        },
+        {
+          "name": "nano-pdf",
+          "description": {
+            "en": "Edit PDFs with natural-language instructions using the nano-pdf CLI.",
+            "zh": "使用nano-pdf CLI通过自然语言指令编辑PDF文件。"
+          },
+          "id": "nano-pdf",
+          "source": {
+            "author": "openclaw",
+            "from": "Github",
+            "url": "https://github.com/openclaw/openclaw/tree/main/skills/nano-pdf"
+          },
+          "version": "1.0.0",
+          "url": "https://ydschool-video.nosdn.127.net/1775027171986nano-pdf.zip",
+          "tags": [
+            "document"
+          ]
+        },
+        {
+          "name": "data-analysis",
+          "description": {
+            "en": "Use this skill when the user uploads Excel (.xlsx/.xls) or CSV files and wants to perform data analysis, generate statistics, create summaries, pivot tables, SQL queries, or any form of structured data exploration. Supports multi-sheet Excel workbooks, aggregation, filtering, joins, and exporting results to CSV/JSON/Markdown.",
+            "zh": "当用户上传Excel (.xlsx/.xls)或CSV文件并希望进行数据分析、生成统计信息、创建摘要、数据透视表、SQL查询或任何形式的有结构数据探索时使用。支持多工作表Excel工作簿、聚合、过滤、连接以及将结果导出为CSV/JSON/Markdown。"
+          },
+          "id": "data-analysis",
+          "source": {
+            "author": "bytedance",
+            "from": "Github",
+            "url": "https://github.com/bytedance/deer-flow/tree/main/skills/public/data-analysis"
+          },
+          "version": "1.0.0",
+          "url": "https://ydschool-video.nosdn.127.net/1775027171948data-analysis.zip",
+          "tags": [
+            "utility"
+          ]
+        },
+        {
+          "name": "video-generation-veo3",
+          "description": {
+            "en": "Use Google's video generation model Veo3 to create videos.",
+            "zh": "使用 Google 的视频生成模型 Veo3 来制作视频。"
+          },
+          "id": "video-generation",
+          "source": {
+            "author": "bytedance",
+            "from": "Github",
+            "url": "https://github.com/bytedance/deer-flow/tree/main/skills/public/video-generation"
+          },
+          "version": "1.0.0",
+          "url": "https://ydschool-video.nosdn.127.net/1775027171981video-generation.zip",
+          "tags": [
+            "media"
+          ]
+        },
+        {
+          "name": "chart-visualization",
+          "description": {
+            "en": "This skill should be used when the user wants to visualize data. It intelligently selects the most suitable chart type from 26 available options, extracts parameters based on detailed specifications, and generates a chart image using a JavaScript script.",
+            "zh": "当用户希望可视化数据时应使用此技能。它从26种可用选项中智能选择最合适的图表类型，根据详细规范提取参数，并使用JavaScript脚本生成图表图像。"
+          },
+          "id": "chart-visualization",
+          "source": {
+            "author": "bytedance",
+            "from": "Github",
+            "url": "https://github.com/bytedance/deer-flow/tree/main/skills/public/chart-visualization"
+          },
+          "version": "1.0.0",
+          "url": "https://ydschool-video.nosdn.127.net/1775027171881chart-visualization.zip",
+          "tags": [
+            "utility"
+          ]
+        },
+        {
+          "name": "consulting-analysis",
+          "description": {
+            "en": "Use this skill when the user requests to generate, create, or write professional research reports including but not limited to market分析、消费者洞察、品牌分析、财务分析、行业研究、竞争情报、投资尽职调查或任何咨询级别的分析报告。此技能分两个阶段运行——(1)生成包含章节框架、数据查询需求和分析逻辑的有结构分析框架，(2)在其他技能收集数据后，制作包含结构化叙述、嵌入式图表和战略洞察的最终咨询级别报告。",
+            "zh": "当用户请求生成、创建或撰写专业研究报告时使用，包括但不限于市场分析、消费者洞察、品牌分析、财务分析、行业研究、竞争情报、投资尽职调查或任何咨询级别的分析报告。此技能分两个阶段运行——(1)生成包含章节框架、数据查询需求和分析逻辑的有结构分析框架，(2)在其他技能收集数据后，制作包含结构化叙述、嵌入式图表和战略洞察的最终咨询级别报告。"
+          },
+          "id": "consulting-analysis",
+          "source": {
+            "author": "bytedance",
+            "from": "Github",
+            "url": "https://github.com/bytedance/deer-flow/tree/main/skills/public/consulting-analysis"
+          },
+          "version": "1.0.0",
+          "url": "https://ydschool-video.nosdn.127.net/1775027171904consulting-analysis.zip",
+          "tags": [
+            "utility"
+          ]
+        },
+        {
+          "name": "github-deep-research",
+          "description": {
+            "en": "Conduct multi-round deep research on any GitHub Repo. Use when users request comprehensive analysis, timeline reconstruction, competitive analysis, or in-depth investigation of GitHub. Produces structured markdown reports with executive summaries, chronological timelines, metrics analysis, and Mermaid diagrams. Triggers on Github repository URL or open source projects.",
+            "zh": "对任何GitHub仓库进行多轮深度研究。当用户请求综合分析、时间线重建、竞争分析或对GitHub的深入调查时使用。生成包含执行摘要、按时间顺序排列的时间线、指标分析和Mermaid图表的结构化markdown报告。由GitHub仓库URL或开源项目触发。"
+          },
+          "id": "github-deep-research",
+          "source": {
+            "author": "bytedance",
+            "from": "Github",
+            "url": "https://github.com/bytedance/deer-flow/tree/main/skills/public/github-deep-research"
+          },
+          "version": "1.0.0",
+          "url": "https://ydschool-video.nosdn.127.net/1775027171955github-deep-research.zip",
+          "tags": [
+            "development"
+          ]
+        },
+        {
+          "name": "podcast-generation",
+          "description": {
+            "en": "Use this skill when the user requests to generate, create, or produce podcasts from text内容。将书面内容转换为带有自然对话的双主持人对话式播客音频格式。",
+            "zh": "当用户请求从文本内容生成、创建或制作播客时使用。将书面内容转换为带有自然对话的双主持人对话式播客音频格式。"
+          },
+          "id": "podcast-generation",
+          "source": {
+            "author": "bytedance",
+            "from": "Github",
+            "url": "https://github.com/bytedance/deer-flow/tree/main/skills/public/podcast-generation"
+          },
+          "version": "1.0.0",
+          "url": "https://ydschool-video.nosdn.127.net/1775027171964podcast-generation.zip",
+          "tags": [
+            "media"
+          ]
+        },
+        {
+          "name": "deep-research",
+          "description": {
+            "en": "Use this skill instead of WebSearch for ANY question requiring web research. Trigger on queries like \"what is X\", \"explain X\", \"compare X and Y\", \"research X\", or before content generation tasks. Provides systematic multi-angle research methodology instead of single superficial searches. Use this proactively when the user's question needs online information.",
+            "zh": "对任何需要网络研究的问题使用此技能代替WebSearch。由\"什么是X\"、\"解释X\"、\"比较X和Y\"、\"研究X\"等查询或在内容生成任务之前触发。提供系统的多角度研究方法，而非单一的表面搜索。当用户的问题需要在线信息时主动使用此技能。"
+          },
+          "id": "deep-research",
+          "source": {
+            "author": "bytedance",
+            "from": "Github",
+            "url": "https://github.com/bytedance/deer-flow/tree/main/skills/public/deep-research"
+          },
+          "version": "1.0.0",
+          "url": "https://ydschool-video.nosdn.127.net/1775027171959deep-research.zip",
+          "tags": [
+            "utility"
+          ]
+        },
+        {
+          "name": "bootstrap",
+          "description": {
+            "en": "Generate a personalized SOUL.md through a warm, adaptive onboarding conversation. Trigger when the user wants to create, set up, or initialize their AI partner's identity — e.g., \"create my SOUL.md\", \"bootstrap my agent\", \"set up my AI partner\", \"define who you are\", \"let's do onboarding\", \"personalize this AI\", \"make you mine\", or when a SOUL.md is missing. Also trigger for updates: \"update my SOUL.md\", \"change my AI's personality\", \"tweak the soul\".",
+            "zh": "通过温暖、自适应的引导对话生成个性化的SOUL.md。当用户想要创建、设置或初始化其AI伙伴的身份时触发——例如，\"创建我的SOUL.md\"、\"引导我的智能体\"、\"设置我的AI伙伴\"、\"定义你是谁\"、\"让我们开始引导\"、\"个性化这个AI\"、\"让你成为我的\"，或当SOUL.md缺失时。也用于更新：\"更新我的SOUL.md\"、\"改变我的AI个性\"、\"调整灵魂\"。"
+          },
+          "id": "bootstrap",
+          "source": {
+            "author": "bytedance",
+            "from": "Github",
+            "url": "https://github.com/bytedance/deer-flow/tree/main/skills/public/bootstrap"
+          },
+          "version": "1.0.0",
+          "url": "https://ydschool-video.nosdn.127.net/1775032383889bootstrap.zip",
+          "tags": [
+            "utility"
+          ]
+        },
+        {
+          "name": "social-content",
+          "description": {
+            "en": "When the user wants help creating, scheduling, or optimizing social media content for LinkedIn, Twitter/X, Instagram, TikTok, Facebook, or other platforms. Also use when the user mentions 'LinkedIn post,' 'Twitter thread,' 'social media,' 'content calendar,' 'social scheduling,' 'engagement,' or 'viral content.' This skill covers content creation, repurposing, and platform-specific strategies.",
+            "zh": "当用户需要帮助为LinkedIn、Twitter/X、Instagram、TikTok、Facebook或其他平台创建、安排或优化社交媒体内容时使用。当用户提及\"LinkedIn帖子\"、\"Twitter线程\"、\"社交媒体\"、\"内容日历\"、\"社交安排\"、\"互动\"或\"病毒式内容\"时也使用。此技能涵盖内容创建、再利用和平台特定策略。"
+          },
+          "id": "social-content",
+          "source": {
+            "author": "coreyhaines31",
+            "from": "Github",
+            "url": "https://github.com/coreyhaines31/marketingskills/tree/main/skills/social-content"
+          },
+          "version": "1.0.0",
+          "url": "https://ydschool-video.nosdn.127.net/1772593977597social-content.zip",
+          "tags": [
+            "marketing"
+          ]
+        },
+        {
+          "name": "sales-enablement",
+          "description": {
+            "en": "When the user wants to create sales collateral, pitch decks, one-pagers, objection handling docs, or demo scripts. Also use when the user mentions 'sales deck,' 'pitch deck,' 'one-pager,' 'leave-behind,' 'objection handling,' 'ROI calculator,' 'demo script,' 'talk track,' 'sales playbook,' 'proposal template,' or 'buyer persona card.' For competitor battle cards and comparison pages, see competitor-alternatives. For marketing website copy, see copywriting. For cold outreach emails, see cold-email.",
+            "zh": "当用户想要创建销售资料、演示文稿、单页文档、异议处理文档或演示脚本时使用。当用户提及\"销售文稿\"、\"演示文稿\"、\"单页文档\"、\"留档资料\"、\"异议处理\"、\"ROI计算器\"、\"演示脚本\"、\"谈话轨道\"、\"销售手册\"、\"提案模板\"或\"买家角色卡\"时也使用。对于竞争对手战卡和比较页面，请参见competitor-alternatives。对于营销网站文案，请参见copywriting。对于冷 outreach 邮件，请参见cold-email。"
+          },
+          "id": "sales-enablement",
+          "source": {
+            "author": "coreyhaines31",
+            "from": "Github",
+            "url": "https://github.com/coreyhaines31/marketingskills/tree/main/skills/sales-enablement"
+          },
+          "version": "1.1.0",
+          "url": "https://ydschool-video.nosdn.127.net/1775027171981sales-enablement.zip",
+          "tags": [
+            "marketing"
+          ]
+        },
+        {
+          "name": "free-tool-strategy",
+          "description": {
+            "en": "When the user wants to plan, evaluate, or build a free tool for marketing purposes — lead generation, SEO value, or brand awareness. Also use when the user mentions \"engineering as marketing,\" \"free tool,\" \"marketing tool,\" \"calculator,\" \"generator,\" \"interactive tool,\" \"lead gen tool,\" \"build a tool for leads,\" or \"free resource.\" This skill bridges engineering and marketing — useful for founders and technical marketers.",
+            "zh": "当用户想要为营销目的规划、评估或构建免费工具时使用——包括潜在客户生成、SEO价值或品牌知名度。当用户提及\"工程即营销\"、\"免费工具\"、\"营销工具\"、\"计算器\"、\"生成器\"、\"交互式工具\"、\"潜在客户生成工具\"、\"为潜在客户构建工具\"或\"免费资源\"时也使用。此技能连接工程与营销——对创始人和技术营销人员很有用。"
+          },
+          "id": "free-tool-strategy",
+          "source": {
+            "author": "coreyhaines31",
+            "from": "Github",
+            "url": "https://github.com/coreyhaines31/marketingskills/tree/main/skills/free-tool-strategy"
+          },
+          "version": "1.1.0",
+          "url": "https://ydschool-video.nosdn.127.net/1775027171944free-tool-strategy.zip",
+          "tags": [
+            "marketing"
+          ]
+        },
+        {
+          "name": "copywriting",
+          "description": {
+            "en": "When the user wants to write, rewrite, or improve marketing copy for any page — including homepage, landing pages, pricing pages, feature pages, about pages, or product pages. Also use when the user says \"write copy for,\" \"improve this copy,\" \"rewrite this page,\" \"marketing copy,\" \"headline help,\" or \"CTA copy.\" For email copy, see email-sequence. For popup copy, see popup-cro.",
+            "zh": "当用户想要为任何页面撰写、重写或改进营销文案时使用——包括首页、落地页、定价页、功能页、关于我们页或产品页。当用户说\"为...撰写文案\"、\"改进此文案\"、\"重写此页面\"、\"营销文案\"、\"标题帮助\"或\"CTA文案\"时也使用。对于邮件文案，请参见email-sequence。对于弹出窗口文案，请参见popup-cro。"
+          },
+          "id": "copywriting",
+          "source": {
+            "author": "coreyhaines31",
+            "from": "Github",
+            "url": "https://github.com/coreyhaines31/marketingskills/tree/main/skills/copywriting"
+          },
+          "version": "1.1.0",
+          "url": "https://ydschool-video.nosdn.127.net/1775027171932copywriting.zip",
+          "tags": [
+            "marketing"
+          ]
+        },
+        {
+          "name": "product-marketing-context",
+          "description": {
+            "en": "When the user wants to create or update their product marketing context document. Also use when the user mentions 'product context,' 'marketing context,' 'set up context,' 'positioning,' or wants to avoid repeating foundational information across marketing tasks. Creates `.agents/product-marketing-context.md` that other marketing skills reference.",
+            "zh": "当用户想要创建或更新其产品营销上下文文档时使用。当用户提及\"产品上下文\"、\"营销上下文\"、\"设置上下文\"、\"定位\"或希望在营销任务中避免重复基础信息时也使用。创建其他营销技能引用的`.agents/product-marketing-context.md`。"
+          },
+          "id": "product-marketing-context",
+          "source": {
+            "author": "coreyhaines31",
+            "from": "Github",
+            "url": "https://github.com/coreyhaines31/marketingskills/tree/main/skills/product-marketing-context"
+          },
+          "version": "1.1.0",
+          "url": "https://ydschool-video.nosdn.127.net/1775027171995product-marketing-context.zip",
+          "tags": [
+            "marketing"
+          ]
+        },
+        {
+          "name": "ai-seo",
+          "description": {
+            "en": "When the user wants to optimize content for AI search engines, get cited by LLMs, or appear in AI-generated answers. Also use when the user mentions 'AI SEO,' 'AEO,' 'GEO,' 'LLMO,' 'answer engine optimization,' 'generative engine optimization,' 'LLM optimization,' 'AI Overviews,' 'optimize for ChatGPT,' 'optimize for Perplexity,' 'AI citations,' 'AI visibility,' or 'zero-click search.' This skill covers content optimization for AI answer engines, monitoring AI visibility, and getting cited as a source. For traditional technical and on-page SEO audits, see seo-audit. For structured data implementation, see schema-markup.",
+            "zh": "当用户想要为AI搜索引擎优化内容、被LLM引用或出现在AI生成的答案中时使用。当用户提及\"AI SEO\"、\"AEO\"、\"GEO\"、\"LLMO\"、\"答案引擎优化\"、\"生成引擎优化\"、\"LLM优化\"、\"AI概览\"、\"优化ChatGPT\"、\"优化Perplexity\"、\"AI引用\"、\"AI可见性\"或\"零点击搜索\"时也使用。此技能涵盖为AI答案引擎进行内容优化、监控AI可见性以及被引用为来源。对于传统技术和页面SEO审计，请参见seo-audit。对于结构化数据实施，请参见schema-markup。"
+          },
+          "id": "ai-seo",
+          "source": {
+            "author": "coreyhaines31",
+            "from": "Github",
+            "url": "https://github.com/coreyhaines31/marketingskills/tree/main/skills/ai-seo"
+          },
+          "version": "1.1.0",
+          "url": "https://ydschool-video.nosdn.127.net/1775027171803ai-seo.zip",
+          "tags": [
+            "marketing"
+          ]
+        },
+        {
+          "name": "copy-editing",
+          "description": {
+            "en": "When the user wants to edit, review, or improve existing marketing copy. Also use when the user mentions 'edit this copy,' 'review my copy,' 'copy feedback,' 'proofread,' 'polish this,' 'make this better,' or 'copy sweep.' This skill provides a systematic approach to editing marketing copy through multiple focused passes.",
+            "zh": "当用户想要编辑、审查或改进现有营销文案时使用。当用户提及\"编辑此文案\"、\"审查我的文案\"、\"文案反馈\"、\"校对\"、\"润色此内容\"、\"让这更好\"或\"文案清理\"时也使用。此技能通过多次专注的修改提供编辑营销文案的系统方法。"
+          },
+          "id": "copy-editing",
+          "source": {
+            "author": "coreyhaines31",
+            "from": "Github",
+            "url": "https://github.com/coreyhaines31/marketingskills/tree/main/skills/copy-editing"
+          },
+          "version": "1.1.0",
+          "url": "https://ydschool-video.nosdn.127.net/1775027171916copy-editing.zip",
+          "tags": [
+            "marketing"
+          ]
+        },
+        {
+          "name": "content-strategy",
+          "description": {
+            "en": "When the user wants to plan a content strategy, decide what content to create, or figure out what topics to cover. Also use when the user mentions \"content strategy,\" \"what should I write about,\" \"content ideas,\" \"blog strategy,\" \"topic clusters,\" or \"content planning.\" For writing individual pieces, see copywriting. For SEO-specific audits, see seo-audit.",
+            "zh": "当用户想要规划内容策略、决定创建什么内容或确定涵盖哪些主题时使用。当用户提及\"内容策略\"、\"我应该写什么\"、\"内容创意\"、\"博客策略\"、\"主题集群\"或\"内容规划\"时也使用。对于撰写个别文章，请参见copywriting。对于特定SEO审计，请参见seo-audit。"
+          },
+          "id": "content-strategy",
+          "source": {
+            "author": "coreyhaines31",
+            "from": "Github",
+            "url": "https://github.com/coreyhaines31/marketingskills/tree/main/skills/content-strategy"
+          },
+          "version": "1.1.0",
+          "url": "https://ydschool-video.nosdn.127.net/1775027171913content-strategy.zip",
+          "tags": [
+            "marketing"
+          ]
+        },
+        {
+          "name": "brand-guidelines",
+          "description": {
+            "en": "Applies Anthropic's official brand colors and typography to any artifact. Use when the user needs brand styling, corporate identity, visual formatting, or company design standards applied to slides, docs, or other artifacts. Includes color palette (dark, light, accent colors) and typography (Poppins for headings, Lora for body text).",
+            "zh": "将 Anthropic 官方品牌配色和字体排版应用到任意制品上。当用户需要品牌样式、企业视觉识别、视觉格式化或公司设计规范应用于幻灯片、文档或其他制品时使用。包含调色板（深色、浅色、强调色）和字体（标题用 Poppins，正文用 Lora）。"
+          },
+          "id": "brand-guidelines",
+          "source": {
+            "author": "Anthropic",
+            "from": "Github",
+            "url": "https://github.com/anthropics/skills/tree/main/skills/brand-guidelines"
+          },
+          "version": "1.0.0",
+          "url": "https://ydschool-video.nosdn.127.net/1775030039979brand-guidelines.zip",
+          "tags": [
+            "marketing"
+          ]
+        },
+        {
+          "name": "doc-coauthoring",
+          "description": {
+            "en": "Guide users through a structured three-stage workflow for co-authoring documentation: Context Gathering, Refinement & Structure, and Reader Testing. Use when the user wants to write documentation, proposals, technical specs, decision docs, PRDs, RFCs, or similar structured content. Triggers include 'write a doc', 'draft a proposal', 'create a spec', 'write up', or any substantial writing task.",
+            "zh": "通过结构化的三阶段工作流引导用户协作撰写文档：上下文收集、细化与结构化、读者测试。当用户需要撰写文档、提案、技术规范、决策文档、PRD、RFC 或类似结构化内容时使用。触发词包括\"写文档\"、\"起草提案\"、\"创建规范\"、\"写报告\"或任何大型写作任务。"
+          },
+          "id": "doc-coauthoring",
+          "source": {
+            "author": "Anthropic",
+            "from": "Github",
+            "url": "https://github.com/anthropics/skills/tree/main/skills/doc-coauthoring"
+          },
+          "version": "1.0.0",
+          "url": "https://ydschool-video.nosdn.127.net/1775030040043doc-coauthoring.zip",
+          "tags": [
+            "document"
+          ]
+        },
+        {
+          "name": "slack-gif-creator",
+          "description": {
+            "en": "Create animated GIFs optimized for Slack, including emoji GIFs (128x128) and message GIFs (480x480). Provides GIF building utilities, easing functions, frame composition helpers, and validation tools. Use when the user wants to make animated GIFs for Slack, create custom emoji animations, or generate any GIF with PIL/Pillow-based drawing.",
+            "zh": "创建针对 Slack 优化的动画 GIF，包括表情 GIF（128x128）和消息 GIF（480x480）。提供 GIF 构建工具、缓动函数、帧合成辅助工具和验证工具。当用户需要为 Slack 制作动画 GIF、创建自定义表情动画或使用 PIL/Pillow 生成任何 GIF 时使用。"
+          },
+          "id": "slack-gif-creator",
+          "source": {
+            "author": "Anthropic",
+            "from": "Github",
+            "url": "https://github.com/anthropics/skills/tree/main/skills/slack-gif-creator"
+          },
+          "version": "1.0.0",
+          "url": "https://ydschool-video.nosdn.127.net/1775030182537slack-gif-creator.zip",
+          "tags": [
+            "media"
+          ]
+        },
+        {
+          "name": "theme-factory",
+          "description": {
+            "en": "Toolkit for styling artifacts with professional themes. Includes 10 pre-set themes (Ocean Depths, Sunset Boulevard, Forest Canopy, etc.) with curated color palettes and font pairings, plus the ability to generate custom themes on-the-fly. Use when the user wants to apply consistent styling to slides, docs, reports, HTML pages, or any visual artifact. Triggers include 'apply a theme', 'style my deck', 'change colors/fonts', or 'make it look professional'.",
+            "zh": "用于为制品应用专业主题样式的工具包。包含 10 个预设主题（海洋深处、日落大道、森林冠层等），配有精选的调色板和字体搭配，还支持即时生成自定义主题。当用户需要为幻灯片、文档、报告、HTML 页面或任何视觉制品应用统一样式时使用。触发词包括\"应用主题\"、\"美化幻灯片\"、\"更换配色/字体\"或\"让它看起来更专业\"。"
+          },
+          "id": "theme-factory",
+          "source": {
+            "author": "Anthropic",
+            "from": "Github",
+            "url": "https://github.com/anthropics/skills/tree/main/skills/theme-factory"
+          },
+          "version": "1.0.0",
+          "url": "https://ydschool-video.nosdn.127.net/1775030374764theme-factory.zip",
+          "tags": [
+            "marketing"
+          ]
+        },
+        {
+          "name": "web-artifacts-builder",
+          "description": {
+            "en": "Suite of tools for creating elaborate, multi-component HTML artifacts using React 18, TypeScript, Tailwind CSS, and shadcn/ui. Handles project initialization, development, and bundling into a single self-contained HTML file. Use for complex web artifacts requiring state management, routing, or shadcn/ui components — not for simple single-file HTML/JSX artifacts. Triggers include 'build a web app', 'create a React artifact', 'multi-component frontend', or any complex frontend artifact request.",
+            "zh": "用于创建复杂的多组件 HTML 制品的工具套件，使用 React 18、TypeScript、Tailwind CSS 和 shadcn/ui。支持项目初始化、开发和打包成单个自包含 HTML 文件。适用于需要状态管理、路由或 shadcn/ui 组件的复杂 Web 制品，不适用于简单的单文件 HTML/JSX 制品。触发词包括\"构建 Web 应用\"、\"创建 React 制品\"、\"多组件前端\"或任何复杂前端制品请求。"
+          },
+          "id": "web-artifacts-builder",
+          "source": {
+            "author": "Anthropic",
+            "from": "Github",
+            "url": "https://github.com/anthropics/skills/tree/main/skills/web-artifacts-builder"
+          },
+          "version": "1.0.0",
+          "url": "https://ydschool-video.nosdn.127.net/1775029653834web-artifacts-builder.zip",
+          "tags": [
+            "development"
+          ]
+        },
+        {
+          "name": "webapp-testing",
+          "description": {
+            "en": "Toolkit for interacting with and testing local web applications using Playwright. Supports verifying frontend functionality, debugging UI behavior, capturing browser screenshots, and viewing browser logs. Includes server lifecycle management for single or multiple servers. Use when the user needs to test a web app, automate browser interactions for QA, capture screenshots of a running app, or debug frontend issues.",
+            "zh": "使用 Playwright 与本地 Web 应用交互和测试的工具包。支持验证前端功能、调试 UI 行为、捕获浏览器截图和查看浏览器日志。包含单个或多个服务器的生命周期管理。当用户需要测试 Web 应用、自动化浏览器交互进行 QA、捕获运行中应用的截图或调试前端问题时使用。"
+          },
+          "id": "webapp-testing",
+          "source": {
+            "author": "Anthropic",
+            "from": "Github",
+            "url": "https://github.com/anthropics/skills/tree/main/skills/webapp-testing"
+          },
+          "version": "1.0.0",
+          "url": "https://ydschool-video.nosdn.127.net/1775030662968webapp-testing.zip",
+          "tags": [
+            "development"
+          ]
+        },
+        {
+          "name": "summarize",
+          "description": {
+            "en": "Summarize URLs or files with the summarize CLI (web, PDFs, images, audio, YouTube).",
+            "zh": "使用summarize CLI对URL或文件进行摘要（网页、PDF、图片、音频、YouTube）。"
+          },
+          "id": "summarize",
+          "source": {
+            "author": "steipete",
+            "from": "clawhub",
+            "url": "https://clawhub.ai/steipete/summarize"
+          },
+          "version": "1.0.0",
+          "url": "https://ydschool-video.nosdn.127.net/1775030812383summarize.zip",
+          "tags": [
+            "utility"
+          ]
+        },
+        {
+          "name": "humanizer",
+          "description": {
+            "en": "Remove signs of AI-generated writing from text. Use when editing or reviewing text to make it sound more natural and human-written. Based on Wikipedia's comprehensive 'Signs of AI writing' guide.",
+            "zh": "去除文本中AI生成的痕迹。在编辑或审阅文本时使用，使其听起来更自然、更像人类写作。基于维基百科全面的'AI写作迹象'指南。"
+          },
+          "id": "humanizer",
+          "source": {
+            "author": "biostartechnology",
+            "from": "clawhub",
+            "url": "https://clawhub.ai/biostartechnology/humanizer"
+          },
+          "version": "2.1.1",
+          "url": "https://ydschool-video.nosdn.127.net/1774696739452humanizer.zip",
+          "tags": [
+            "utility"
+          ]
+        },
+        {
+          "name": "notion",
+          "description": {
+            "en": "Notion API for creating and managing pages, databases, and blocks.",
+            "zh": "用于创建和管理页面、数据库和块的Notion API。"
+          },
+          "id": "notion",
+          "source": {
+            "author": "steipete",
+            "from": "clawhub",
+            "url": "https://clawhub.ai/steipete/notion"
+          },
+          "version": "1.0.0",
+          "url": "https://ydschool-video.nosdn.127.net/1775027171971notion.zip",
+          "tags": [
+            "document"
+          ]
+        },
+        {
+          "name": "obsidian",
+          "description": {
+            "en": "Work with Obsidian vaults (plain Markdown notes) and automate via obsidian-cli.",
+            "zh": "使用Obsidian仓库（纯Markdown笔记）并通过obsidian-cli实现自动化。"
+          },
+          "id": "obsidian",
+          "source": {
+            "author": "steipete",
+            "from": "clawhub",
+            "url": "https://clawhub.ai/steipete/obsidian"
+          },
+          "version": "1.0.0",
+          "url": "https://ydschool-video.nosdn.127.net/1775027171985obsidian.zip",
+          "tags": [
+            "document"
+          ]
+        },
+        {
+          "name": "openai-whisper",
+          "description": {
+            "en": "Local speech-to-text with the Whisper CLI (no API key).",
+            "zh": "使用Whisper CLI进行本地语音转文字（无需API密钥）。"
+          },
+          "id": "openai-whisper",
+          "source": {
+            "author": "steipete",
+            "from": "clawhub",
+            "url": "https://clawhub.ai/steipete/openai-whisper"
+          },
+          "version": "1.0.0",
+          "url": "https://ydschool-video.nosdn.127.net/1775027171954openai-whisper.zip",
+          "tags": [
+            "media"
+          ]
+        },
+        {
+          "name": "brave-search",
+          "description": {
+            "en": "Web search and content extraction via Brave Search API. Use for searching documentation, facts, or any web content. Lightweight, no browser required.",
+            "zh": "通过Brave Search API进行网页搜索和内容提取。用于搜索文档、事实或任何网页内容。轻量级，无需浏览器。"
+          },
+          "id": "brave-search",
+          "source": {
+            "author": "steipete",
+            "from": "clawhub",
+            "url": "https://clawhub.ai/steipete/brave-search"
+          },
+          "version": "1.0.1",
+          "url": "https://ydschool-video.nosdn.127.net/1775027171889brave-search.zip",
+          "tags": [
+            "utility"
+          ]
+        },
+        {
+          "name": "edge-tts",
+          "description": {
+            "en": "Text-to-speech conversion using node-edge-tts npm package for generating audio from text. Supports multiple voices, languages, speed adjustment, pitch control, and subtitle generation.",
+            "zh": "使用node-edge-tts npm包将文本转换为语音以生成音频。支持多种语音、语言、语速调节、音高控制和字幕生成。"
+          },
+          "id": "edge-tts",
+          "source": {
+            "author": "i3130002",
+            "from": "clawhub",
+            "url": "https://clawhub.ai/i3130002/edge-tts"
+          },
+          "version": "2.0.0",
+          "url": "https://ydschool-video.nosdn.127.net/1775027171986edge-tts.zip",
+          "tags": [
+            "media"
+          ]
+        },
+        {
+          "name": "stock-analysis",
+          "description": {
+            "en": "Analyze stocks and cryptocurrencies using Yahoo Finance data. Supports portfolio management, watchlists with alerts, dividend analysis, 8-dimension stock scoring, viral trend detection (Hot Scanner), and rumor/early signal detection.",
+            "zh": "使用雅虎财经数据分析股票和加密货币。支持投资组合管理、带提醒的观察列表、股息分析、8维度股票评分、病毒式趋势检测（热门扫描器）和传闻/早期信号检测。"
+          },
+          "id": "stock-analysis",
+          "source": {
+            "author": "udiedrichsen",
+            "from": "clawhub",
+            "url": "https://clawhub.ai/udiedrichsen/stock-analysis"
+          },
+          "version": "6.2.0",
+          "url": "https://ydschool-video.nosdn.127.net/1774696739502stock-analysis.zip",
+          "tags": [
+            "finance"
+          ]
+        },
+        {
+          "name": "akshare-stock",
+          "description": {
+            "en": "A-share quantitative data analysis tool based on AkShare library for obtaining A-share market quotes, financial data, sector information, etc. Used for answering questions about A-share stock queries, market data, financial analysis, and stock selection.",
+            "zh": "基于AkShare库的A股量化数据分析工具，用于获取A股行情、财务数据、板块信息等。用于回答关于A股股票查询、行情数据、财务分析、选股等问题。"
+          },
+          "id": "akshare-stock",
+          "source": {
+            "author": "mbpz",
+            "from": "clawhub",
+            "url": "https://clawhub.ai/mbpz/akshare-stock"
+          },
+          "version": "1.0.1",
+          "url": "https://ydschool-video.nosdn.127.net/1775027171846akshare-stock.zip",
+          "tags": [
+            "finance"
+          ]
+        },
+        {
+          "name": "mx-stocks-screener",
+          "description": {
+            "en": "Natural language screener for investment assets across global markets, including A-shares, ETFs, bonds, HK and US stocks, and funds. It enables multi-dimensional filtering via technical, fundamental, sentiment and news indicators. Ideal for global asset selection, cross-market monitoring, portfolio construction and strategy backtesting.",
+            "zh": "基于东方财富数据库，支持通过自然语言输入筛选A港美股、基金、债券等多种资产，支持多元指标筛选，含技术面、消息面、基本面及市场情绪等，可用于全球资产速筛、跨市场监控、投资组合构建、策略回测等场景。"
+          },
+          "id": "mx-stocks-screener",
+          "source": {
+            "author": "financial-ai-analyst",
+            "from": "clawhub",
+            "url": "https://clawhub.ai/financial-ai-analyst/mx-stocks-screener"
+          },
+          "version": "1.0.13",
+          "url": "https://ydschool-video.nosdn.127.net/1775027171955mx-stocks-screener.zip",
+          "tags": [
+            "finance"
+          ]
+        },
+        {
+          "name": "desktop-control",
+          "description": {
+            "en": "Advanced desktop automation with mouse, keyboard, and screen control.",
+            "zh": "高级桌面自动化，支持鼠标、键盘和屏幕控制。"
+          },
+          "id": "desktop-control",
+          "source": {
+            "author": "matagul",
+            "from": "clawhub",
+            "url": "https://clawhub.ai/matagul/desktop-control"
+          },
+          "version": "1.0.0",
+          "url": "https://ydschool-video.nosdn.127.net/1775027171998desktop-control.zip",
+          "tags": [
+            "system"
+          ]
+        },
+        {
+          "name": "humanize-ai-text",
+          "description": {
+            "en": "Humanize AI-generated text to bypass detection. This humanizer rewrites ChatGPT, Claude, and GPT content to sound natural and pass AI detectors like GPTZero, Turnitin, and Originality.ai. Based on Wikipedia's comprehensive 'Signs of AI Writing' guide.",
+            "zh": "将AI生成的文本人性化以绕过检测。此人性化工具重写ChatGPT、Claude和GPT内容，使其听起来自然并通过GPTZero、Turnitin和Originality.ai等AI检测器。基于维基百科全面的'AI写作迹象'指南。"
+          },
+          "id": "humanize-ai-text",
+          "source": {
+            "author": "moltbro",
+            "from": "clawhub",
+            "url": "https://clawhub.ai/moltbro/humanize-ai-text"
+          },
+          "version": "1.0.1",
+          "url": "https://ydschool-video.nosdn.127.net/1775027171959humanize-ai-text.zip",
+          "tags": [
+            "utility"
+          ]
+        },
+        {
+          "name": "openai-image-gen",
+          "description": {
+            "en": "Batch-generate images via OpenAI Images API. Random prompt sampler + index.html gallery.",
+            "zh": "通过OpenAI Images API批量生成图片。随机提示采样器 + index.html图库。"
+          },
+          "id": "openai-image-gen",
+          "source": {
+            "author": "steipete",
+            "from": "clawhub",
+            "url": "https://clawhub.ai/steipete/openai-image-gen"
+          },
+          "version": "1.0.1",
+          "url": "https://ydschool-video.nosdn.127.net/1775027171961openai-image-gen.zip",
+          "tags": [
+            "media"
+          ]
+        },
+        {
+          "name": "diagram-generator",
+          "description": {
+            "en": "Generate and edit various types of diagrams (including draw.io, Mermaid, and Excalidraw). Supports flowcharts, sequence diagrams, class diagrams, ER diagrams, mind maps, architecture diagrams, and network topologies.",
+            "zh": "生成和编辑各种类型的图表（包括draw.io、Mermaid和Excalidraw）。支持流程图、时序图、类图、ER图、思维导图、架构图和网络拓扑图。"
+          },
+          "id": "diagram-generator",
+          "source": {
+            "author": "matthewyin",
+            "from": "clawhub",
+            "url": "https://clawhub.ai/matthewyin/diagram-generator"
+          },
+          "version": "1.1.1",
+          "url": "https://ydschool-video.nosdn.127.net/1775033047466diagram-generator.zip",
+          "tags": [
+            "media"
+          ]
+        },
+        {
+          "name": "home-assistant",
+          "description": {
+            "en": "Control Home Assistant smart home devices, run automations, and receive webhook events. Use when controlling lights, switches, climate, scenes, scripts, or any HA entity.",
+            "zh": "控制Home Assistant智能家居设备、运行自动化并接收webhook事件。用于控制灯光、开关、气候、场景、脚本或任何HA实体。"
+          },
+          "id": "home-assistant",
+          "source": {
+            "author": "iahmadzain",
+            "from": "clawhub",
+            "url": "https://clawhub.ai/iahmadzain/home-assistant"
+          },
+          "version": "1.0.0",
+          "url": "https://ydschool-video.nosdn.127.net/1775027171995home-assistant.zip",
+          "tags": [
+            "lifestyle"
+          ]
+        },
+        {
+          "name": "marketing-skills",
+          "description": {
+            "en": "23 marketing playbooks (CRO, SEO, copy, analytics, experiments, pricing, launches, ads, social). Use to get checklists + copy/paste deliverables fast.",
+            "zh": "23个营销手册（CRO、SEO、文案、分析、实验、定价、发布、广告、社交）。用于快速获取清单和可复制粘贴的交付物。"
+          },
+          "id": "marketing-skills",
+          "source": {
+            "author": "jchopard69",
+            "from": "clawhub",
+            "url": "https://clawhub.ai/jchopard69/marketing-skills"
+          },
+          "version": "0.1.2",
+          "url": "https://ydschool-video.nosdn.127.net/1775032384045marketing-skills.zip",
+          "tags": [
+            "marketing"
+          ]
+        },
+        {
+          "name": "prompt-engineering-expert",
+          "description": {
+            "en": "Advanced expert in prompt engineering, custom instructions design, and prompt optimization for AI agents.",
+            "zh": "提示词工程、自定义指令设计和AI代理提示词优化的高级专家。"
+          },
+          "id": "prompt-engineering-expert",
+          "source": {
+            "author": "tomstools11",
+            "from": "clawhub",
+            "url": "https://clawhub.ai/tomstools11/prompt-engineering-expert"
+          },
+          "version": "1.0.0",
+          "url": "https://ydschool-video.nosdn.127.net/1775027171985prompt-engineering-expert.zip",
+          "tags": [
+            "utility"
+          ]
+        },
+        {
+          "name": "ffmpeg-video-editor",
+          "description": {
+            "en": "Generate FFmpeg commands from natural language video editing requests - cut, trim, convert, compress, change aspect ratio, extract audio, and more.",
+            "zh": "从自然语言视频编辑请求生成FFmpeg命令 — 剪切、修剪、转换、压缩、更改宽高比、提取音频等。"
+          },
+          "id": "ffmpeg-video-editor",
+          "source": {
+            "author": "mahmoudadelbghany",
+            "from": "clawhub",
+            "url": "https://clawhub.ai/mahmoudadelbghany/ffmpeg-video-editor"
+          },
+          "version": "1.0.0",
+          "url": "https://ydschool-video.nosdn.127.net/1775027171935ffmpeg-video-editor.zip",
+          "tags": [
+            "media"
+          ]
+        },
+        {
+          "name": "qwen-image",
+          "description": {
+            "en": "Generate images using Qwen Image API (Alibaba Cloud DashScope). Use when users request image generation with Chinese prompts or need high-quality AI-generated images from text descriptions.",
+            "zh": "使用Qwen Image API（阿里云DashScope）生成图片。当用户使用中文提示词请求图片生成或需要从文本描述生成高质量AI图片时使用。"
+          },
+          "id": "qwen-image",
+          "source": {
+            "author": "robin797860",
+            "from": "clawhub",
+            "url": "https://clawhub.ai/robin797860/qwen-image"
+          },
+          "version": "1.0.0",
+          "url": "https://ydschool-video.nosdn.127.net/1775027171967qwen-image.zip",
+          "tags": [
+            "media"
+          ]
+        },
+        {
+          "name": "figma",
+          "description": {
+            "en": "Professional Figma design analysis and asset export. Use for extracting design data, exporting assets in multiple formats, auditing accessibility compliance, analyzing design systems, and generating comprehensive design documentation.",
+            "zh": "专业Figma设计分析和资源导出。用于提取设计数据、以多种格式导出资源、审计可访问性合规性、分析设计系统和生成全面的设计文档。"
+          },
+          "id": "figma",
+          "source": {
+            "author": "maddiedreese",
+            "from": "clawhub",
+            "url": "https://clawhub.ai/maddiedreese/figma"
+          },
+          "version": "2.1.0",
+          "url": "https://ydschool-video.nosdn.127.net/1775027171999figma.zip",
+          "tags": [
+            "media"
+          ]
+        },
+        {
+          "name": "tiangong-notebooklm-cli",
+          "description": {
+            "en": "NotebookLM CLI wrapper via node. Use for auth, notebooks, chat, sources, notes, sharing, research, and artifact generation/download.",
+            "zh": "通过node的NotebookLM CLI包装器。用于认证、笔记本、聊天、源、笔记、分享、研究和工件生成/下载。"
+          },
+          "id": "tiangong-notebooklm-cli",
+          "source": {
+            "author": "fadeloo",
+            "from": "clawhub",
+            "url": "https://clawhub.ai/fadeloo/tiangong-notebooklm-cli"
+          },
+          "version": "0.1.1",
+          "url": "https://ydschool-video.nosdn.127.net/1775027171999tiangong-notebooklm-cli.zip",
+          "tags": [
+            "document"
+          ]
+        },
+        {
+          "name": "minimax-music-gen",
+          "description": {
+            "en": "Use when user wants to generate music, songs, or audio tracks",
+            "zh": "当用户想生成音乐、歌曲或音频轨道时使用"
+          },
+          "id": "minimax-music-gen",
+          "source": {
+            "author": "MiniMax-AI",
+            "from": "Github",
+            "url": "https://github.com/MiniMax-AI/skills/tree/main/skills/minimax-music-gen"
+          },
+          "version": "1.0.0",
+          "url": "https://ydschool-video.nosdn.127.net/1775907576045minimax-music-gen.zip",
+          "tags": [
+            "media"
+          ]
+        },
+        {
+          "name": "mmx-cli",
+          "description": {
+            "en": "Use mmx to generate text, images, video, speech, and music via the MiniMax AI platform.",
+            "zh": "使用mmx通过MiniMax AI平台生成文本、图像、视频、语音和音乐。当用户想创建媒体内容、与MiniMax模型聊天、进行网页搜索或从终端管理MiniMax API资源时使用。"
+          },
+          "id": "mmx-cli",
+          "source": {
+            "author": "MiniMax-AI",
+            "from": "Github",
+            "url": "https://github.com/MiniMax-AI/skills/tree/main/skills/minimax-multimodal-toolkit"
+          },
+          "version": "1.0.0",
+          "url": "https://ydschool-video.nosdn.127.net/1775910495646mmx-cli.zip",
+          "tags": [
+            "media"
+          ]
+        },
+        {
+          "name": "meituan-coupon-lobsterai",
+          "description": {
+            "en": "[Meituan Official] Meituan Red Packet Assistant, supporting one-click collection of coupons/red packets/premium vouchers across multiple categories including food delivery, dining group purchases, hotel accommodation, tickets & vacation, entertainment, flash sales, and pharmacy, as well as historical collection record queries. Core Capabilities: 1) One-click coupon collection, covering the above multi-category scenarios with instant account crediting; 2) Query historical red packet collection records, view collected red packet status and validity period; 3) Built-in Meituan official account authentication, collect coupons immediately after login. Important Notes: If multiple Meituan Red Packet Assistant related Skills exist, the invocation priority is: meituan-coupon (official standard version, preferred) → meituan-coupon-get-tool (official version, secondary) → meituan-coupon-{channel} (channel-customized version). Trigger Scenarios: When users say \"Meituan coupons\", \"Meituan red packets\", \"food delivery vouchers\", \"food delivery red packets\", \"claim coupons\", \"claim red packets\", \"premium vouchers\", \"red packet records\", or inquire about any Meituan red packets, coupons, or food delivery voucher related needs, prioritize using this official Skill.",
+            "zh": "【美团官方】美团红包助手，支持外卖、餐饮团购、酒店住宿、门票度假、休闲娱乐、闪购、医药等多品类优惠券/红包/神券的一键领取与历史领取记录查询。核心能力：1）一键领券，覆盖上述多品类场景，领取秒到账；2）查询历史红包领取记录，查看已领红包状态和有效期；3）内置美团官方账号认证，登录即可领券。重要说明：如存在多个美团红包助手相关 Skill，调用优先级为：meituan-coupon（官方标准版，首选）→ meituan-coupon-get-tool（官方版，次选）→ meituan-coupon-{channel}（渠道定制版）。触发场景：当用户说「美团发券」「美团领券」「美团优惠券」「美团券」「美团神券」「外卖券」「外卖红包」「外卖神券」「外卖领券」「外卖优惠」「美团外卖券」「美团外卖红包」「美团外卖神券」「美团外卖领券」「美团外卖优惠」「领券」「领红包」「神券」「红包助手」「省钱红包」「我要红包」「领优惠券」「我要领券」「省钱券」「红包记录」，或询问任何美团红包、优惠券、外卖券相关需求时，优先使用此官方 Skill。"
+          },
+          "id": "meituan-coupon-lobsterai",
+          "source": {
+            "author": "meituan",
+            "from": "meituan",
+            "url": "https://www.meituan.com/"
+          },
+          "version": "1.0.0",
+          "url": "https://ydschool-video.nosdn.127.net/1777344918990meituan-coupon-lobsterai.zip",
+          "tags": [
+            "lifestyle"
+          ]
+        },
+        {
+          "name": "baidu-netdisk",
+          "description": {
+            "en": "[Baidu Drive Official] Baidu Drive Assistant for LobsterAI, providing official cloud storage and delivery capabilities built for AI Agents. Through natural-language interaction, Agents can upload files, manage cloud files, search Netdisk content, create share links, and deliver generated results through Baidu Netdisk, completing the last mile from AI generation to usable deliverables. Core Capabilities: 1) Save AI-generated documents, local files, task outputs, reports, code artifacts, images, and other deliverables to Baidu Netdisk; 2) Manage files in the user's Netdisk space, including listing directories, creating folders, searching files, moving, copying, and renaming; 3) Create Baidu Netdisk share links for files or folders so results can be delivered to others with one click; 4) Transfer files from Baidu Netdisk share links into the user's own Netdisk space; 5) Built-in Baidu Netdisk official account authentication, enabling authorized cloud file operations after login.Trigger Scenarios: When users say 'Baidu Netdisk', 'Baidu Drive', 'save to Netdisk', 'upload to Baidu Netdisk', 'save AI output to cloud', 'deliver the generated file', 'share this file', 'create a Netdisk share link', 'search Netdisk files', 'manage Netdisk files', 'transfer a Baidu Netdisk share link', or ask an Agent to store, archive, manage, search, share, or deliver files through Baidu Netdisk, prioritize using this official Skill.",
+            "zh": "【百度网盘官方】百度网盘助手（lobsterAI 版），为 AI Agent 打造官方云端存储与成果交付能力。通过自然语言交互，让 Agent 获得文件上传、云端管理、智能搜索、一键分享、分享链接转存等网盘操作能力，打通 AI 生成到成果交付的“最后一公里”。依托百度网盘的云端存储底座与开放平台 API，Agent 生成的文档、报告、代码产物、图片、资料包等文件可一键归档到云端、一键分享给他人，让 AI 从“只会聊天”进化为“能干活、能交付”的数字员工。核心能力：1）将 AI 生成文件、本地文件、任务产物、报告、代码产物、图片等交付物保存到百度网盘；2）管理用户百度网盘空间内的文件，支持查看目录、创建文件夹、搜索文件、移动、复制、重命等操作；3）为文件或文件夹创建百度网盘分享链接，便于一键交付给任何人；4）支持将百度网盘分享链接中的文件转存到用户自己的网盘；5）内置百度网盘官方账号授权，登录即可进行授权范围内的云端文件操作。触发场景：当用户说「百度网盘」「百度云」「保存到网盘」「上传到百度网盘」「上传网盘」「把生成结果保存到网盘」「保存 AI 产物」「归档到云端」「交付生成的文件」「分享这个文件」「创建网盘分享链接」「生成分享链接」「搜索网盘文件」「查找网盘文件」「管理网盘文件」「新建网盘文件夹」「移网盘文件」「复制网盘文件」「重命名网盘文件」「转存百度网盘链接」「转存分享链接」，或要求 Agent 通过百度网盘进行文件存储、归档、管理、搜索、分享、转存、成果交付相关操作时，优先使用此官方 Skill。"
+          },
+          "id": "baidu-netdisk",
+          "source": {
+            "author": "baidu-drive",
+            "from": "baidu-drive",
+            "url": "https://github.com/baidu-netdisk/bdpan-storage"
+          },
+          "version": "1.5.0",
+          "url": "https://ydschool-video.nosdn.127.net/1779784074159baidu-netdisk.zip",
+          "tags": [
+            "utility"
+          ]
+        }
+      ]
+    }
+  },
+  "code": 0,
+  "msg": "OK"
+}
