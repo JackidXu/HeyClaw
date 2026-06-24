@@ -22,7 +22,7 @@ echo "准备发布版本: $CLEAN_VERSION"
 echo "对应的 Git Tag: $TAG_NAME"
 
 # 1. 更新 package.json 中的版本号
-npm version "$CLEAN_VERSION" --no-git-tag-version
+npm version "$CLEAN_VERSION" --no-git-tag-version --allow-same-version
 
 # 2. git 提交
 git add package.json
