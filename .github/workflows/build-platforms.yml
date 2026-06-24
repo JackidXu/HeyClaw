@@ -199,8 +199,8 @@ jobs:
           
           # 寻找对应的包文件名
           WIN_FILE=$(cd oss-dist && ls *.exe | head -n 1)
-          MAC_ARM64_FILE=$(cd oss-dist && ls *arm64.dmg | head -n 1)
-          MAC_X64_FILE=$(cd oss-dist && ls *x64.dmg | head -n 1)
+          MAC_ARM64_FILE=$(cd oss-dist && ls *arm64*.dmg | head -n 1)
+          MAC_X64_FILE=$(cd oss-dist && ls *x64*.dmg | head -n 1)
           
           # 从 Secrets 读取 CDN 前缀
           CDN_PREFIX="${{ secrets.CDN_URL_PREFIX }}"
