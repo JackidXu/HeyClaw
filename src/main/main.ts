@@ -47,15 +47,42 @@ function isBuiltInSkillPath(filePath: any): boolean {
 }
 
 function resolveVirtualSkillPath(virtualPath: any): any {
-  if (typeof virtualPath === 'string' && virtualPath.startsWith('skill://')) {
-    const match = virtualPath.match(/^skill:\/\/([a-zA-Z0-9_-]+)\/(.+)$/);
-    if (match) {
-      const [_, skillId, subPath] = match;
-      try {
-        const userData = app.getPath('userData');
-        return path.join(userData, 'SKILLs', skillId, subPath);
-      } catch (e) {
-        console.error('[VirtualFS] Failed to get userData path:', e);
+  if (typeof virtualPath === 'string') {
+    let cleanPath = virtualPath.replace(/\\/g, '/').trim();
+    // 移除可能存在的波浪号前缀 (如 ~built-in://... 或 ~skill://...)
+    if (cleanPath.startsWith('~')) {
+      cleanPath = cleanPath.slice(1);
+    }
+
+    // 我们支持的主虚拟前缀列表
+    const prefixes = ['.heyclaw/skills/', 'skill://', 'built-in://'];
+    let matchedPrefix = '';
+    for (const prefix of prefixes) {
+      if (cleanPath.startsWith(prefix)) {
+        matchedPrefix = prefix;
+        break;
+      }
+    }
+
+    if (matchedPrefix) {
+      // 提取前缀后面的部分，并防止可能出现的重复嵌套前缀
+      let subContent = cleanPath.slice(matchedPrefix.length);
+      for (const prefix of prefixes) {
+        if (subContent.startsWith(prefix)) {
+          subContent = subContent.slice(prefix.length);
+        }
+      }
+
+      // 匹配 skillId 和具体路径，如 hook-and-headline-writing/SKILL.md
+      const match = subContent.match(/^([a-zA-Z0-9_-]+)\/(.+)$/);
+      if (match) {
+        const [_, skillId, subPath] = match;
+        try {
+          const userData = app.getPath('userData');
+          return path.join(userData, 'SKILLs', skillId, subPath);
+        } catch (e) {
+          console.error('[VirtualFS] Failed to get userData path:', e);
+        }
       }
     }
   }

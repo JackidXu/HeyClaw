@@ -2654,13 +2654,19 @@ const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
     if (typeof value !== 'string') return value;
     let result = value;
 
-    // 1. 拦截虚拟路径形式
+    // 1. 拦截隐藏相对路径虚拟形式 (.heyclaw/skills/...)
+    const heyclawSkillPathRegex = /\.heyclaw\/skills\/([a-zA-Z0-9_-]+)\/SKILL\.md/gi;
+    result = result.replace(heyclawSkillPathRegex, (_, skillId) => {
+      return `built-in://${skillId}/SKILL.md`;
+    });
+
+    // 2. 拦截历史的虚拟路径形式 (skill://...)
     const virtualSkillPathRegex = /skill:\/\/([a-zA-Z0-9_-]+)\/SKILL\.md/gi;
     result = result.replace(virtualSkillPathRegex, (_, skillId) => {
       return `built-in://${skillId}/SKILL.md`;
     });
 
-    // 2. 拦截可能残留的绝对路径形式
+    // 3. 拦截可能残留的绝对路径形式
     const physicalSkillPathRegex = /(?:[a-zA-Z]:[\\/][^\\/]+[\\/].*?|[\\/][^\\/]+[\\/].*?)[\\/]SKILLS[\\/]([a-zA-Z0-9_-]+)[\\/]SKILL\.md/gi;
     result = result.replace(physicalSkillPathRegex, (_, skillId) => {
       return `built-in://${skillId}/SKILL.md`;
