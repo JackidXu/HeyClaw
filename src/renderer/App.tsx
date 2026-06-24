@@ -25,7 +25,6 @@ import { SkillsView } from './components/skills';
 import Toast from './components/Toast';
 import AppUpdateBadge from './components/update/AppUpdateBadge';
 import AppUpdateModal from './components/update/AppUpdateModal';
-
 import WindowTitleBar from './components/window/WindowTitleBar';
 import { defaultConfig, getProviderDisplayName, ShortcutAction } from './config';
 import type { ApiConfig } from './services/api';

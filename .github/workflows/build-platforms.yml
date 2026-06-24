@@ -52,7 +52,7 @@ jobs:
         run: |
           TAG_NAME=${GITHUB_REF#refs/tags/}
           VERSION=${TAG_NAME#v}
-          npm version $VERSION --no-git-tag-version
+          npm version $VERSION --no-git-tag-version --allow-same-version
       
       - run: npm install
       

@@ -945,7 +945,7 @@ const Settings: React.FC<SettingsProps> = ({
         updateCheckTimerRef.current = null;
       }, 3000);
     }
-  }, [appVersion, authUser, updateCheckStatus, onUpdateFound]);
+  }, [appVersion, authUser, updateCheckStatus, onUpdateFound, appUpdateState?.status]);
 
   const updateButtonLabel = useMemo(() => {
     if (

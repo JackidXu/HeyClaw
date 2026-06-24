@@ -1,4 +1,4 @@
-import { type ProviderConfig, ProviderRegistry, ProviderName } from '@shared/providers';
+import { type ProviderConfig, ProviderName,ProviderRegistry } from '@shared/providers';
 
 import {
   type BrowserWebAccessConfig,

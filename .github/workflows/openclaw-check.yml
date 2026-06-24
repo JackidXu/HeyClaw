@@ -2,6 +2,8 @@ name: OpenClaw Integration Check
 
 on:
   push:
+    branches:
+      - main
     paths:
       - 'package.json'
       - 'scripts/ensure-openclaw-version.cjs'

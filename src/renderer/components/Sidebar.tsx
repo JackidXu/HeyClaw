@@ -1,9 +1,10 @@
-import { ExclamationTriangleIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+import { ArrowPathIcon,ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import { AgentId } from '@shared/agent';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
 
 import { agentService } from '../services/agent';
+import { configService } from '../services/config';
 import { coworkService } from '../services/cowork';
 import { i18nService } from '../services/i18n';
 import { RootState } from '../store';
@@ -31,7 +32,6 @@ import SidebarKitsIcon from './icons/SidebarKitsIcon';
 import SidebarToggleIcon from './icons/SidebarToggleIcon';
 import SkillIcon from './icons/SkillIcon';
 import TrashIcon from './icons/TrashIcon';
-import { configService } from '../services/config';
 
 interface SidebarProps {
   onShowSettings: () => void;
