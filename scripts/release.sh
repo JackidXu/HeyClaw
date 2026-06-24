@@ -28,8 +28,8 @@ npm version "$CLEAN_VERSION" --no-git-tag-version --allow-same-version
 git add package.json
 git commit -m "chore: bump version to $CLEAN_VERSION"
 
-# 3. 创建本地 Tag
-git tag "$TAG_NAME"
+# 3. 强制创建/覆盖本地 Tag，防止已存在时报错中断
+git tag -f "$TAG_NAME"
 
 echo ""
 echo "✓ 本地版本修改、Commit 和 Tag 创建已完成！"
@@ -39,7 +39,7 @@ read -p "是否执行 git push？(y/N): " CONFIRM
 if [ "$CONFIRM" = "y" ] || [ "$CONFIRM" = "Y" ]; then
   echo "正在推送代码和 Tag..."
   git push origin "$CURRENT_BRANCH"
-  git push origin "$TAG_NAME"
+  git push origin -f "$TAG_NAME"
   echo "✓ 推送成功！打包流水线已触发。"
 else
   echo "推送已被取消。您可以稍后手动执行以下命令推送："
