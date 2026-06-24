@@ -244,4 +244,4 @@ jobs:
           access-key-secret: ${{ secrets.OSS_ACCESS_KEY_SECRET }}
 
       - name: Upload Artifacts to Aliyun OSS
-        run: ossutil cp -r oss-dist/ oss://${{ secrets.OSS_BUCKET }}/heyclaw/downloads/
+        run: ossutil cp -f -r oss-dist/ oss://${{ secrets.OSS_BUCKET }}/heyclaw/downloads/
