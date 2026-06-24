@@ -163,16 +163,34 @@ function MainConsole() {
     const valueContainer = kitsContainer.data?.value;
     if (!valueContainer) return;
 
-    let nextKits = Array.isArray(valueContainer.kits) ? [...valueContainer.kits] : [];
+    let nextLocal = Array.isArray(valueContainer.localKit) ? [...valueContainer.localKit] : [];
+    let nextMarket = Array.isArray(valueContainer.marketplace) ? [...valueContainer.marketplace] : [];
+
+    const targetType = payloadKit._type || 'marketplace';
+    
+    // 物理 JSON 写入去冗余，解构剔除临时的 _type 字段
+    const { _type, ...finalKit } = payloadKit;
 
     if (isNewKit) {
-      if (nextKits.some((k: any) => k.id === payloadKit.id)) {
-        message.error('该套件 ID 已存在，请使用唯一 ID');
-        return;
+      if (targetType === 'localKit') {
+        if (nextLocal.some((k: any) => k.id === finalKit.id)) {
+          message.error('本地内置专家中已存在该 ID，请使用唯一 ID');
+          return;
+        }
+        nextLocal.push(finalKit);
+      } else {
+        if (nextMarket.some((k: any) => k.id === finalKit.id)) {
+          message.error('云端市场专家中已存在该 ID，请使用唯一 ID');
+          return;
+        }
+        nextMarket.push(finalKit);
       }
-      nextKits.push(payloadKit);
     } else {
-      nextKits = nextKits.map((k: any) => (k.id === payloadKit.id ? payloadKit : k));
+      if (targetType === 'localKit') {
+        nextLocal = nextLocal.map((k: any) => (k.id === finalKit.id ? finalKit : k));
+      } else {
+        nextMarket = nextMarket.map((k: any) => (k.id === finalKit.id ? finalKit : k));
+      }
     }
 
     const nextContainer = {
@@ -181,7 +199,8 @@ function MainConsole() {
         ...kitsContainer.data,
         value: {
           ...valueContainer,
-          kits: nextKits
+          localKit: nextLocal,
+          marketplace: nextMarket
         }
       }
     };
@@ -192,19 +211,28 @@ function MainConsole() {
   };
 
   // Kit - 删除
-  const handleKitDelete = (kitId: string) => {
+  const handleKitDelete = (kitId: string, type: 'localKit' | 'marketplace') => {
     if (!kitsContainer) return;
     const valueContainer = kitsContainer.data?.value;
     if (!valueContainer) return;
 
-    const nextKits = valueContainer.kits.filter((k: any) => k.id !== kitId);
+    let nextLocal = Array.isArray(valueContainer.localKit) ? [...valueContainer.localKit] : [];
+    let nextMarket = Array.isArray(valueContainer.marketplace) ? [...valueContainer.marketplace] : [];
+
+    if (type === 'localKit') {
+      nextLocal = nextLocal.filter((k: any) => k.id !== kitId);
+    } else {
+      nextMarket = nextMarket.filter((k: any) => k.id !== kitId);
+    }
+
     const nextContainer = {
       ...kitsContainer,
       data: {
         ...kitsContainer.data,
         value: {
           ...valueContainer,
-          kits: nextKits
+          localKit: nextLocal,
+          marketplace: nextMarket
         }
       }
     };
@@ -300,12 +328,15 @@ function MainConsole() {
   // 分类管理 - 保存
   const handleCategoriesSave = (nextCategories: any[]) => {
     if (!kitsContainer) return;
+    const valueContainer = kitsContainer.data?.value;
+    if (!valueContainer) return;
+
     const nextContainer = {
       ...kitsContainer,
       data: {
         ...kitsContainer.data,
         value: {
-          ...kitsContainer.data.value,
+          ...valueContainer,
           categories: nextCategories
         }
       }
@@ -346,7 +377,15 @@ function MainConsole() {
     ];
   };
 
-  const getKitsList = () => kitsContainer?.data?.value?.kits || [];
+  const getKitsList = () => {
+    if (!kitsContainer) return [];
+    const value = kitsContainer.data?.value;
+    if (!value) return [];
+
+    const local = (value.localKit || []).map((k: any) => ({ ...k, _type: 'localKit' }));
+    const market = (value.marketplace || []).map((k: any) => ({ ...k, _type: 'marketplace' }));
+    return [...local, ...market];
+  };
   const getCategories = () => kitsContainer?.data?.value?.categories || [];
   const getSkillsList = () => {
     if (!skillsContainer) return [];
@@ -375,18 +414,18 @@ function MainConsole() {
             setEditingKit(kit);
           }}
           onDelete={handleKitDelete}
-          onNewKit={() => {
+          onNewKit={(type) => {
             setIsNewKit(true);
             setEditingKit({
               id: '',
+              _type: type,
               name: { zh: '', en: '' },
               description: { zh: '', en: '' },
               version: '1.0.0',
-              category: 'market',
+              category: type === 'localKit' ? 'local' : 'market',
               author: 'HeyClaw',
               icon: '',
-              downloadCount: '0',
-              skills: null,
+              skills: { list: [] },
               tryAsking: []
             });
           }}
@@ -399,7 +438,7 @@ function MainConsole() {
       label: (
         <span>
           <BuildOutlined />
-          技能市场
+          技能管理
         </span>
       ),
       children: (
@@ -411,14 +450,14 @@ function MainConsole() {
             setEditingSkill(skill);
           }}
           onDelete={handleSkillDelete}
-          onNewSkill={() => {
+          onNewSkill={(type) => {
             setIsNewSkill(true);
             setEditingSkill({
               id: '',
               name: '',
               description: { zh: '', en: '' },
               version: '1.0.0',
-              _type: 'marketplace',
+              _type: type,
               tagsSelected: [],
               url: '',
               source: null
@@ -436,7 +475,7 @@ function MainConsole() {
           备份回退
         </span>
       ),
-      children: <BackupList backups={backups} onRestore={handleRestore} />
+      children: <BackupList backups={backups} token={token} onRestore={handleRestore} />
     }
   ];
 

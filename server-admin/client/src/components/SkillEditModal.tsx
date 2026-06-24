@@ -3,8 +3,6 @@ import { Modal, Form, Input, Select, Button, Row, Col, Card } from 'antd';
 import { SaveOutlined, CloseOutlined } from '@ant-design/icons';
 import UploadDropzone from './UploadDropzone';
 
-const { Option } = Select;
-
 interface SkillEditModalProps {
   visible: boolean;
   skill: any;
@@ -52,10 +50,11 @@ export default function SkillEditModal({
     }
   }, [visible, skill, form]);
 
+  const isLocal = skill?._type === 'localSkill';
+
   const onFinish = (values: any) => {
     const {
       id,
-      _type,
       name,
       version,
       url,
@@ -67,35 +66,49 @@ export default function SkillEditModal({
       descriptionEn
     } = values;
 
-    let source = null;
-    if (sourceAuthor.trim() || sourceFrom.trim() || sourceUrl.trim()) {
-      source = {
-        author: sourceAuthor.trim(),
-        from: sourceFrom.trim() || 'Github',
-        url: sourceUrl.trim()
+    let payloadSkill: any;
+    if (isLocal) {
+      payloadSkill = {
+        id: id.trim(),
+        _type: 'localSkill',
+        name: name.trim(),
+        version: version ? version.trim() : '1.0.0',
+        description: {
+          zh: descriptionZh.trim(),
+          en: descriptionEn.trim()
+        }
+      };
+    } else {
+      let source = null;
+      if (sourceAuthor.trim() || sourceFrom.trim() || sourceUrl.trim()) {
+        source = {
+          author: sourceAuthor.trim(),
+          from: sourceFrom.trim() || 'Github',
+          url: sourceUrl.trim()
+        };
+      }
+
+      payloadSkill = {
+        id: id.trim(),
+        _type: 'marketplace',
+        name: name.trim(),
+        version: version ? version.trim() : '1.0.0',
+        url: url ? url.trim() : '',
+        tags: tagsSelected || [],
+        source,
+        description: {
+          zh: descriptionZh.trim(),
+          en: descriptionEn.trim()
+        }
       };
     }
-
-    const payloadSkill = {
-      id: id.trim(),
-      _type,
-      name: name.trim(),
-      version: version ? version.trim() : '1.0.0',
-      url: url ? url.trim() : '',
-      tags: tagsSelected || [],
-      source,
-      description: {
-        zh: descriptionZh.trim(),
-        en: descriptionEn.trim()
-      }
-    };
 
     onSave(payloadSkill);
   };
 
   return (
     <Modal
-      title={isNew ? '新增技能市场项目' : '编辑技能市场项目'}
+      title={isNew ? (isLocal ? '新增本地内置技能' : '新增技能市场项目') : (isLocal ? '编辑本地内置技能' : '编辑技能市场项目')}
       open={visible}
       onCancel={onCancel}
       width={680}
@@ -128,19 +141,6 @@ export default function SkillEditModal({
             <Input disabled={!isNew} placeholder="如: code-beautify" />
           </Form.Item>
 
-          {isNew && (
-            <Form.Item
-              label="技能类型 (内置/市场)"
-              name="_type"
-              rules={[{ required: true }]}
-            >
-              <Select>
-                <Option value="marketplace">市场技能 (marketplace)</Option>
-                <Option value="localSkill">本地内置技能 (localSkill)</Option>
-              </Select>
-            </Form.Item>
-          )}
-
           <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '16px' }}>
             <Form.Item
               label="技能别名名称 (name，纯小写英文)"
@@ -156,56 +156,89 @@ export default function SkillEditModal({
           </div>
         </Card>
 
-        {/* Card 2：技能市场标签 (tags) */}
-        <Card title="关联市场标签 (tags)" size="small" style={{ marginBottom: 16 }}>
-          <Form.Item name="tagsSelected" style={{ marginBottom: 0 }}>
-            <Select
-              mode="multiple"
-              allowClear
-              placeholder="选择该技能所属的标签"
-              options={marketTags.map((tag) => ({
-                value: tag.id,
-                label: `${tag.zh} (${tag.id})`
-              }))}
-            />
-          </Form.Item>
-        </Card>
-
-        {/* Card 3：云端 Zip 资源配置（带说明提示） */}
-        <Card title="云端 Zip 资源配置" size="small" style={{ marginBottom: 16 }}>
-          <Form.Item 
-            label="技能 Zip 资源下载包链接 (url)" 
-            name="url"
-            extra={<span style={{ fontSize: '12px', color: '#fa8c16' }}>💡 提示：本地内置技能 (LOCAL) 此项通常留空；云端市场技能 (MARKET) 热更新运行必须上传并配置该 Zip 地址。</span>}
-          >
-            <Input placeholder="请输入技能 Zip 包在线地址" />
-          </Form.Item>
-          <UploadDropzone
-            token={token}
-            accept=".zip"
-            placeholderText="点击或拖拽上传技能 Zip 包"
-            onUploadSuccess={(url) => form.setFieldsValue({ url })}
-          />
-        </Card>
-
-        {/* Card 4：源码与作者配置 (source) */}
-        <Card title="源码与作者配置 (source)" size="small" style={{ marginBottom: 16 }}>
-          <Row gutter={12}>
-            <Col span={12}>
-              <Form.Item label="作者 (author)" name="sourceAuthor">
-                <Input placeholder="如: NetEase" />
+        {/* 仅当不是本地技能时，才显示市场专属属性卡片 */}
+        {!isLocal && (
+          <>
+            {/* Card 2：技能市场标签 (tags) */}
+            <Card title="关联市场标签 (tags)" size="small" style={{ marginBottom: 16 }}>
+              <Form.Item name="tagsSelected" style={{ marginBottom: 0 }}>
+                <Select
+                  mode="multiple"
+                  allowClear
+                  placeholder="选择该技能所属的标签"
+                  options={marketTags.map((tag) => ({
+                    value: tag.id,
+                    label: `${tag.zh} (${tag.id})`
+                  }))}
+                />
               </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item label="来源平台 (from)" name="sourceFrom">
-                <Input placeholder="Github" />
+            </Card>
+
+            {/* Card 3：云端 Zip 资源配置 */}
+            <Card title="云端 Zip 资源配置" size="small" style={{ marginBottom: 16 }}>
+              <Form.Item noStyle shouldUpdate={(prev, curr) => prev.url !== curr.url}>
+                {({ getFieldValue }) => {
+                  const currentUrl = getFieldValue('url');
+                  return (
+                    <div style={{ marginBottom: 8 }}>
+                      <div style={{ fontSize: '14px', fontWeight: '500', color: 'rgba(0, 0, 0, 0.88)', marginBottom: 8 }}>
+                        技能 Zip 资源包 (url)
+                      </div>
+                      {currentUrl ? (
+                        <div style={{ padding: '8px 12px', background: '#f6ffed', border: '1px solid #b7eb8f', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                          <span style={{ fontSize: '13px', color: '#389e0d', wordBreak: 'break-all' }}>
+                            ✓ 已绑定云端资源包：{currentUrl}
+                          </span>
+                          <Button 
+                            type="link" 
+                            danger 
+                            size="small" 
+                            icon={<CloseOutlined />}
+                            onClick={() => form.setFieldsValue({ url: '' })}
+                          >
+                            清除
+                          </Button>
+                        </div>
+                      ) : (
+                        <div style={{ padding: '8px 12px', background: '#fafafa', border: '1px dashed #d9d9d9', borderRadius: 6, fontSize: '13px', color: '#8c8c8c', marginBottom: 8 }}>
+                          💡 提示：云端市场技能 运行必须上传配置该 Zip。
+                        </div>
+                      )}
+                      <UploadDropzone
+                        token={token}
+                        accept=".zip"
+                        placeholderText="点击或拖拽上传技能 Zip 包"
+                        onUploadSuccess={(url) => form.setFieldsValue({ url })}
+                      />
+                    </div>
+                  );
+                }}
               </Form.Item>
-            </Col>
-          </Row>
-          <Form.Item label="源码仓库地址" name="sourceUrl" style={{ marginBottom: 0 }}>
-            <Input placeholder="https://github.com/..." />
-          </Form.Item>
-        </Card>
+              <Form.Item name="url" style={{ margin: 0, height: 0, overflow: 'hidden' }}>
+                <Input />
+              </Form.Item>
+            </Card>
+
+            {/* Card 4：源码与作者配置 (source) */}
+            <Card title="源码与作者配置 (source)" size="small" style={{ marginBottom: 16 }}>
+              <Row gutter={12}>
+                <Col span={12}>
+                  <Form.Item label="作者 (author)" name="sourceAuthor">
+                    <Input placeholder="如: NetEase" />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item label="来源平台 (from)" name="sourceFrom">
+                    <Input placeholder="Github" />
+                  </Form.Item>
+                </Col>
+              </Row>
+              <Form.Item label="源码仓库地址" name="sourceUrl" style={{ marginBottom: 0 }}>
+                <Input placeholder="https://github.com/..." />
+              </Form.Item>
+            </Card>
+          </>
+        )}
 
         {/* Card 5：中英文描述 */}
         <Card title="中英文描述" size="small">

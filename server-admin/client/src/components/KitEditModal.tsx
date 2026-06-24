@@ -20,13 +20,13 @@ export default function KitEditModal({
   visible,
   kit,
   isNew,
-  allSkills,
   categories,
   token,
   onCancel,
   onSave
 }: KitEditModalProps) {
   const [form] = Form.useForm();
+  const isLocalKit = kit?._type === 'localKit';
 
   // 辅助解析多语言文本
   const getLocText = (field: any, lang: 'zh' | 'en' = 'zh'): string => {
@@ -38,7 +38,12 @@ export default function KitEditModal({
   // 监听 kit 改变回填表单
   useEffect(() => {
     if (visible && kit) {
-      const skillsSelected = kit.skills?.list?.map((s: any) => s.id) || [];
+      const skillsList = (kit.skills?.list || []).map((s: any) => ({
+        id: s.id || '',
+        name: s.name || '',
+        descriptionZh: getLocText(s.description, 'zh'),
+        descriptionEn: getLocText(s.description, 'en')
+      }));
       const tryAskingList = (kit.tryAsking || []).map((item: any) => ({
         zh: item.zh || '',
         en: item.en || ''
@@ -61,6 +66,12 @@ export default function KitEditModal({
         url: item.url || ''
       }));
 
+      const tagsList = (kit.tags || []).map((t: any) => ({
+        textZh: getLocText(t.text, 'zh'),
+        textEn: getLocText(t.text, 'en'),
+        color: t.color || 'sky'
+      }));
+
       form.setFieldsValue({
         id: kit.id || '',
         category: kit.category || 'market',
@@ -73,10 +84,16 @@ export default function KitEditModal({
         downloadCount: kit.downloadCount || '0',
         icon: kit.icon || '',
         bundleUrl: kit.skills?.bundle || '',
-        skillsSelected,
+        skillsList,
         tryAskingList,
         mcpList,
-        connectorList
+        connectorList,
+        taglineZh: getLocText(kit.tagline, 'zh'),
+        taglineEn: getLocText(kit.tagline, 'en'),
+        mottoZh: getLocText(kit.motto, 'zh'),
+        mottoEn: getLocText(kit.motto, 'en'),
+        avatarBg: kit.avatarBg || 'sky',
+        tagsList
       });
     } else {
       form.resetFields();
@@ -96,35 +113,27 @@ export default function KitEditModal({
       downloadCount,
       icon,
       bundleUrl,
-      skillsSelected,
+      skillsList,
       tryAskingList,
       mcpList,
-      connectorList
+      connectorList,
+      taglineZh,
+      taglineEn,
+      mottoZh,
+      mottoEn,
+      avatarBg,
+      tagsList
     } = values;
 
     // 1. 组装关联技能并保留历史关联
-    const skillsList: any[] = [];
-    (skillsSelected || []).forEach((skillId: string) => {
-      const found = allSkills.find((s) => s.id === skillId);
-      if (found) {
-        skillsList.push({
-          id: found.id,
-          name: `/${found.id}`,
-          description: found.description || { zh: '', en: '' }
-        });
-      } else {
-        const oldRef = kit.skills?.list?.find((item: any) => item.id === skillId);
-        if (oldRef) {
-          skillsList.push(oldRef);
-        } else {
-          skillsList.push({
-            id: skillId,
-            name: `/${skillId}`,
-            description: { zh: skillId, en: skillId }
-          });
-        }
+    const finalSkills = (skillsList || []).map((s: any) => ({
+      id: (s.id || '').trim(),
+      name: (s.name || '').trim() || `/${(s.id || '').trim()}`, // 缺省时自动补充前缀 /
+      description: {
+        zh: (s.descriptionZh || '').trim(),
+        en: (s.descriptionEn || '').trim()
       }
-    });
+    }));
 
     // 2. 组装提问示例
     const tryAsking = (tryAskingList || []).map((item: any) => ({
@@ -160,22 +169,56 @@ export default function KitEditModal({
       url: item.url
     }));
 
-    // 5. 最终组装的 JSON 格式 payload (干净的去冗余方案)
-    const payloadKit: any = {
-      id: id.trim(),
-      category: category || 'market',
-      name: { zh: nameZh.trim(), en: nameEn.trim() },
-      description: { zh: descriptionZh.trim(), en: descriptionEn.trim() },
-      author: author ? author.trim() : 'HeyClaw',
-      version: version ? version.trim() : '1.0.0',
-      downloadCount: downloadCount ? downloadCount.trim() : '0',
-      icon: icon ? icon.trim() : '',
-      skills: {
-        list: skillsList,
-        bundle: bundleUrl || ''
-      },
-      tryAsking
-    };
+    // 5. 最终组装的 JSON 格式 payload (根据大类分治，支持干净的去冗余少字段方案)
+    let payloadKit: any;
+    if (isLocalKit) {
+      payloadKit = {
+        id: id.trim(),
+        _type: 'localKit', // 保留大类标记用于 App.tsx 保存路由分发
+        category: category || 'market',
+        name: { zh: nameZh.trim(), en: nameEn.trim() },
+        description: { zh: descriptionZh.trim(), en: descriptionEn.trim() },
+        author: author ? author.trim() : 'HeyClaw',
+        version: version ? version.trim() : '1.0.0',
+        icon: icon ? icon.trim() : '',
+        skills: {
+          list: finalSkills
+          // 本地内置专家在物理上不包含 bundle 键，精简字段
+        },
+        tryAsking,
+        tagline: { zh: (taglineZh || '').trim(), en: (taglineEn || '').trim() },
+        motto: { zh: (mottoZh || '').trim(), en: (mottoEn || '').trim() },
+        avatarBg: avatarBg || 'sky',
+        tags: (tagsList || []).slice(0, 3).map((t: any) => ({
+          text: { zh: (t.textZh || '').trim(), en: (t.textEn || '').trim() },
+          color: t.color || 'sky'
+        }))
+      };
+    } else {
+      payloadKit = {
+        id: id.trim(),
+        _type: 'marketplace', // 保留大类标记用于 App.tsx 保存路由分发
+        category: category || 'market',
+        name: { zh: nameZh.trim(), en: nameEn.trim() },
+        description: { zh: descriptionZh.trim(), en: descriptionEn.trim() },
+        author: author ? author.trim() : 'HeyClaw',
+        version: version ? version.trim() : '1.0.0',
+        downloadCount: downloadCount ? downloadCount.trim() : '0',
+        icon: icon ? icon.trim() : '',
+        skills: {
+          list: finalSkills,
+          bundle: bundleUrl || ''
+        },
+        tryAsking,
+        tagline: { zh: (taglineZh || '').trim(), en: (taglineEn || '').trim() },
+        motto: { zh: (mottoZh || '').trim(), en: (mottoEn || '').trim() },
+        avatarBg: avatarBg || 'sky',
+        tags: (tagsList || []).slice(0, 3).map((t: any) => ({
+          text: { zh: (t.textZh || '').trim(), en: (t.textEn || '').trim() },
+          color: t.color || 'sky'
+        }))
+      };
+    }
 
     // 仅在有依赖值时才输出字段，免去 json 写入多余 null 键
     if (mcpServers.length > 0) {
@@ -188,31 +231,9 @@ export default function KitEditModal({
     onSave(payloadKit);
   };
 
-  const getSkillOptions = () => {
-    const list: any[] = [];
-    allSkills.forEach((s) => {
-      list.push({
-        value: s.id,
-        label: `${s.id} (已注册)`
-      });
-    });
-
-    const currentSelected = kit?.skills?.list?.map((s: any) => s.id) || [];
-    currentSelected.forEach((selId: string) => {
-      if (!allSkills.some((s) => s.id === selId)) {
-        list.push({
-          value: selId,
-          label: `${selId} (历史保留)`
-        });
-      }
-    });
-
-    return list;
-  };
-
   return (
     <Modal
-      title={isNew ? '新增专家套件' : '编辑专家套件'}
+      title={isNew ? (isLocalKit ? '新增本地内置专家' : '新增专家套件') : (isLocalKit ? '编辑本地内置专家' : '编辑专家套件')}
       open={visible}
       onCancel={onCancel}
       width={720}
@@ -277,7 +298,11 @@ export default function KitEditModal({
             </Form.Item>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 0.8fr 1fr', gap: '12px' }}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: isLocalKit ? '1.2fr 0.8fr' : '1fr 0.8fr 1fr',
+            gap: '12px'
+          }}>
             <Form.Item label="作者 (author)" name="author">
               <Input placeholder="默认: HeyClaw" />
             </Form.Item>
@@ -288,19 +313,19 @@ export default function KitEditModal({
             >
               <Input placeholder="1.0.0" />
             </Form.Item>
-            <Form.Item label="已下载次数" name="downloadCount">
-              <Input placeholder="0" />
-            </Form.Item>
+            {!isLocalKit && (
+              <Form.Item label="已下载次数" name="downloadCount">
+                <Input placeholder="0" />
+              </Form.Item>
+            )}
           </div>
         </Card>
 
         {/* Card 2：云端资源与图标上传 */}
         <Card title="云端资源与图标" size="small" style={{ marginBottom: 16 }}>
-          <Form.Item label="套件图标链接 (icon)" name="icon">
-            <Input placeholder="请输入图标在线地址" />
-          </Form.Item>
-          
-          {/* 实时的图标图片预览展示 */}
+          <div style={{ fontSize: '14px', fontWeight: '500', color: 'rgba(0, 0, 0, 0.88)', marginBottom: 8 }}>
+            套件图标 (icon)
+          </div>
           <Form.Item noStyle shouldUpdate={(prev, curr) => prev.icon !== curr.icon}>
             {({ getFieldValue }) => {
               const currentIcon = getFieldValue('icon');
@@ -336,40 +361,136 @@ export default function KitEditModal({
               );
             }}
           </Form.Item>
-
-          <Divider style={{ margin: '16px 0 12px 0' }} />
-
-          <Form.Item
-            label="套件 Zip 资源包下载地址 (bundleUrl)"
-            name="bundleUrl"
-            rules={[{ required: true, message: '资源包下载地址必填' }]}
-          >
-            <Input placeholder="请输入 Zip 资源包在线地址" />
+          <Form.Item name="icon" style={{ margin: 0, height: 0, overflow: 'hidden' }}>
+            <Input />
           </Form.Item>
-          <UploadDropzone
-            token={token}
-            accept=".zip"
-            placeholderText="点击或拖拽上传套件 Zip 包"
-            onUploadSuccess={(url) => form.setFieldsValue({ bundleUrl: url })}
-          />
+
+          {!isLocalKit && (
+            <>
+              <Divider style={{ margin: '16px 0 16px 0' }} />
+              <Form.Item noStyle shouldUpdate={(prev, curr) => prev.bundleUrl !== curr.bundleUrl}>
+                {({ getFieldValue }) => {
+                  const currentBundleUrl = getFieldValue('bundleUrl');
+                  return (
+                    <div style={{ marginBottom: 8 }}>
+                      <div style={{ fontSize: '14px', fontWeight: '500', color: 'rgba(0, 0, 0, 0.88)', marginBottom: 8 }}>
+                        套件 Zip 资源包 (bundleUrl) <span style={{ color: '#ff4d4f' }}>*</span>
+                      </div>
+                      {currentBundleUrl ? (
+                        <div style={{ padding: '8px 12px', background: '#f6ffed', border: '1px solid #b7eb8f', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                          <span style={{ fontSize: '13px', color: '#389e0d', wordBreak: 'break-all' }}>
+                            ✓ 已绑定云端资源包：{currentBundleUrl}
+                          </span>
+                          <Button 
+                            type="link" 
+                            danger 
+                            size="small" 
+                            icon={<DeleteOutlined />}
+                            onClick={() => form.setFieldsValue({ bundleUrl: '' })}
+                          >
+                            清除
+                          </Button>
+                        </div>
+                      ) : (
+                        <div style={{ padding: '8px 12px', background: '#fff2e8', border: '1px solid #ffbb96', borderRadius: 6, fontSize: '13px', color: '#d4380d', marginBottom: 8 }}>
+                          ⚠ 尚未上传云端资源包，请在下方拖拽或点击上传。
+                        </div>
+                      )}
+                      <UploadDropzone
+                        token={token}
+                        accept=".zip"
+                        placeholderText="点击或拖拽上传套件 Zip 包"
+                        onUploadSuccess={(url) => form.setFieldsValue({ bundleUrl: url })}
+                      />
+                    </div>
+                  );
+                }}
+              </Form.Item>
+              <Form.Item
+                name="bundleUrl"
+                rules={[{ required: true, message: '请上传套件 Zip 资源包' }]}
+                style={{ margin: 0, height: 0, overflow: 'hidden' }}
+              >
+                <Input />
+              </Form.Item>
+            </>
+          )}
         </Card>
 
         {/* Card 3：关联技能配置 */}
         <Card title="关联技能配置" size="small" style={{ marginBottom: 16 }}>
-          <Form.Item
-            label="选择关联技能 (支持中文/英文/ID搜索，可多选)"
-            name="skillsSelected"
-            style={{ marginBottom: 0 }}
-          >
-            <Select
-              mode="multiple"
-              allowClear
-              style={{ width: '100%' }}
-              placeholder="从全局技能库中搜索和多选绑定..."
-              optionFilterProp="label"
-              options={getSkillOptions()}
-            />
-          </Form.Item>
+          <Form.List name="skillsList">
+            {(fields, { add, remove }) => (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {fields.map(({ key, name, ...restField }) => (
+                  <div
+                    key={key}
+                    style={{
+                      padding: '12px 12px 12px 12px',
+                      background: '#fafafa',
+                      border: '1px solid #f0f0f0',
+                      borderRadius: 8,
+                      position: 'relative'
+                    }}
+                  >
+                    <MinusCircleOutlined
+                      style={{ position: 'absolute', right: 10, top: 10, color: '#ff4d4f', zIndex: 2 }}
+                      onClick={() => remove(name)}
+                    />
+                    <Form.Item
+                      {...restField}
+                      label="技能唯一标识 ID (id)"
+                      name={[name, 'id']}
+                      rules={[{ required: true, message: '请输入技能唯一 ID' }]}
+                      style={{ marginBottom: 8 }}
+                    >
+                      <Input 
+                        placeholder="如: architecture" 
+                        onChange={(e) => {
+                          // 自动补全 name 为 /id 的小交互
+                          const val = e.target.value;
+                          const nameVal = form.getFieldValue(['skillsList', name, 'name']);
+                          if (!nameVal || nameVal === `/${val.slice(0, -1)}`) {
+                            form.setFieldValue(['skillsList', name, 'name'], val ? `/${val}` : '');
+                          }
+                        }}
+                      />
+                    </Form.Item>
+                    <Form.Item
+                      {...restField}
+                      label="技能指令名称 (name)"
+                      name={[name, 'name']}
+                      rules={[{ required: true, message: '请输入技能指令名称' }]}
+                      style={{ marginBottom: 8 }}
+                    >
+                      <Input placeholder="如: /architecture" />
+                    </Form.Item>
+                    <Form.Item
+                      {...restField}
+                      label="中文描述"
+                      name={[name, 'descriptionZh']}
+                      rules={[{ required: true, message: '请输入中文描述' }]}
+                      style={{ marginBottom: 8 }}
+                    >
+                      <Input.TextArea autoSize={{ minRows: 2, maxRows: 3 }} placeholder="中文描述该技能作用" />
+                    </Form.Item>
+                    <Form.Item
+                      {...restField}
+                      label="英文描述"
+                      name={[name, 'descriptionEn']}
+                      rules={[{ required: true, message: '请输入英文描述' }]}
+                      style={{ marginBottom: 0 }}
+                    >
+                      <Input.TextArea autoSize={{ minRows: 2, maxRows: 3 }} placeholder="英文描述该技能作用" />
+                    </Form.Item>
+                  </div>
+                ))}
+                <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>
+                  添加关联技能
+                </Button>
+              </div>
+            )}
+          </Form.List>
         </Card>
 
         {/* Card 4：中英文描述 */}
@@ -389,6 +510,118 @@ export default function KitEditModal({
           >
             <Input.TextArea autoSize={{ minRows: 2, maxRows: 3 }} placeholder="Description in English" />
           </Form.Item>
+        </Card>
+
+        {/* 外观呈现与个性化配置 */}
+        <Card title="外观呈现与个性化配置" size="small" style={{ marginBottom: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <Form.Item
+              label="中文一句话定位 (tagline)"
+              name="taglineZh"
+              rules={[{ required: true, message: '请输入中文一句话定位' }]}
+            >
+              <Input placeholder="如: 代码编写 · 系统架构" />
+            </Form.Item>
+            <Form.Item
+              label="英文一句话定位 (tagline)"
+              name="taglineEn"
+              rules={[{ required: true, message: '请输入英文一句话定位' }]}
+            >
+              <Input placeholder="如: Code Writing · System Architecture" />
+            </Form.Item>
+          </div>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <Form.Item
+              label="中文专家格言/座右铭 (motto)"
+              name="mottoZh"
+              rules={[{ required: true, message: '请输入中文专家座右铭' }]}
+            >
+              <Input.TextArea autoSize={{ minRows: 1, maxRows: 2 }} placeholder="如: 别家还在找 bug，我已重构完成" />
+            </Form.Item>
+            <Form.Item
+              label="英文专家格言/座右铭 (motto)"
+              name="mottoEn"
+              rules={[{ required: true, message: '请输入英文专家座右铭' }]}
+            >
+              <Input.TextArea autoSize={{ minRows: 1, maxRows: 2 }} placeholder="如: Others are debugging, I've refactored." />
+            </Form.Item>
+          </div>
+
+          <Form.Item
+            label="专家头像背景色 (avatarBg)"
+            name="avatarBg"
+            rules={[{ required: true, message: '请选择头像背景色' }]}
+            style={{ marginBottom: 0 }}
+          >
+            <Select placeholder="选择头像背景色">
+              <Option value="sky">sky (天蓝)</Option>
+              <Option value="purple">purple (紫色)</Option>
+              <Option value="slate">slate (石板灰)</Option>
+              <Option value="emerald">emerald (翡翠绿)</Option>
+              <Option value="amber">amber (琥珀黄)</Option>
+              <Option value="rose">rose (玫瑰红)</Option>
+              <Option value="indigo">indigo (靛蓝)</Option>
+              <Option value="orange">orange (橙色)</Option>
+            </Select>
+          </Form.Item>
+        </Card>
+
+        {/* 特色高光标签 (最多 3 个) */}
+        <Card title="特色高光标签 (最多 3 个)" size="small" style={{ marginBottom: 16 }}>
+          <Form.List name="tagsList">
+            {(fields, { add, remove }) => (
+              <Space direction="vertical" style={{ width: '100%' }}>
+                {fields.map(({ key, name, ...restField }) => (
+                  <Space key={key} style={{ display: 'flex', marginBottom: 4 }} align="baseline">
+                    <Form.Item
+                      {...restField}
+                      name={[name, 'textZh']}
+                      rules={[{ required: true, message: '中文必填' }]}
+                      style={{ margin: 0 }}
+                    >
+                      <Input placeholder="中文标签文本 (如: 架构决策)" style={{ width: 220 }} />
+                    </Form.Item>
+                    <Form.Item
+                      {...restField}
+                      name={[name, 'textEn']}
+                      rules={[{ required: true, message: '英文必填' }]}
+                      style={{ margin: 0 }}
+                    >
+                      <Input placeholder="英文标签文本 (如: ADR)" style={{ width: 220 }} />
+                    </Form.Item>
+                    <Form.Item
+                      {...restField}
+                      name={[name, 'color']}
+                      rules={[{ required: true, message: '必选' }]}
+                      style={{ margin: 0 }}
+                    >
+                      <Select placeholder="颜色" style={{ width: 140 }}>
+                        <Option value="sky">sky (天蓝)</Option>
+                        <Option value="purple">purple (紫色)</Option>
+                        <Option value="slate">slate (石板灰)</Option>
+                        <Option value="emerald">emerald (翡翠绿)</Option>
+                        <Option value="amber">amber (琥珀黄)</Option>
+                        <Option value="rose">rose (玫瑰红)</Option>
+                        <Option value="indigo">indigo (靛蓝)</Option>
+                        <Option value="orange">orange (橙色)</Option>
+                      </Select>
+                    </Form.Item>
+                    <MinusCircleOutlined onClick={() => remove(name)} style={{ color: '#ff4d4f' }} />
+                  </Space>
+                ))}
+                {fields.length < 3 ? (
+                  <Button type="dashed" onClick={() => add({ color: 'sky' })} block icon={<PlusOutlined />}>
+                    添加特色标签 (当前 {fields.length}/3)
+                  </Button>
+                ) : (
+                  <div style={{ textAlign: 'center', color: '#8c8c8c', fontSize: '13px', padding: '4px 0' }}>
+                    已达到标签上限 3 个，若要添加新标签，请先删除已有标签。
+                  </div>
+                )}
+              </Space>
+            )}
+          </Form.List>
         </Card>
 
         {/* Card 5：推荐提问示例 */}

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Card, Input, Button, Row, Col, Space, Tag, Empty, Popconfirm, Select, Pagination } from 'antd';
+import { Card, Input, Button, Row, Col, Space, Tag, Empty, Popconfirm, Select, Pagination, Tabs } from 'antd';
 import { SearchOutlined, TagsOutlined, PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 
 interface SkillCardListProps {
@@ -7,7 +7,7 @@ interface SkillCardListProps {
   marketTags: any[];
   onEdit: (skill: any) => void;
   onDelete: (id: string, type: 'localSkill' | 'marketplace') => void;
-  onNewSkill: () => void;
+  onNewSkill: (type: 'localSkill' | 'marketplace') => void;
   onManageTags: () => void;
 }
 
@@ -20,7 +20,7 @@ export default function SkillCardList({
   onManageTags
 }: SkillCardListProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedType, setSelectedType] = useState<string | undefined>(undefined);
+  const [selectedType, setSelectedType] = useState<string>('marketplace');
   const [selectedTag, setSelectedTag] = useState<string | undefined>(undefined);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 12;
@@ -41,7 +41,7 @@ export default function SkillCardList({
       s.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (s.name && s.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
-    const matchesType = selectedType ? s._type === selectedType : true;
+    const matchesType = s._type === selectedType;
     const matchesTag = selectedTag ? (s.tags || []).includes(selectedTag) : true;
 
     return matchesSearch && matchesType && matchesTag;
@@ -51,8 +51,30 @@ export default function SkillCardList({
 
   return (
     <div>
+      {/* 次级 Tab 分类隔离 */}
+      <Tabs
+        activeKey={selectedType}
+        onChange={(key) => {
+          setSelectedType(key);
+          setSelectedTag(undefined); // 切换大类时清空标签过滤
+        }}
+        style={{ marginBottom: 16 }}
+        items={[
+          {
+            key: 'marketplace',
+            label: '云端市场技能 (marketplace)'
+          },
+          {
+            key: 'localSkill',
+            label: '本地内置技能 (localSkill)'
+          }
+        ]}
+      />
+
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
-        <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 600 }}>技能市场列表 ({filteredSkills.length})</h2>
+        <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 600 }}>
+          {selectedType === 'localSkill' ? '本地内置技能列表' : '云端市场技能列表'} ({filteredSkills.length})
+        </h2>
         <Space size="middle" style={{ flexWrap: 'wrap' }}>
           <Input
             prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
@@ -62,35 +84,34 @@ export default function SkillCardList({
             style={{ width: 220 }}
             allowClear
           />
-          <Select
-            placeholder="全部类型"
-            value={selectedType}
-            onChange={(val) => setSelectedType(val)}
-            style={{ width: 130 }}
-            allowClear
-          >
-            <Select.Option value="marketplace">市场技能 (MARKET)</Select.Option>
-            <Select.Option value="localSkill">本地内置技能 (LOCAL)</Select.Option>
-          </Select>
-          <Select
-            placeholder="筛选标签"
-            value={selectedTag}
-            onChange={(val) => setSelectedTag(val)}
-            style={{ width: 130 }}
-            allowClear
-          >
-            {marketTags.map((tag) => (
-              <Select.Option key={tag.id} value={tag.id}>
-                {tag.zh}
-              </Select.Option>
-            ))}
-          </Select>
-          <Button icon={<TagsOutlined />} onClick={onManageTags}>
-            管理标签
-          </Button>
-          <Button type="primary" icon={<PlusOutlined />} onClick={onNewSkill}>
-            新增技能项目
-          </Button>
+          {selectedType === 'marketplace' && (
+            <>
+              <Select
+                placeholder="筛选标签"
+                value={selectedTag}
+                onChange={(val) => setSelectedTag(val)}
+                style={{ width: 130 }}
+                allowClear
+              >
+                {marketTags.map((tag) => (
+                  <Select.Option key={tag.id} value={tag.id}>
+                    {tag.zh}
+                  </Select.Option>
+                ))}
+              </Select>
+              <Button icon={<TagsOutlined />} onClick={onManageTags}>
+                管理标签
+              </Button>
+              <Button type="primary" icon={<PlusOutlined />} onClick={() => onNewSkill('marketplace')}>
+                新增技能项目
+              </Button>
+            </>
+          )}
+          {selectedType === 'localSkill' && (
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => onNewSkill('localSkill')}>
+              新增本地内置技能
+            </Button>
+          )}
         </Space>
       </div>
 

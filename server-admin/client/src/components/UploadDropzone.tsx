@@ -25,6 +25,7 @@ export default function UploadDropzone({
   const [percent, setPercent] = useState<number | null>(null);
 
   // 自定义二进制流式 XHR 上传以对接原生 Node 服务端点
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const customUploadRequest = async (options: any) => {
     const { file, onSuccess, onError } = options;
     const xhr = new XMLHttpRequest();
@@ -44,9 +45,7 @@ export default function UploadDropzone({
         try {
           const data = JSON.parse(xhr.responseText);
           if (data.success) {
-            const protocol = window.location.protocol;
-            const host = window.location.hostname;
-            const finalUrl = `${protocol}//${host}:8081${data.url}`;
+            const finalUrl = data.url;
             onUploadSuccess(finalUrl);
             onSuccess(data);
             message.success(`${file.name} 上传成功`);

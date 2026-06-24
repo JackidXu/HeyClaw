@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Card, Input, Button, Row, Col, Space, Tag, Empty, Popconfirm, Select, Pagination } from 'antd';
+import { Card, Input, Button, Row, Col, Space, Tag, Empty, Popconfirm, Select, Pagination, Tabs } from 'antd';
 import { SearchOutlined, FolderOpenOutlined, PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 
 interface KitCardListProps {
   kitsList: any[];
   categories: any[];
   onEdit: (kit: any) => void;
-  onDelete: (id: string) => void;
-  onNewKit: () => void;
+  onDelete: (id: string, type: 'localKit' | 'marketplace') => void;
+  onNewKit: (type: 'localKit' | 'marketplace') => void;
   onManageCategories: () => void;
 }
 
@@ -21,13 +21,14 @@ export default function KitCardList({
 }: KitCardListProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>(undefined);
+  const [selectedType, setSelectedType] = useState<string>('marketplace');
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 12;
 
-  // 当搜索条件或分类发生变化时，重置回第一页
+  // 当搜索条件、分类或大类 Tab 变化时，重置回第一页
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, selectedCategory]);
+  }, [searchQuery, selectedCategory, selectedType]);
 
   const getLocText = (field: any, lang: 'zh' | 'en' = 'zh'): string => {
     if (!field) return '';
@@ -41,15 +42,38 @@ export default function KitCardList({
       getLocText(k.name, 'zh').toLowerCase().includes(searchQuery.toLowerCase());
     
     const matchesCategory = selectedCategory ? k.category === selectedCategory : true;
-    return matchesSearch && matchesCategory;
+    const matchesType = (k._type || 'marketplace') === selectedType;
+    return matchesSearch && matchesCategory && matchesType;
   });
 
   const displayedKits = filteredKits.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   return (
     <div>
+      {/* 专家套件次级 Tab 隔离 */}
+      <Tabs
+        activeKey={selectedType}
+        onChange={(key) => {
+          setSelectedType(key);
+          setSelectedCategory(undefined); // 切换大类时重置分类过滤
+        }}
+        style={{ marginBottom: 16 }}
+        items={[
+          {
+            key: 'marketplace',
+            label: '云端市场专家 (marketplace)'
+          },
+          {
+            key: 'localKit',
+            label: '本地内置专家 (localKit)'
+          }
+        ]}
+      />
+
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
-        <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 600 }}>专家套件列表 ({filteredKits.length})</h2>
+        <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 600 }}>
+          {selectedType === 'localKit' ? '本地内置专家列表' : '云端市场专家列表'} ({filteredKits.length})
+        </h2>
         <Space size="middle" style={{ flexWrap: 'wrap' }}>
           <Input
             prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
@@ -75,9 +99,15 @@ export default function KitCardList({
           <Button icon={<FolderOpenOutlined />} onClick={onManageCategories}>
             管理分类
           </Button>
-          <Button type="primary" icon={<PlusOutlined />} onClick={onNewKit}>
-            新增专家套件
-          </Button>
+          {selectedType === 'marketplace' ? (
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => onNewKit('marketplace')}>
+              新增专家套件
+            </Button>
+          ) : (
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => onNewKit('localKit')}>
+              新增本地内置专家
+            </Button>
+          )}
         </Space>
       </div>
       {filteredKits.length > 0 ? (
@@ -94,7 +124,7 @@ export default function KitCardList({
                     </Button>,
                     <Popconfirm
                       title={`确定删除套件「${k.id}」吗？`}
-                      onConfirm={() => onDelete(k.id)}
+                      onConfirm={() => onDelete(k.id, k._type || 'marketplace')}
                       okText="确定"
                       cancelText="取消"
                       okType="danger"
@@ -110,9 +140,14 @@ export default function KitCardList({
                       <div style={{ fontSize: '15px', fontWeight: 600, color: '#262626', marginRight: 8, wordBreak: 'break-all' }}>
                         {getLocText(k.name, 'zh')}
                       </div>
-                      <Tag color={k.id === 'computer-use' ? 'gold' : 'blue'} style={{ margin: 0 }}>
-                        {k.id}
-                      </Tag>
+                      <Space size={4} style={{ margin: 0 }}>
+                        <Tag color={k.id === 'computer-use' ? 'gold' : 'blue'} style={{ margin: 0 }}>
+                          {k.id}
+                        </Tag>
+                        <Tag color={k._type === 'localKit' ? 'success' : 'purple'} style={{ margin: 0 }}>
+                          {k._type === 'localKit' ? 'LOCAL' : 'MARKET'}
+                        </Tag>
+                      </Space>
                     </div>
                     <div style={{ fontSize: '13px', color: '#8c8c8c', marginBottom: 16, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', height: 54 }}>
                       {getLocText(k.description, 'zh')}
