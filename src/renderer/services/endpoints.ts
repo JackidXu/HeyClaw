@@ -10,18 +10,15 @@ export const isTestModeEnabled = () => {
 };
 
 // 自动更新
-export const getUpdateCheckUrl = () => isTestModeEnabled()
-  ? 'https://api-overmind.heyclaw.com/openapi/get/luna/hardware/lobsterai/test/update'
-  : 'https://api-overmind.heyclaw.com/openapi/get/luna/hardware/lobsterai/prod/update';
+export const getUpdateCheckUrl = () =>
+  'https://scrm0.cdn.banchengyun.com/heyclaw/downloads/version.json';
 
 // 手动检查更新
-export const getManualUpdateCheckUrl = () => isTestModeEnabled()
-  ? 'https://api-overmind.heyclaw.com/openapi/get/luna/hardware/lobsterai/test/update-manual'
-  : 'https://api-overmind.heyclaw.com/openapi/get/luna/hardware/lobsterai/prod/update-manual';
+export const getManualUpdateCheckUrl = () =>
+  'https://scrm0.cdn.banchengyun.com/heyclaw/downloads/version.json';
 
-export const getFallbackDownloadUrl = () => isTestModeEnabled()
-  ? 'https://inner.heyclaw.com/#/download-list'
-  : 'https://portal.heyclaw.com/#/download-list';
+export const getFallbackDownloadUrl = () =>
+  'https://claw.chaohui.ai/';
 
 // Skill 商店
 export const getSkillStoreUrl = () => 'https://scrm0.cdn.banchengyun.com/heyclaw/server-assets/skill-store.json';

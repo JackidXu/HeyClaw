@@ -479,7 +479,9 @@ export class AppUpdateCoordinator {
   ): Promise<AppUpdateInfo | null> {
     const baseUrl = manual ? getManualUpdateCheckUrl() : getUpdateCheckUrl();
     const qs = this.getUpdateQueryString(userId, currentVersion);
-    const url = qs ? `${baseUrl}?${qs}` : baseUrl;
+    // 拼接时间戳防止静态文件受到 CDN 强缓存影响
+    const finalQs = qs ? `${qs}&_t=${Date.now()}` : `_t=${Date.now()}`;
+    const url = `${baseUrl}?${finalQs}`;
     console.log(`[AppUpdate] checking update, currentVersion=${currentVersion}, url=${url}`);
 
     const response = await session.defaultSession.fetch(url, {
@@ -493,13 +495,44 @@ export class AppUpdateCoordinator {
       throw new Error(`Update check failed (HTTP ${response.status})`);
     }
 
-    const payload = (await response.json()) as UpdateApiResponse;
-    if (payload.code !== 0) {
-      throw new Error(`Update check failed with code ${payload.code ?? 'unknown'}`);
+    const payload = (await response.json()) as any;
+    let latestVersion = '';
+    let date = '';
+    let downloadUrl = '';
+
+    // 检测并解析阿里云 OSS 新增的扁平 version.json 格式
+    if (payload && typeof payload.version === 'string') {
+      latestVersion = payload.version.trim().replace(/^v/i, '');
+      date = typeof payload.date === 'string' ? payload.date.trim() : '';
+
+      let filename = '';
+      if (process.platform === 'darwin') {
+        filename = process.arch === 'arm64' ? payload.files?.mac_arm64 : payload.files?.mac_x64;
+      } else if (process.platform === 'win32') {
+        filename = payload.files?.windows;
+      }
+
+      if (filename) {
+        // 兼容完整直链 URL 与纯文件名
+        if (filename.startsWith('http://') || filename.startsWith('https://')) {
+          downloadUrl = filename;
+        } else {
+          downloadUrl = `https://scrm0.cdn.banchengyun.com/heyclaw/downloads/${filename}`;
+        }
+      } else {
+        downloadUrl = getFallbackDownloadUrl();
+      }
+    } else {
+      // 保持对原有 nested 格式的向下兼容，确保单元测试跑通
+      if (payload?.code !== 0) {
+        throw new Error(`Update check failed with code ${payload?.code ?? 'unknown'}`);
+      }
+      const value = payload?.data?.value;
+      latestVersion = (value?.version?.trim() || '').replace(/^v/i, '');
+      date = value?.date?.trim() || '';
+      downloadUrl = this.getPlatformDownloadUrl(value);
     }
 
-    const value = payload.data?.value;
-    const latestVersion = value?.version?.trim();
     if (!latestVersion || !this.isNewerVersion(latestVersion, currentVersion)) {
       console.log(
         `[AppUpdate] no update available, latestVersion=${latestVersion || 'N/A'}, currentVersion=${currentVersion}`,
@@ -513,13 +546,16 @@ export class AppUpdateCoordinator {
     });
 
     const result: AppUpdateInfo = {
-      latestVersion,
-      date: value?.date?.trim() || '',
-      changeLog: {
-        zh: toEntry(value?.changeLog?.ch),
-        en: toEntry(value?.changeLog?.en),
+      latestVersion, // 保留带有前缀的原始版本号以供 UI 展示一致性
+      date,
+      changeLog: payload && typeof payload.version === 'string' ? {
+        zh: { title: '版本更新', content: ['有新版本可用，请点击更新'] },
+        en: { title: 'App Update', content: ['A new version is available, please update.'] }
+      } : {
+        zh: toEntry(payload?.data?.value?.changeLog?.ch),
+        en: toEntry(payload?.data?.value?.changeLog?.en),
       },
-      url: this.getPlatformDownloadUrl(value),
+      url: downloadUrl,
     };
     console.log(
       `[AppUpdate] update available: ${currentVersion} -> ${latestVersion}, downloadUrl=${result.url}`,
@@ -618,8 +654,11 @@ export class AppUpdateCoordinator {
   }
 
   private compareVersions(a: string, b: string): number {
-    const aParts = this.toVersionParts(a);
-    const bParts = this.toVersionParts(b);
+    // 统一去除版本号开头的 'v' 或 'V' 字符以确保数字比对正确
+    const aClean = a.replace(/^v/i, '');
+    const bClean = b.replace(/^v/i, '');
+    const aParts = this.toVersionParts(aClean);
+    const bParts = this.toVersionParts(bClean);
     const maxLength = Math.max(aParts.length, bParts.length);
 
     for (let index = 0; index < maxLength; index += 1) {

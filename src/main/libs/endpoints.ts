@@ -37,21 +37,15 @@ export const getHtmlSharePublicBaseUrl = (): string => {
 };
 
 export const getUpdateCheckUrl = (): string => (
-  isTestModeEnabled()
-    ? 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/test/update'
-    : 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/prod/update'
+  'https://scrm0.cdn.banchengyun.com/heyclaw/downloads/version.json'
 );
 
 export const getManualUpdateCheckUrl = (): string => (
-  isTestModeEnabled()
-    ? 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/test/update-manual'
-    : 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/prod/update-manual'
+  'https://scrm0.cdn.banchengyun.com/heyclaw/downloads/version.json'
 );
 
 export const getFallbackDownloadUrl = (): string => (
-  isTestModeEnabled()
-    ? 'https://lobsterai.inner.youdao.com/#/download-list'
-    : 'https://lobsterai.youdao.com/#/download-list'
+  'https://claw.chaohui.ai/'
 );
 
 export const getSkillStoreUrl = (): string => 'https://scrm0.cdn.banchengyun.com/heyclaw/server-assets/skill-store.json';

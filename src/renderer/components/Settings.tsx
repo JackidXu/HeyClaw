@@ -891,6 +891,20 @@ const Settings: React.FC<SettingsProps> = ({
 
   const handleCheckUpdate = useCallback(async () => {
     if (updateCheckStatus === 'checking' || !appVersion) return;
+
+    // 如果更新包已下载就绪，直接触发安装与重启
+    if (appUpdateState?.status === AppUpdateStatus.Ready) {
+      try {
+        const installResult = await window.electron.appUpdate.installReady();
+        if (!installResult.success) {
+          setError(installResult.error || i18nService.t('updateInstallFailed'));
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : i18nService.t('updateInstallFailed'));
+      }
+      return;
+    }
+
     setUpdateCheckStatus('checking');
     try {
       const result = await window.electron.appUpdate.checkNow({ manual: true, userId: authUser?.yid });
@@ -4056,7 +4070,7 @@ const Settings: React.FC<SettingsProps> = ({
                   {!enterpriseConfig?.disableUpdate && (
                   <button
                     type="button"
-                    disabled={true}
+                    disabled={updateCheckStatus === 'checking' || updateCheckStatus === 'downloading'}
                     onClick={(e) => {
                       e.stopPropagation();
                       void handleCheckUpdate();
