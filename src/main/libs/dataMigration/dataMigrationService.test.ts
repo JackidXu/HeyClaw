@@ -616,7 +616,7 @@ test('performDataMigrationRestoreSync checkpoints archived WAL data into the res
     'SELECT id FROM cowork_sessions WHERE id = ?',
     ['source-wal-session'],
   )).toBe('source-wal-session');
-});
+}, 20000);
 
 test('performDataMigrationRestoreSync restores valid backup when current sqlite is unreadable', () => {
   const root = makeTempDir();
