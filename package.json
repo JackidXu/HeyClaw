@@ -61,6 +61,7 @@
     "node": ">=24 <25"
   },
   "scripts": {
+    "release": "bash scripts/release.sh",
     "dev": "vite",
     "prebuild": "node scripts/generate-keyfrom-build-info.cjs",
     "build": "tsc && cross-env NODE_OPTIONS=\"--max-old-space-size=4096\" vite build",
