@@ -41,7 +41,7 @@ const SKILL_FILE_NAME = 'SKILL.md';
 function downloadBuffer(url: string): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     const mod = url.startsWith('https') ? https : http;
-    const req = mod.get(url, { timeout: 60000 }, (res) => {
+    const req = mod.get(url, { timeout: 60000 }, res => {
       // Follow redirects
       if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
         downloadBuffer(res.headers.location).then(resolve, reject);
@@ -59,7 +59,10 @@ function downloadBuffer(url: string): Promise<Buffer> {
       res.on('error', reject);
     });
     req.on('error', reject);
-    req.on('timeout', () => { req.destroy(); reject(new Error('Download timeout')); });
+    req.on('timeout', () => {
+      req.destroy();
+      reject(new Error('Download timeout'));
+    });
   });
 }
 
@@ -80,9 +83,7 @@ function sha256Buffer(buffer: Buffer): string {
 
 type InstalledKitsMap = Record<string, InstalledKitRecord>;
 
-const normalizeCapabilityList = (value: unknown): unknown[] => (
-  Array.isArray(value) ? value : []
-);
+const normalizeCapabilityList = (value: unknown): unknown[] => (Array.isArray(value) ? value : []);
 
 function appendBuiltInKitsToStoreResponse(data: string): string {
   if (!isComputerUseKitSupportedPlatform()) {
@@ -96,22 +97,21 @@ function appendBuiltInKitsToStoreResponse(data: string): string {
     return data;
   }
 
-  const value = typeof rawValue === 'string'
-    ? JSON.parse(rawValue) as Record<string, unknown>
-    : rawValue as Record<string, unknown>;
+  const value =
+    typeof rawValue === 'string'
+      ? (JSON.parse(rawValue) as Record<string, unknown>)
+      : (rawValue as Record<string, unknown>);
   const kits = Array.isArray(value.kits) ? value.kits : [];
-  const withoutDuplicate = kits.filter((kit) => (
-    !kit
-    || typeof kit !== 'object'
-    || (kit as Record<string, unknown>).id !== ComputerUseKitId.BuiltIn
-  ));
+  const withoutDuplicate = kits.filter(
+    kit =>
+      !kit ||
+      typeof kit !== 'object' ||
+      (kit as Record<string, unknown>).id !== ComputerUseKitId.BuiltIn,
+  );
 
   const nextValue = {
     ...value,
-    kits: [
-      ...withoutDuplicate,
-      buildComputerUseMarketplaceKit(),
-    ],
+    kits: [...withoutDuplicate, buildComputerUseMarketplaceKit()],
   };
   valueContainer.value = typeof rawValue === 'string' ? JSON.stringify(nextValue) : nextValue;
   return JSON.stringify(parsed);
@@ -171,7 +171,12 @@ function ensureSkillsRoot(): string {
 }
 
 function normalizeFolderName(name: string): string {
-  return name.replace(/[^a-zA-Z0-9_\-\.]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '') || 'skill';
+  return (
+    name
+      .replace(/[^a-zA-Z0-9_\-\.]/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '') || 'skill'
+  );
 }
 
 function normalizeWindowsAttrs(targetDir: string): void {
@@ -213,13 +218,16 @@ function collectSkillDirs(source: string): string[] {
 
 function listSkillDirs(root: string): string[] {
   if (!fs.existsSync(root)) return [];
-  return fs.readdirSync(root)
+  return fs
+    .readdirSync(root)
     .sort((a, b) => a.localeCompare(b))
     .map(entry => path.join(root, entry))
     .filter(entryPath => {
       try {
-        return fs.statSync(entryPath).isDirectory()
-          && fs.existsSync(path.join(entryPath, SKILL_FILE_NAME));
+        return (
+          fs.statSync(entryPath).isDirectory() &&
+          fs.existsSync(path.join(entryPath, SKILL_FILE_NAME))
+        );
       } catch {
         return false;
       }
@@ -242,43 +250,25 @@ export function registerKitHandlers(deps: KitHandlerDeps): void {
     const url = getKitStoreUrl();
     console.log(`[KitStore] fetching from: ${url}`);
     try {
-      let data = '';
-      if (!app.isPackaged) {
-        const pathsToTry = [
-          path.join(process.cwd(), 'server-assets/kit-store.json'),
-          path.join(app.getAppPath(), 'server-assets/kit-store.json'),
-          path.join(app.getAppPath(), '../server-assets/kit-store.json'),
-        ];
-        for (const p of pathsToTry) {
-          if (fs.existsSync(p)) {
-            console.log(`[KitStore] local mode: reading from ${p}`);
-            data = fs.readFileSync(p, 'utf8');
-            break;
+      const http = await import('http');
+      const https = await import('https');
+      const mod = url.startsWith('https:') ? https : http;
+      const data = await new Promise<string>((resolve, reject) => {
+        const req = mod.get(url, { timeout: 10000 }, (res) => {
+          if (res.statusCode !== 200) {
+            reject(new Error(`HTTP ${res.statusCode}`));
+            res.resume();
+            return;
           }
-        }
-      }
-
-      if (!data) {
-        const http = await import('http');
-        const https = await import('https');
-        const mod = url.startsWith('https:') ? https : http;
-        data = await new Promise<string>((resolve, reject) => {
-          const req = mod.get(url, { timeout: 10000 }, (res) => {
-            if (res.statusCode !== 200) {
-              reject(new Error(`HTTP ${res.statusCode}`));
-              res.resume();
-              return;
-            }
-            let body = '';
-            res.setEncoding('utf8');
-            res.on('data', (chunk: string) => { body += chunk; });
-            res.on('end', () => resolve(body));
-            res.on('error', reject);
-          });
-          req.on('error', reject);
-          req.on('timeout', () => { req.destroy(); reject(new Error('Request timeout')); });
+          let body = '';
+          res.setEncoding('utf8');
+          res.on('data', (chunk: string) => { body += chunk; });
+          res.on('end', () => resolve(body));
+          res.on('error', reject);
         });
-      }
+        req.on('error', reject);
+        req.on('timeout', () => { req.destroy(); reject(new Error('Request timeout')); });
+      });
       return { success: true, data: appendBuiltInKitsToStoreResponse(data) };
     } catch (error) {
       console.error('[KitStore] fetch failed:', error);
@@ -292,176 +282,205 @@ export function registerKitHandlers(deps: KitHandlerDeps): void {
       const map = getStore().get<InstalledKitsMap>(KITS_INSTALLED_KEY) ?? {};
       return { success: true, installed: map };
     } catch (error) {
-      return { success: false, error: error instanceof Error ? error.message : 'Failed to list installed kits' };
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to list installed kits',
+      };
     }
   });
 
   // Install a kit
-  ipcMain.handle('kits:install', async (_event, params: {
-    kitId: string;
-    bundleUrl: string;
-    version: string;
-    skillListIds: string[];
-    skillList?: KitSkillMetadata[];
-    mcpServers?: unknown[] | null;
-    connectors?: unknown[] | null;
-  }) => {
-    const { kitId, bundleUrl, version, skillListIds: _skillListIds } = params;
-    const isComputerUseKit = kitId === ComputerUseKitId.BuiltIn;
-    console.log(`[KitStore] Installing kit "${kitId}" v${version} from ${bundleUrl}`);
+  ipcMain.handle(
+    'kits:install',
+    async (
+      _event,
+      params: {
+        kitId: string;
+        bundleUrl: string;
+        version: string;
+        skillListIds: string[];
+        skillList?: KitSkillMetadata[];
+        mcpServers?: unknown[] | null;
+        connectors?: unknown[] | null;
+      },
+    ) => {
+      const { kitId, bundleUrl, version, skillListIds: _skillListIds } = params;
+      const isComputerUseKit = kitId === ComputerUseKitId.BuiltIn;
+      console.log(`[KitStore] Installing kit "${kitId}" v${version} from ${bundleUrl}`);
 
-    let tempRoot: string | null = null;
-    let skillWatchingStopped = false;
-    let skillWatchingRestarted = false;
-    try {
-      if (isComputerUseKit && bundleUrl !== ComputerUseKitBundle.BuiltIn) {
-        throw new Error('Computer Use kit bundle URL does not match the built-in catalog entry');
-      }
-      if (isComputerUseKit && !isComputerUseKitSupportedPlatform()) {
-        throw new Error('Computer Use kit is only available on Windows x64.');
-      }
-
-      // 1. Download zip
-      tempRoot = fs.mkdtempSync(path.join(app.getPath('temp'), 'lobsterai-kit-'));
-      const buffer = await downloadBuffer(bundleUrl);
-      if (isComputerUseKit) {
-        if (buffer.length !== ComputerUseKitBundleIntegrity.SizeBytes) {
-          throw new Error('Computer Use kit bundle size verification failed');
+      let tempRoot: string | null = null;
+      let skillWatchingStopped = false;
+      let skillWatchingRestarted = false;
+      try {
+        if (isComputerUseKit && bundleUrl !== ComputerUseKitBundle.BuiltIn) {
+          throw new Error('Computer Use kit bundle URL does not match the built-in catalog entry');
         }
-        if (sha256Buffer(buffer) !== ComputerUseKitBundleIntegrity.Sha256) {
-          throw new Error('Computer Use kit bundle checksum verification failed');
+        if (isComputerUseKit && !isComputerUseKitSupportedPlatform()) {
+          throw new Error('Computer Use kit is only available on Windows x64.');
         }
-      }
-      const zipPath = path.join(tempRoot, 'kit-bundle.zip');
-      const extractRoot = path.join(tempRoot, 'extracted');
-      fs.writeFileSync(zipPath, buffer);
-      fs.mkdirSync(extractRoot, { recursive: true });
 
-      // 2. Extract
-      await extractZip(zipPath, { dir: extractRoot });
-
-      // Handle single-directory wrapper (e.g. zip contains one root folder)
-      let sourceRoot = extractRoot;
-      const extractedEntries = fs.readdirSync(extractRoot)
-        .map(entry => path.join(extractRoot, entry))
-        .filter(p => { try { return fs.statSync(p).isDirectory(); } catch { return false; } });
-      if (extractedEntries.length === 1) {
-        sourceRoot = extractedEntries[0];
-      }
-
-      // 3. Discover skill directories
-      const skillDirs = collectSkillDirs(sourceRoot);
-      if (skillDirs.length === 0) {
-        throw new Error('No skills found in kit bundle (no SKILL.md detected)');
-      }
-
-      if (isComputerUseKit) {
-        const runtimeResult = await installComputerUseRuntime();
-        if (!runtimeResult.success) {
-          throw new Error(runtimeResult.error || 'Computer Use runtime installation failed');
+        // 1. Download zip
+        tempRoot = fs.mkdtempSync(path.join(app.getPath('temp'), 'lobsterai-kit-'));
+        const buffer = await downloadBuffer(bundleUrl);
+        if (isComputerUseKit) {
+          if (buffer.length !== ComputerUseKitBundleIntegrity.SizeBytes) {
+            throw new Error('Computer Use kit bundle size verification failed');
+          }
+          if (sha256Buffer(buffer) !== ComputerUseKitBundleIntegrity.Sha256) {
+            throw new Error('Computer Use kit bundle checksum verification failed');
+          }
         }
-      }
+        const zipPath = path.join(tempRoot, 'kit-bundle.zip');
+        const extractRoot = path.join(tempRoot, 'extracted');
+        fs.writeFileSync(zipPath, buffer);
+        fs.mkdirSync(extractRoot, { recursive: true });
 
-      const skillManager = getSkillManager();
-      skillManager.stopWatching();
-      skillWatchingStopped = true;
-      if (isComputerUseKit) {
-        removeComputerUseSkillArtifacts(getStore());
-      }
+        // 2. Extract
+        await extractZip(zipPath, { dir: extractRoot });
 
-      // 4. Copy skills to user SKILLs directory
-      const root = ensureSkillsRoot();
-      const installedSkillIds: string[] = [];
-      const installedSkillMetadata: Record<string, KitSkillMetadata> = {};
-      const sourceSkillMetadata = normalizeKitSkillMetadataList(params.skillList);
-
-      for (const skillDir of skillDirs) {
-        const folderName = normalizeFolderName(path.basename(skillDir));
-        let targetDir = path.resolve(root, folderName);
-        let suffix = 1;
-        while (fs.existsSync(targetDir)) {
-          targetDir = path.resolve(root, `${folderName}-${suffix}`);
-          suffix += 1;
-        }
-        cpRecursiveSync(skillDir, targetDir);
-        normalizeWindowsAttrs(targetDir);
-        const installedSkillId = path.basename(targetDir);
-        installedSkillIds.push(installedSkillId);
-
-        const sourceSkillId = path.basename(skillDir);
-        const metadata = sourceSkillMetadata.get(sourceSkillId) ?? sourceSkillMetadata.get(folderName);
-        if (metadata?.name || metadata?.description) {
-          installedSkillMetadata[installedSkillId] = {
-            id: installedSkillId,
-            ...(metadata.name ? { name: metadata.name } : {}),
-            ...(metadata.description ? { description: metadata.description } : {}),
-          };
-        }
-      }
-
-      // 5. Enable installed skills
-      const stateMap = getStore().get<Record<string, { enabled: boolean }>>('skills_state') ?? {};
-      for (const skillId of installedSkillIds) {
-        stateMap[skillId] = { enabled: true };
-      }
-      getStore().set('skills_state', stateMap);
-
-      // 6. Persist kit installation record
-      const installedMap = getInstalledKitsMap(getStore());
-      installedMap[kitId] = isComputerUseKit
-        ? buildInstalledComputerUseKitRecord(installedSkillIds, installedSkillMetadata)
-        : {
-          id: kitId,
-          version,
-          installedAt: Date.now(),
-          skills: installedSkillIds.length > 0
-            ? {
-              skillIds: installedSkillIds,
-              ...(Object.keys(installedSkillMetadata).length > 0 ? { metadata: installedSkillMetadata } : {}),
+        // Handle single-directory wrapper (e.g. zip contains one root folder)
+        let sourceRoot = extractRoot;
+        const extractedEntries = fs
+          .readdirSync(extractRoot)
+          .map(entry => path.join(extractRoot, entry))
+          .filter(p => {
+            try {
+              return fs.statSync(p).isDirectory();
+            } catch {
+              return false;
             }
-            : null,
-          mcpServers: normalizeCapabilityList(params.mcpServers),
-          connectors: normalizeCapabilityList(params.connectors),
-      };
-      getStore().set(KITS_INSTALLED_KEY, installedMap);
+          });
+        if (extractedEntries.length === 1) {
+          sourceRoot = extractedEntries[0];
+        }
 
-      if (isComputerUseKit) {
-        const syncResult = await syncOpenClawConfig({
-          reason: 'computer-use-kit-installed',
-          restartGatewayIfRunning: true,
-          expectedImpact: OpenClawConfigImpact.Restart,
-        });
-        if (!syncResult.success) {
-          throw new Error(syncResult.error || 'OpenClaw config sync failed after Computer Use install');
+        // 3. Discover skill directories
+        const skillDirs = collectSkillDirs(sourceRoot);
+        if (skillDirs.length === 0) {
+          throw new Error('No skills found in kit bundle (no SKILL.md detected)');
+        }
+
+        if (isComputerUseKit) {
+          const runtimeResult = await installComputerUseRuntime();
+          if (!runtimeResult.success) {
+            throw new Error(runtimeResult.error || 'Computer Use runtime installation failed');
+          }
+        }
+
+        const skillManager = getSkillManager();
+        skillManager.stopWatching();
+        skillWatchingStopped = true;
+        if (isComputerUseKit) {
+          removeComputerUseSkillArtifacts(getStore());
+        }
+
+        // 4. Copy skills to user SKILLs directory
+        const root = ensureSkillsRoot();
+        const installedSkillIds: string[] = [];
+        const installedSkillMetadata: Record<string, KitSkillMetadata> = {};
+        const sourceSkillMetadata = normalizeKitSkillMetadataList(params.skillList);
+
+        for (const skillDir of skillDirs) {
+          const folderName = normalizeFolderName(path.basename(skillDir));
+          let targetDir = path.resolve(root, folderName);
+          let suffix = 1;
+          while (fs.existsSync(targetDir)) {
+            targetDir = path.resolve(root, `${folderName}-${suffix}`);
+            suffix += 1;
+          }
+          cpRecursiveSync(skillDir, targetDir);
+          normalizeWindowsAttrs(targetDir);
+          const installedSkillId = path.basename(targetDir);
+          installedSkillIds.push(installedSkillId);
+
+          const sourceSkillId = path.basename(skillDir);
+          const metadata =
+            sourceSkillMetadata.get(sourceSkillId) ?? sourceSkillMetadata.get(folderName);
+          if (metadata?.name || metadata?.description) {
+            installedSkillMetadata[installedSkillId] = {
+              id: installedSkillId,
+              ...(metadata.name ? { name: metadata.name } : {}),
+              ...(metadata.description ? { description: metadata.description } : {}),
+            };
+          }
+        }
+
+        // 5. Enable installed skills
+        const stateMap = getStore().get<Record<string, { enabled: boolean }>>('skills_state') ?? {};
+        for (const skillId of installedSkillIds) {
+          stateMap[skillId] = { enabled: true };
+        }
+        getStore().set('skills_state', stateMap);
+
+        // 6. Persist kit installation record
+        const installedMap = getInstalledKitsMap(getStore());
+        installedMap[kitId] = isComputerUseKit
+          ? buildInstalledComputerUseKitRecord(installedSkillIds, installedSkillMetadata)
+          : {
+              id: kitId,
+              version,
+              installedAt: Date.now(),
+              skills:
+                installedSkillIds.length > 0
+                  ? {
+                      skillIds: installedSkillIds,
+                      ...(Object.keys(installedSkillMetadata).length > 0
+                        ? { metadata: installedSkillMetadata }
+                        : {}),
+                    }
+                  : null,
+              mcpServers: normalizeCapabilityList(params.mcpServers),
+              connectors: normalizeCapabilityList(params.connectors),
+            };
+        getStore().set(KITS_INSTALLED_KEY, installedMap);
+
+        if (isComputerUseKit) {
+          const syncResult = await syncOpenClawConfig({
+            reason: 'computer-use-kit-installed',
+            restartGatewayIfRunning: true,
+            expectedImpact: OpenClawConfigImpact.Restart,
+          });
+          if (!syncResult.success) {
+            throw new Error(
+              syncResult.error || 'OpenClaw config sync failed after Computer Use install',
+            );
+          }
+        }
+
+        // 7. Notify after all installation work and Computer Use config sync are complete.
+        skillManager.startWatching();
+        skillWatchingRestarted = true;
+        notifySkillsChanged();
+
+        console.log(
+          `[KitStore] Kit "${kitId}" installed successfully with skills: ${installedSkillIds.join(', ')}`,
+        );
+        return { success: true, skillIds: installedSkillIds };
+      } catch (error) {
+        console.error(`[KitStore] Install failed for kit "${kitId}":`, error);
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : 'Kit installation failed',
+        };
+      } finally {
+        // Cleanup temp
+        if (tempRoot) {
+          try {
+            fs.rmSync(tempRoot, { recursive: true, force: true });
+          } catch {
+            /* ignore cleanup errors */
+          }
+        }
+        if (skillWatchingStopped && !skillWatchingRestarted) {
+          try {
+            getSkillManager().startWatching();
+          } catch (error) {
+            console.warn('[KitStore] failed to restart skill watcher after install:', error);
+          }
         }
       }
-
-      // 7. Notify after all installation work and Computer Use config sync are complete.
-      skillManager.startWatching();
-      skillWatchingRestarted = true;
-      notifySkillsChanged();
-
-      console.log(`[KitStore] Kit "${kitId}" installed successfully with skills: ${installedSkillIds.join(', ')}`);
-      return { success: true, skillIds: installedSkillIds };
-    } catch (error) {
-      console.error(`[KitStore] Install failed for kit "${kitId}":`, error);
-      return { success: false, error: error instanceof Error ? error.message : 'Kit installation failed' };
-    } finally {
-      // Cleanup temp
-      if (tempRoot) {
-        try {
-          fs.rmSync(tempRoot, { recursive: true, force: true });
-        } catch { /* ignore cleanup errors */ }
-      }
-      if (skillWatchingStopped && !skillWatchingRestarted) {
-        try {
-          getSkillManager().startWatching();
-        } catch (error) {
-          console.warn('[KitStore] failed to restart skill watcher after install:', error);
-        }
-      }
-    }
-  });
+    },
+  );
 
   // Uninstall a kit
   ipcMain.handle('kits:uninstall', async (_event, kitId: string) => {
@@ -511,7 +530,9 @@ export function registerKitHandlers(deps: KitHandlerDeps): void {
           expectedImpact: OpenClawConfigImpact.Restart,
         });
         if (!syncResult.success) {
-          throw new Error(syncResult.error || 'OpenClaw config sync failed after Computer Use uninstall');
+          throw new Error(
+            syncResult.error || 'OpenClaw config sync failed after Computer Use uninstall',
+          );
         }
       }
 
@@ -524,7 +545,10 @@ export function registerKitHandlers(deps: KitHandlerDeps): void {
       return { success: true };
     } catch (error) {
       console.error(`[KitStore] Uninstall failed for kit "${kitId}":`, error);
-      return { success: false, error: error instanceof Error ? error.message : 'Kit uninstallation failed' };
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Kit uninstallation failed',
+      };
     } finally {
       if (skillWatchingStopped && !skillWatchingRestarted) {
         try {

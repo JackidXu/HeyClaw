@@ -28,7 +28,10 @@ export function registerSkillHandlers(deps: SkillHandlerDeps): void {
       const skills = getSkillManager().listSkills();
       return { success: true, skills };
     } catch (error) {
-      return { success: false, error: error instanceof Error ? error.message : 'Failed to load skills' };
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to load skills',
+      };
     }
   });
 
@@ -42,7 +45,11 @@ export function registerSkillHandlers(deps: SkillHandlerDeps): void {
           await adapter.connectGatewayIfNeeded();
           const client = adapter.getGatewayClient();
           if (client) {
-            await client.request('skills.update', { skillKey: options.id, enabled: options.enabled }, { timeoutMs: 10_000 });
+            await client.request(
+              'skills.update',
+              { skillKey: options.id, enabled: options.enabled },
+              { timeoutMs: 10_000 },
+            );
           }
         }
       } catch (ocError) {
@@ -50,7 +57,10 @@ export function registerSkillHandlers(deps: SkillHandlerDeps): void {
       }
       return { success: true, skills };
     } catch (error) {
-      return { success: false, error: error instanceof Error ? error.message : 'Failed to update skill' };
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to update skill',
+      };
     }
   });
 
@@ -67,7 +77,9 @@ export function registerSkillHandlers(deps: SkillHandlerDeps): void {
             openclawSourceDir = meta.openclawSourceDir;
           }
         }
-      } catch { /* best-effort */ }
+      } catch {
+        /* best-effort */
+      }
 
       const skills = await getSkillManager().deleteSkill(id);
 
@@ -84,7 +96,10 @@ export function registerSkillHandlers(deps: SkillHandlerDeps): void {
       return { success: true, skills };
     } catch (error) {
       console.error('[skills] Failed to delete skill:', id, error);
-      return { success: false, error: error instanceof Error ? error.message : 'Failed to delete skill' };
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to delete skill',
+      };
     }
   });
 
@@ -103,7 +118,7 @@ export function registerSkillHandlers(deps: SkillHandlerDeps): void {
     }
     return getSkillManager().confirmPendingInstall(
       pendingId,
-      action as 'install' | 'installDisabled' | 'cancel'
+      action as 'install' | 'installDisabled' | 'cancel',
     );
   });
 
@@ -112,7 +127,10 @@ export function registerSkillHandlers(deps: SkillHandlerDeps): void {
       const root = getSkillManager().getSkillsRoot();
       return { success: true, path: root };
     } catch (error) {
-      return { success: false, error: error instanceof Error ? error.message : 'Failed to resolve skills root' };
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to resolve skills root',
+      };
     }
   });
 
@@ -121,7 +139,10 @@ export function registerSkillHandlers(deps: SkillHandlerDeps): void {
       const prompt = getSkillManager().buildAutoRoutingPrompt();
       return { success: true, prompt };
     } catch (error) {
-      return { success: false, error: error instanceof Error ? error.message : 'Failed to build auto-routing prompt' };
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to build auto-routing prompt',
+      };
     }
   });
 
@@ -133,55 +154,36 @@ export function registerSkillHandlers(deps: SkillHandlerDeps): void {
     return getSkillManager().setSkillConfig(skillId, config);
   });
 
-  ipcMain.handle('skills:testEmailConnectivity', async (
-    _event,
-    skillId: string,
-    config: Record<string, string>
-  ) => {
-    return getSkillManager().testEmailConnectivity(skillId, config);
-  });
+  ipcMain.handle(
+    'skills:testEmailConnectivity',
+    async (_event, skillId: string, config: Record<string, string>) => {
+      return getSkillManager().testEmailConnectivity(skillId, config);
+    },
+  );
 
   ipcMain.handle('skills:fetchMarketplace', async () => {
     const url = getSkillStoreUrl();
     console.log(`[SkillMarketplace] fetching from: ${url}`);
     try {
-      let data = '';
-      if (!app.isPackaged) {
-        const pathsToTry = [
-          path.join(process.cwd(), 'server-assets/skill-store.json'),
-          path.join(app.getAppPath(), 'server-assets/skill-store.json'),
-          path.join(app.getAppPath(), '../server-assets/skill-store.json'),
-        ];
-        for (const p of pathsToTry) {
-          if (fs.existsSync(p)) {
-            console.log(`[SkillMarketplace] local mode: reading from ${p}`);
-            data = fs.readFileSync(p, 'utf8');
-            break;
+      const http = await import('http');
+      const https = await import('https');
+      const mod = url.startsWith('https:') ? https : http;
+      const data = await new Promise<string>((resolve, reject) => {
+        const req = mod.get(url, { timeout: 10000 }, (res) => {
+          if (res.statusCode !== 200) {
+            reject(new Error(`HTTP ${res.statusCode}`));
+            res.resume();
+            return;
           }
-        }
-      }
-
-      if (!data) {
-        const http = await import('http');
-        const https = await import('https');
-        const mod = url.startsWith('https:') ? https : http;
-        data = await new Promise<string>((resolve, reject) => {
-          const req = mod.get(url, { timeout: 10000 }, (res) => {
-            if (res.statusCode !== 200) {
-              reject(new Error(`HTTP ${res.statusCode}`));
-              res.resume();
-              return;
-            }
-            let body = '';
-            res.setEncoding('utf8');
-            res.on('data', (chunk: string) => { body += chunk; });
-            res.on('end', () => resolve(body));
-            res.on('error', reject);
-          });
-          req.on('error', reject);
-          req.on('timeout', () => { req.destroy(); reject(new Error('Request timeout')); });
+          let body = '';
+          res.setEncoding('utf8');
+          res.on('data', (chunk: string) => { body += chunk; });
+          res.on('end', () => resolve(body));
+          res.on('error', reject);
         });
-      }
+        req.on('error', reject);
+        req.on('timeout', () => { req.destroy(); reject(new Error('Request timeout')); });
+      });
       return { success: true, data };
     } catch (error) {
       console.error('[SkillMarketplace] fetch failed:', error);
@@ -200,7 +202,11 @@ export function registerSkillHandlers(deps: SkillHandlerDeps): void {
       if (!client) {
         return { skills: [], error: 'Gateway client not connected' };
       }
-      const report = await client.request<{ skills: Array<Record<string, unknown>> }>('skills.status', {}, { timeoutMs: 10_000 });
+      const report = await client.request<{ skills: Array<Record<string, unknown>> }>(
+        'skills.status',
+        {},
+        { timeoutMs: 10_000 },
+      );
       const sm = getSkillManager();
       updatePluginSkillIdsFromReport(sm, report as any);
       return sm.detectSkillsFromOpenClaw(report as any);
@@ -220,7 +226,11 @@ export function registerSkillHandlers(deps: SkillHandlerDeps): void {
       if (!client) {
         return { synced: [], error: 'Gateway client not connected' };
       }
-      const report = await client.request<{ skills: Array<Record<string, unknown>> }>('skills.status', {}, { timeoutMs: 10_000 });
+      const report = await client.request<{ skills: Array<Record<string, unknown>> }>(
+        'skills.status',
+        {},
+        { timeoutMs: 10_000 },
+      );
       const sm = getSkillManager();
       updatePluginSkillIdsFromReport(sm, report as any);
       return sm.syncSkillsFromOpenClaw(report as any);
@@ -240,7 +250,11 @@ export function registerSkillHandlers(deps: SkillHandlerDeps): void {
       if (!client) {
         return { success: false, error: 'Gateway client not connected' };
       }
-      const report = await client.request<{ skills: Array<Record<string, unknown>> }>('skills.status', {}, { timeoutMs: 10_000 });
+      const report = await client.request<{ skills: Array<Record<string, unknown>> }>(
+        'skills.status',
+        {},
+        { timeoutMs: 10_000 },
+      );
       const sm = getSkillManager();
       updatePluginSkillIdsFromReport(sm, report as any);
       return { success: true, pluginSkillIds: [...sm.getPluginSkillIds()] };
