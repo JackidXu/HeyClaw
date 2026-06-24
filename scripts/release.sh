@@ -14,8 +14,8 @@ if [ -z "$VERSION" ]; then
   read -p "请输入要发布的新版本号 (例如 2026.6.24): " VERSION
 fi
 
-# 去除可能包含的 'v' 前缀以得到纯版本号
-CLEAN_VERSION=${VERSION#v}
+# 去除可能包含的 'v' 或 'V' 前缀以得到纯版本号
+CLEAN_VERSION=$(echo "$VERSION" | sed 's/^[vV]//')
 TAG_NAME="v$CLEAN_VERSION"
 
 echo "准备发布版本: $CLEAN_VERSION"
