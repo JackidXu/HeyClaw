@@ -198,9 +198,26 @@ const App: React.FC = () => {
         const config = await configService.getConfig();
         
         // 读取 oneapi 配置，将其作为激活服务商的底层配置
-        const oneapiConfig = config.providers?.['oneapi'];
-        const oneapiKey = oneapiConfig?.apiKey?.trim();
-        const oneapiBaseUrl = oneapiConfig?.baseUrl?.trim() || 'http://101.96.234.167:3000/v1';
+        let oneapiConfig = config.providers?.['oneapi'];
+        let oneapiKey = oneapiConfig?.apiKey?.trim();
+        let oneapiBaseUrl = oneapiConfig?.baseUrl?.trim() || 'https://token.chaohui.ai/v1';
+
+        // 平滑迁移：如果本地保存的还是旧的 IP，自动在本地更正并更新存储
+        if (oneapiBaseUrl.includes('101.96.234.167:3000')) {
+          oneapiBaseUrl = oneapiBaseUrl.replace('101.96.234.167:3000', 'token.chaohui.ai').replace(/^http:/, 'https:');
+          if (oneapiConfig) {
+            oneapiConfig = {
+              ...oneapiConfig,
+              baseUrl: oneapiBaseUrl
+            };
+            void configService.updateConfig({
+              providers: {
+                ...config.providers,
+                oneapi: oneapiConfig
+              }
+            });
+          }
+        }
 
         let activated = false;
         let finalConfig = config;
@@ -912,7 +929,7 @@ const App: React.FC = () => {
             enabled: false,
             apiKey: '',
             models: [],
-            baseUrl: oneapiConfig?.baseUrl || 'http://101.96.234.167:3000/v1',
+            baseUrl: oneapiConfig?.baseUrl || 'https://token.chaohui.ai/v1',
           }
         };
 
@@ -1263,7 +1280,7 @@ const ActivationOverlay: React.FC<ActivationOverlayProps> = ({ onActivated, wind
     try {
       const config = configService.getConfig();
       const oneapiConfig = config.providers?.['oneapi'];
-      const oneapiBaseUrl = oneapiConfig?.baseUrl?.trim() || 'http://101.96.234.167:3000/v1';
+      const oneapiBaseUrl = oneapiConfig?.baseUrl?.trim() || 'https://token.chaohui.ai/v1';
       const cleanBaseUrl = oneapiBaseUrl.replace(/\/+$/, '');
       const testUrl = `${cleanBaseUrl}/models`;
 

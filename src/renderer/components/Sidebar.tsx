@@ -149,7 +149,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       const config = configService.getConfig();
       const oneapiConfig = config.providers?.['oneapi'];
       const apiKey = oneapiConfig?.apiKey?.trim();
-      const baseUrl = oneapiConfig?.baseUrl?.trim() || 'http://101.96.234.167:3000/v1';
+      const baseUrl = oneapiConfig?.baseUrl?.trim() || 'https://token.chaohui.ai/v1';
 
       if (!apiKey) {
         await minDelayPromise;

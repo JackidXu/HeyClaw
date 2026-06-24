@@ -341,10 +341,10 @@ const PROVIDER_DEFINITIONS = [
   {
     id: ProviderName.Oneapi,
     label: 'HeyClaw',
-    website: 'http://101.96.234.167:3000',
-    apiKeyUrl: 'http://101.96.234.167:3000',
+    website: 'https://token.chaohui.ai',
+    apiKeyUrl: 'https://token.chaohui.ai',
     openClawProviderId: OpenClawProviderId.OpenAI,
-    defaultBaseUrl: 'http://101.96.234.167:3000/v1',
+    defaultBaseUrl: 'https://token.chaohui.ai/v1',
     defaultApiFormat: ApiFormat.OpenAI,
     codingPlanSupported: false,
     region: 'china',

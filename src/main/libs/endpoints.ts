@@ -54,7 +54,7 @@ export const getFallbackDownloadUrl = (): string => (
     : 'https://lobsterai.youdao.com/#/download-list'
 );
 
-export const getSkillStoreUrl = (): string => 'http://101.96.234.167:8081/skill-store.json';
+export const getSkillStoreUrl = (): string => 'https://scrm0.cdn.banchengyun.com/heyclaw/server-assets/skill-store.json';
 
 // Portal 页面
 const PORTAL_BASE_TEST = 'https://lobsterai.inner.youdao.com/portal#';
@@ -64,4 +64,4 @@ const getPortalBase = (): string => isTestModeEnabled() ? PORTAL_BASE_TEST : POR
 
 export const getPortalTasksUrl = (): string => `${getPortalBase()}/profile/detail?tab=tasks`;
 
-export const getKitStoreUrl = (): string => 'http://101.96.234.167:8081/kit-store.json';
+export const getKitStoreUrl = (): string => 'https://scrm0.cdn.banchengyun.com/heyclaw/server-assets/kit-store.json';

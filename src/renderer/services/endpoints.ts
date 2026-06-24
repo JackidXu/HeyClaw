@@ -24,14 +24,14 @@ export const getFallbackDownloadUrl = () => isTestModeEnabled()
   : 'https://portal.heyclaw.com/#/download-list';
 
 // Skill 商店
-export const getSkillStoreUrl = () => 'http://101.96.234.167:8081/skill-store.json';
+export const getSkillStoreUrl = () => 'https://scrm0.cdn.banchengyun.com/heyclaw/server-assets/skill-store.json';
 
 // Kit 商店
-export const getKitStoreUrl = () => 'http://101.96.234.167:8081/kit-store.json';
+export const getKitStoreUrl = () => 'https://scrm0.cdn.banchengyun.com/heyclaw/server-assets/kit-store.json';
 
 // 快速发问
-export const getQuickActionsUrl = () => 'http://101.96.234.167:8081/quick-actions.json';
-export const getQuickActionsI18nUrl = () => 'http://101.96.234.167:8081/quick-actions-i18n.json';
+export const getQuickActionsUrl = () => 'https://scrm0.cdn.banchengyun.com/heyclaw/server-assets/quick-actions.json';
+export const getQuickActionsI18nUrl = () => 'https://scrm0.cdn.banchengyun.com/heyclaw/server-assets/quick-actions-i18n.json';
 
 // 登录地址
 export const getLoginOvermindUrl = () => isTestModeEnabled()

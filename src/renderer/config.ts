@@ -121,7 +121,7 @@ const buildDefaultProviders = (): AppConfig['providers'] => {
 export const defaultConfig: AppConfig = {
   api: {
     key: '',
-    baseUrl: 'http://101.96.234.167:3000/v1',
+    baseUrl: 'https://token.chaohui.ai/v1',
   },
   model: {
     availableModels: [
