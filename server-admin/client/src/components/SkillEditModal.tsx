@@ -1,7 +1,41 @@
 import { useEffect } from 'react';
-import { Modal, Form, Input, Select, Button, Row, Col, Card } from 'antd';
-import { SaveOutlined, CloseOutlined } from '@ant-design/icons';
-import UploadDropzone from './UploadDropzone';
+import { Modal, Form, Input, Select, Button, Row, Col, Card, Upload, message } from 'antd';
+import { SaveOutlined, CloseOutlined, PlusOutlined } from '@ant-design/icons';
+
+// 自适应 API 端口基址
+const API_BASE =
+  window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:8082'
+    : '';
+
+// 二进制文件流式上传 (对接服务端 /api/upload-file)
+const performUpload = (file: File, token: string): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `${API_BASE}/api/upload-file?filename=${encodeURIComponent(file.name)}`, true);
+    xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+
+    xhr.onload = () => {
+      if (xhr.status === 200) {
+        try {
+          const res = JSON.parse(xhr.responseText);
+          if (res.success && res.url) {
+            resolve(res.url);
+          } else {
+            reject(new Error(res.error || '上传响应失败'));
+          }
+        } catch (e) {
+          reject(new Error('解析上传响应出错'));
+        }
+      } else {
+        reject(new Error(`HTTP 状态异常: ${xhr.status}`));
+      }
+    };
+
+    xhr.onerror = () => reject(new Error('网络连接异常'));
+    xhr.send(file);
+  });
+};
 
 interface SkillEditModalProps {
   visible: boolean;
@@ -39,8 +73,8 @@ export default function SkillEditModal({
         version: skill.version || '1.0.0',
         url: skill.url || '',
         tagsSelected: skill.tagsSelected || [],
-        sourceAuthor: skill.source?.author || '',
-        sourceFrom: skill.source?.from || 'Github',
+        sourceAuthor: skill.source?.author || (isNew ? 'HeyClaw' : ''),
+        sourceFrom: skill.source?.from || (isNew ? 'HeyClaw' : 'Github'),
         sourceUrl: skill.source?.url || '',
         descriptionZh: getLocText(skill.description, 'zh'),
         descriptionEn: getLocText(skill.description, 'en')
@@ -143,11 +177,11 @@ export default function SkillEditModal({
 
           <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '16px' }}>
             <Form.Item
-              label="技能别名名称 (name，纯小写英文)"
+              label="技能别名名称 (name)"
               name="name"
               rules={[{ required: true, message: '请输入技能名称' }]}
             >
-              <Input placeholder="如: code-formatter" />
+              <Input placeholder="如: 网页搜索 或 code-formatter" />
             </Form.Item>
 
             <Form.Item label="版本号" name="version">
@@ -176,46 +210,56 @@ export default function SkillEditModal({
 
             {/* Card 3：云端 Zip 资源配置 */}
             <Card title="云端 Zip 资源配置" size="small" style={{ marginBottom: 16 }}>
-              <Form.Item noStyle shouldUpdate={(prev, curr) => prev.url !== curr.url}>
-                {({ getFieldValue }) => {
-                  const currentUrl = getFieldValue('url');
-                  return (
-                    <div style={{ marginBottom: 8 }}>
-                      <div style={{ fontSize: '14px', fontWeight: '500', color: 'rgba(0, 0, 0, 0.88)', marginBottom: 8 }}>
-                        技能 Zip 资源包 (url)
-                      </div>
-                      {currentUrl ? (
-                        <div style={{ padding: '8px 12px', background: '#f6ffed', border: '1px solid #b7eb8f', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                          <span style={{ fontSize: '13px', color: '#389e0d', wordBreak: 'break-all' }}>
-                            ✓ 已绑定云端资源包：{currentUrl}
-                          </span>
-                          <Button 
-                            type="link" 
-                            danger 
-                            size="small" 
-                            icon={<CloseOutlined />}
-                            onClick={() => form.setFieldsValue({ url: '' })}
-                          >
-                            清除
-                          </Button>
-                        </div>
-                      ) : (
-                        <div style={{ padding: '8px 12px', background: '#fafafa', border: '1px dashed #d9d9d9', borderRadius: 6, fontSize: '13px', color: '#8c8c8c', marginBottom: 8 }}>
-                          💡 提示：云端市场技能 运行必须上传配置该 Zip。
-                        </div>
-                      )}
-                      <UploadDropzone
-                        token={token}
-                        accept=".zip"
-                        placeholderText="点击或拖拽上传技能 Zip 包"
-                        onUploadSuccess={(url) => form.setFieldsValue({ url })}
-                      />
-                    </div>
-                  );
-                }}
-              </Form.Item>
-              <Form.Item name="url" style={{ margin: 0, height: 0, overflow: 'hidden' }}>
-                <Input />
+              <Form.Item
+                label="技能 Zip 资源包 (url)"
+                name="url"
+                rules={[{ required: true, message: '请上传技能 Zip 资源包' }]}
+                style={{ marginBottom: 16 }}
+              >
+                <Form.Item noStyle shouldUpdate={(prev, curr) => prev.url !== curr.url}>
+                  {({ getFieldValue }) => {
+                    const zipUrl = getFieldValue('url') || '';
+                    const zipFileList = zipUrl ? [{
+                      uid: '-1',
+                      name: zipUrl.substring(zipUrl.lastIndexOf('/') + 1) || 'skill.zip',
+                      status: 'done' as const,
+                      url: zipUrl
+                    }] : [];
+
+                    return (
+                      <Upload
+                        fileList={zipFileList}
+                        customRequest={async (options) => {
+                          const { file, onSuccess, onError } = options;
+                          try {
+                            const url = await performUpload(file as File, token);
+                            form.setFieldsValue({ url });
+                            onSuccess?.(url);
+                            message.success('资源包上传成功');
+                          } catch (err: any) {
+                            onError?.(err);
+                            message.error(`资源包上传失败: ${err.message}`);
+                          }
+                        }}
+                        onRemove={() => {
+                          form.setFieldsValue({ url: '' });
+                        }}
+                        beforeUpload={(file) => {
+                          const ext = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+                          if (ext !== '.zip') {
+                            message.error('仅支持上传 .zip 文件');
+                            return Upload.LIST_IGNORE;
+                          }
+                          return true;
+                        }}
+                      >
+                        {zipFileList.length >= 1 ? null : (
+                          <Button icon={<PlusOutlined />}>上传 Zip 资源包</Button>
+                        )}
+                      </Upload>
+                    );
+                  }}
+                </Form.Item>
               </Form.Item>
             </Card>
 

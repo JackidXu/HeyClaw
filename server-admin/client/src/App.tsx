@@ -460,7 +460,7 @@ function MainConsole() {
               _type: type,
               tagsSelected: [],
               url: '',
-              source: null
+              source: { author: 'HeyClaw', from: 'HeyClaw', url: '' }
             });
           }}
           onManageTags={() => setIsManagingTags(true)}

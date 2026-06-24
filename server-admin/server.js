@@ -528,9 +528,12 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, { success: false, error: '不支持的文件类型，仅支持上传 .zip 及常用图片图标' }, 400);
     }
 
-    // 防路径穿越，只保留文件名基本信息
+    // 防路径穿越，只保留文件名基本信息并附加时间戳防重名冲突
     const safeBaseName = path.basename(rawFileName);
-    const cloudFilePath = `heyclaw/server-assets/zip-bundles/${safeBaseName}`;
+    const fileExt = path.extname(safeBaseName);
+    const nameWithoutExt = path.basename(safeBaseName, fileExt);
+    const uniqueFileName = `${nameWithoutExt}-${Date.now()}${fileExt}`;
+    const cloudFilePath = `heyclaw/server-assets/zip-bundles/${uniqueFileName}`;
 
     if (storeClient) {
       try {
@@ -539,7 +542,7 @@ const server = http.createServer(async (req, res) => {
         
         // 优先使用配置的 CDN 域名，否则回退为 OSS 自身的访问 URL
         const finalUrl = CDN_PREFIX 
-          ? `${CDN_PREFIX}/heyclaw/server-assets/zip-bundles/${safeBaseName}`
+          ? `${CDN_PREFIX}/heyclaw/server-assets/zip-bundles/${uniqueFileName}`
           : ossResult.url;
 
         console.log(`[Admin] Successfully uploaded asset to cloud: ${cloudFilePath}, URL: ${finalUrl}`);
@@ -550,12 +553,12 @@ const server = http.createServer(async (req, res) => {
       }
     } else {
       // 本地降级写入
-      const targetFilePath = path.join(ASSETS_DIR, safeBaseName);
+      const targetFilePath = path.join(ASSETS_DIR, uniqueFileName);
       const writeStream = fs.createWriteStream(targetFilePath);
       req.pipe(writeStream);
 
       writeStream.on('finish', () => {
-        const relativeUrl = `/zip-bundles/${safeBaseName}`;
+        const relativeUrl = `/zip-bundles/${uniqueFileName}`;
         console.log(`[Admin] Successfully uploaded asset locally to: ${targetFilePath}`);
         return sendJson(res, { success: true, url: relativeUrl });
       });

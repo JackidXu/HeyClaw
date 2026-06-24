@@ -145,9 +145,18 @@ export default function SkillCardList({
                       <div style={{ fontSize: '15px', fontWeight: 600, color: '#262626', marginRight: 8, wordBreak: 'break-all' }}>
                         {s.name}
                       </div>
-                      <Tag color={s._type === 'localSkill' ? 'success' : 'purple'} style={{ margin: 0 }}>
-                        {s._type === 'localSkill' ? 'LOCAL' : 'MARKET'}
-                      </Tag>
+                      {s._type === 'marketplace' && s.tags && s.tags.length > 0 && (
+                        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                          {s.tags.map((tagId: string) => {
+                            const tag = marketTags.find((t) => t.id === tagId);
+                            return tag ? (
+                              <Tag color="blue" key={tagId} style={{ margin: 0 }}>
+                                {tag.zh}
+                              </Tag>
+                            ) : null;
+                          })}
+                        </div>
+                      )}
                     </div>
                     <div style={{ fontSize: '13px', color: '#8c8c8c', marginBottom: 16, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', height: 54 }}>
                       {getLocText(s.description, 'zh')}

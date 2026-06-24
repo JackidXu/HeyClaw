@@ -140,14 +140,9 @@ export default function KitCardList({
                       <div style={{ fontSize: '15px', fontWeight: 600, color: '#262626', marginRight: 8, wordBreak: 'break-all' }}>
                         {getLocText(k.name, 'zh')}
                       </div>
-                      <Space size={4} style={{ margin: 0 }}>
-                        <Tag color={k.id === 'computer-use' ? 'gold' : 'blue'} style={{ margin: 0 }}>
-                          {k.id}
-                        </Tag>
-                        <Tag color={k._type === 'localKit' ? 'success' : 'purple'} style={{ margin: 0 }}>
-                          {k._type === 'localKit' ? 'LOCAL' : 'MARKET'}
-                        </Tag>
-                      </Space>
+                      <Tag color={k.id === 'computer-use' ? 'gold' : 'blue'} style={{ margin: 0 }}>
+                        {k.id}
+                      </Tag>
                     </div>
                     <div style={{ fontSize: '13px', color: '#8c8c8c', marginBottom: 16, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', height: 54 }}>
                       {getLocText(k.description, 'zh')}

@@ -1,9 +1,42 @@
 import { useEffect } from 'react';
-import { Modal, Form, Input, Select, Button, Space, Card, Divider, Collapse } from 'antd';
-import { PlusOutlined, MinusCircleOutlined, SaveOutlined, CloseOutlined, DeleteOutlined } from '@ant-design/icons';
-import UploadDropzone from './UploadDropzone';
+import { Modal, Form, Input, Select, Button, Space, Card, Divider, Collapse, Radio, Upload, message } from 'antd';
+import { PlusOutlined, MinusCircleOutlined, SaveOutlined, CloseOutlined } from '@ant-design/icons';
 
 const { Option } = Select;
+
+const API_BASE =
+  window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:8082'
+    : '';
+
+// 二进制文件流式上传 (对接服务端 /api/upload-file)
+const performUpload = (file: File, token: string): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `${API_BASE}/api/upload-file?filename=${encodeURIComponent(file.name)}`, true);
+    xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+
+    xhr.onload = () => {
+      if (xhr.status === 200) {
+        try {
+          const data = JSON.parse(xhr.responseText);
+          if (data.success) {
+            resolve(data.url);
+          } else {
+            reject(new Error(data.error || '上传失败'));
+          }
+        } catch (err) {
+          reject(err);
+        }
+      } else {
+        reject(new Error(`HTTP ${xhr.status}`));
+      }
+    };
+
+    xhr.onerror = () => reject(new Error('网络连接异常'));
+    xhr.send(file);
+  });
+};
 
 interface KitEditModalProps {
   visible: boolean;
@@ -72,6 +105,13 @@ export default function KitEditModal({
         color: t.color || 'sky'
       }));
 
+      // 判定图标是预设角色还是自定义
+      const rawIcon = kit.icon || '';
+      const isPreset = rawIcon.startsWith('avatar:');
+      const iconMode = isPreset ? 'preset' : 'custom';
+      const presetIcon = isPreset ? rawIcon.replace('avatar:', '') : 'hotspot';
+      const customIcon = isPreset ? '' : rawIcon;
+
       form.setFieldsValue({
         id: kit.id || '',
         category: kit.category || 'market',
@@ -82,7 +122,9 @@ export default function KitEditModal({
         author: kit.author || 'HeyClaw',
         version: kit.version || '1.0.0',
         downloadCount: kit.downloadCount || '0',
-        icon: kit.icon || '',
+        iconMode,
+        presetIcon,
+        customIcon,
         bundleUrl: kit.skills?.bundle || '',
         skillsList,
         tryAskingList,
@@ -111,7 +153,9 @@ export default function KitEditModal({
       author,
       version,
       downloadCount,
-      icon,
+      iconMode,
+      presetIcon,
+      customIcon,
       bundleUrl,
       skillsList,
       tryAskingList,
@@ -124,6 +168,9 @@ export default function KitEditModal({
       avatarBg,
       tagsList
     } = values;
+
+    // 根据选择模式，合并为最终物理 icon 值
+    const finalIcon = iconMode === 'preset' ? `avatar:${presetIcon}` : (customIcon || '');
 
     // 1. 组装关联技能并保留历史关联
     const finalSkills = (skillsList || []).map((s: any) => ({
@@ -180,7 +227,7 @@ export default function KitEditModal({
         description: { zh: descriptionZh.trim(), en: descriptionEn.trim() },
         author: author ? author.trim() : 'HeyClaw',
         version: version ? version.trim() : '1.0.0',
-        icon: icon ? icon.trim() : '',
+        icon: finalIcon.trim(),
         skills: {
           list: finalSkills
           // 本地内置专家在物理上不包含 bundle 键，精简字段
@@ -204,7 +251,7 @@ export default function KitEditModal({
         author: author ? author.trim() : 'HeyClaw',
         version: version ? version.trim() : '1.0.0',
         downloadCount: downloadCount ? downloadCount.trim() : '0',
-        icon: icon ? icon.trim() : '',
+        icon: finalIcon.trim(),
         skills: {
           list: finalSkills,
           bundle: bundleUrl || ''
@@ -321,47 +368,105 @@ export default function KitEditModal({
           </div>
         </Card>
 
-        {/* Card 2：云端资源与图标上传 */}
-        <Card title="云端资源与图标" size="small" style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: '14px', fontWeight: '500', color: 'rgba(0, 0, 0, 0.88)', marginBottom: 8 }}>
-            套件图标 (icon)
-          </div>
-          <Form.Item noStyle shouldUpdate={(prev, curr) => prev.icon !== curr.icon}>
+        {/* Card 2：专家头像与资源配置 */}
+        <Card title="专家头像与资源配置" size="small" style={{ marginBottom: 16 }}>
+          <Form.Item label="头像图标模式" name="iconMode" rules={[{ required: true }]} style={{ marginBottom: 12 }}>
+            <Radio.Group optionType="button" buttonStyle="solid">
+              <Radio.Button value="preset">使用预设角色</Radio.Button>
+              <Radio.Button value="custom">上传自定义图标</Radio.Button>
+            </Radio.Group>
+          </Form.Item>
+
+          <Form.Item noStyle shouldUpdate={(prev, curr) => prev.iconMode !== curr.iconMode}>
             {({ getFieldValue }) => {
-              const currentIcon = getFieldValue('icon');
-              return (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px' }}>
-                  {currentIcon ? (
-                    <div style={{ position: 'relative', width: 64, height: 64, border: '1px solid #f0f0f0', borderRadius: 8, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fafafa' }}>
-                      <img src={currentIcon} alt="icon" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
-                      <Button 
-                        type="primary" 
-                        danger 
-                        shape="circle" 
-                        icon={<DeleteOutlined />} 
-                        size="small" 
-                        style={{ position: 'absolute', right: 2, top: 2, fontSize: 10, width: 20, height: 20, minWidth: 20 }}
-                        onClick={() => form.setFieldsValue({ icon: '' })}
-                      />
+              const mode = getFieldValue('iconMode');
+              if (mode === 'preset') {
+                return (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '16px', alignItems: 'center', marginBottom: 16 }}>
+                    <Form.Item
+                      label="选择内置预设角色"
+                      name="presetIcon"
+                      rules={[{ required: true, message: '请选择预设角色' }]}
+                      style={{ margin: 0 }}
+                    >
+                      <Select placeholder="请选择预设角色">
+                        <Option value="hotspot">追热点达人 (hotspot)</Option>
+                        <Option value="iptopic">老板IP选题王 (iptopic)</Option>
+                        <Option value="coverdesign">封面图设计师 (coverdesign)</Option>
+                        <Option value="alchemist">文案炼金术士 (alchemist)</Option>
+                        <Option value="layoutocd">排版强迫症 (layoutocd)</Option>
+                        <Option value="scriptdirector">口播脚本导演 (scriptdirector)</Option>
+                        <Option value="datatrans">数据翻译官 (datatrans)</Option>
+                      </Select>
+                    </Form.Item>
+                    <div style={{ fontSize: '12px', color: '#8c8c8c', background: '#fafafa', padding: '6px 10px', borderRadius: 6, border: '1px solid #f0f0f0' }}>
+                      💡 角色使用桌面端内置拟人化动效 SVG 头像。
                     </div>
-                  ) : (
-                    <div style={{ width: 64, height: 64, border: '1px dashed #d9d9d9', borderRadius: 8, background: '#fafafa', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#bfbfbf', fontSize: '11px' }}>
-                      暂无图标
-                    </div>
-                  )}
-                  <div style={{ flexGrow: 1 }}>
-                    <UploadDropzone
-                      token={token}
-                      accept="image/*"
-                      placeholderText="点击或拖拽上传并替换新图标"
-                      onUploadSuccess={(url) => form.setFieldsValue({ icon: url })}
-                    />
                   </div>
-                </div>
+                );
+              }
+
+              // 自定义上传模式 (antd 原生虚线卡片上传样式)
+              return (
+                <Form.Item noStyle shouldUpdate={(prev, curr) => prev.customIcon !== curr.customIcon}>
+                  {({ getFieldValue: getVal }) => {
+                    const iconUrl = getVal('customIcon');
+                    const fileList = iconUrl ? [{
+                      uid: '-1',
+                      name: 'icon.png',
+                      status: 'done' as const,
+                      url: iconUrl
+                    }] : [];
+
+                    return (
+                      <div style={{ marginBottom: 16 }}>
+                        <div style={{ fontSize: '13px', color: 'rgba(0, 0, 0, 0.85)', marginBottom: 8 }}>
+                          上传自定义头像图标 (支持 SVG/PNG/JPG)
+                        </div>
+                        <Upload
+                          listType="picture-card"
+                          fileList={fileList}
+                          customRequest={async (options) => {
+                            const { file, onSuccess, onError } = options;
+                            try {
+                              const url = await performUpload(file as File, token);
+                              form.setFieldsValue({ customIcon: url });
+                              onSuccess?.(url);
+                            } catch (err: any) {
+                              onError?.(err);
+                              message.error(`图标上传失败: ${err.message}`);
+                            }
+                          }}
+                          onRemove={() => {
+                            form.setFieldsValue({ customIcon: '' });
+                          }}
+                          beforeUpload={(file) => {
+                            const ext = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+                            const allowed = ['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp'];
+                            if (!allowed.includes(ext)) {
+                              message.error('仅支持常用图片格式 (.png, .jpg, .jpeg, .gif, .svg, .webp)');
+                              return Upload.LIST_IGNORE;
+                            }
+                            return true;
+                          }}
+                        >
+                          {fileList.length >= 1 ? null : (
+                            <div>
+                              <PlusOutlined />
+                              <div style={{ marginTop: 8 }}>Upload</div>
+                            </div>
+                          )}
+                        </Upload>
+                      </div>
+                    );
+                  }}
+                </Form.Item>
               );
             }}
           </Form.Item>
-          <Form.Item name="icon" style={{ margin: 0, height: 0, overflow: 'hidden' }}>
+
+          {/* 隐藏 customIcon 用作 Form 传值 */}
+          <Form.Item name="customIcon" style={{ margin: 0, height: 0, overflow: 'hidden' }}>
             <Input />
           </Form.Item>
 
@@ -370,38 +475,49 @@ export default function KitEditModal({
               <Divider style={{ margin: '16px 0 16px 0' }} />
               <Form.Item noStyle shouldUpdate={(prev, curr) => prev.bundleUrl !== curr.bundleUrl}>
                 {({ getFieldValue }) => {
-                  const currentBundleUrl = getFieldValue('bundleUrl');
+                  const zipUrl = getFieldValue('bundleUrl');
+                  const zipFileList = zipUrl ? [{
+                    uid: '-1',
+                    name: zipUrl.substring(zipUrl.lastIndexOf('/') + 1) || 'bundle.zip',
+                    status: 'done' as const,
+                    url: zipUrl
+                  }] : [];
+
                   return (
-                    <div style={{ marginBottom: 8 }}>
+                    <div>
                       <div style={{ fontSize: '14px', fontWeight: '500', color: 'rgba(0, 0, 0, 0.88)', marginBottom: 8 }}>
                         套件 Zip 资源包 (bundleUrl) <span style={{ color: '#ff4d4f' }}>*</span>
                       </div>
-                      {currentBundleUrl ? (
-                        <div style={{ padding: '8px 12px', background: '#f6ffed', border: '1px solid #b7eb8f', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                          <span style={{ fontSize: '13px', color: '#389e0d', wordBreak: 'break-all' }}>
-                            ✓ 已绑定云端资源包：{currentBundleUrl}
-                          </span>
-                          <Button 
-                            type="link" 
-                            danger 
-                            size="small" 
-                            icon={<DeleteOutlined />}
-                            onClick={() => form.setFieldsValue({ bundleUrl: '' })}
-                          >
-                            清除
-                          </Button>
-                        </div>
-                      ) : (
-                        <div style={{ padding: '8px 12px', background: '#fff2e8', border: '1px solid #ffbb96', borderRadius: 6, fontSize: '13px', color: '#d4380d', marginBottom: 8 }}>
-                          ⚠ 尚未上传云端资源包，请在下方拖拽或点击上传。
-                        </div>
-                      )}
-                      <UploadDropzone
-                        token={token}
-                        accept=".zip"
-                        placeholderText="点击或拖拽上传套件 Zip 包"
-                        onUploadSuccess={(url) => form.setFieldsValue({ bundleUrl: url })}
-                      />
+                      <Upload
+                        fileList={zipFileList}
+                        customRequest={async (options) => {
+                          const { file, onSuccess, onError } = options;
+                          try {
+                            const url = await performUpload(file as File, token);
+                            form.setFieldsValue({ bundleUrl: url });
+                            onSuccess?.(url);
+                            message.success('资源包上传成功');
+                          } catch (err: any) {
+                            onError?.(err);
+                            message.error(`资源包上传失败: ${err.message}`);
+                          }
+                        }}
+                        onRemove={() => {
+                          form.setFieldsValue({ bundleUrl: '' });
+                        }}
+                        beforeUpload={(file) => {
+                          const ext = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+                          if (ext !== '.zip') {
+                            message.error('仅支持上传 .zip 文件');
+                            return Upload.LIST_IGNORE;
+                          }
+                          return true;
+                        }}
+                      >
+                        {zipFileList.length >= 1 ? null : (
+                          <Button icon={<PlusOutlined />}>上传 Zip 资源包</Button>
+                        )}
+                      </Upload>
                     </div>
                   );
                 }}
