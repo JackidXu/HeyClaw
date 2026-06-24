@@ -24,7 +24,7 @@ import { fileURLToPath, pathToFileURL } from 'url';
 
 import { CoworkSystemMessageKind } from '../common/coworkSystemMessages';
 
-// ── Built-in Skill Crypto & Virtual Path Hook ────────────────────────────────
+// ── Built-in Skill Crypto FS Hook ────────────────────────────────
 import { encryptSkillContent, decryptSkillContent } from './libs/skillCrypto';
 
 const originalReadFileSync = fs.readFileSync;
@@ -37,63 +37,16 @@ function isBuiltInSkillPath(filePath: any): boolean {
   if (typeof filePath !== 'string' || !filePath.endsWith('SKILL.md')) {
     return false;
   }
-  try {
-    const userData = app.getPath('userData');
-    const relative = path.relative(path.join(userData, 'SKILLs'), filePath);
-    return !relative.startsWith('..') && !path.isAbsolute(relative);
-  } catch (e) {
-    return filePath.includes('/SKILLs/') || filePath.includes('\\SKILLs\\');
-  }
-}
-
-function resolveVirtualSkillPath(virtualPath: any): any {
-  if (typeof virtualPath === 'string') {
-    let cleanPath = virtualPath.replace(/\\/g, '/').trim();
-    // 移除可能存在的波浪号前缀 (如 ~built-in://... 或 ~skill://...)
-    if (cleanPath.startsWith('~')) {
-      cleanPath = cleanPath.slice(1);
-    }
-
-    // 我们支持的主虚拟前缀列表
-    const prefixes = ['.heyclaw/skills/', 'skill://', 'built-in://'];
-    let matchedPrefix = '';
-    for (const prefix of prefixes) {
-      if (cleanPath.startsWith(prefix)) {
-        matchedPrefix = prefix;
-        break;
-      }
-    }
-
-    if (matchedPrefix) {
-      // 提取前缀后面的部分，并防止可能出现的重复嵌套前缀
-      let subContent = cleanPath.slice(matchedPrefix.length);
-      for (const prefix of prefixes) {
-        if (subContent.startsWith(prefix)) {
-          subContent = subContent.slice(prefix.length);
-        }
-      }
-
-      // 匹配 skillId 和具体路径，如 hook-and-headline-writing/SKILL.md
-      const match = subContent.match(/^([a-zA-Z0-9_-]+)\/(.+)$/);
-      if (match) {
-        const [_, skillId, subPath] = match;
-        try {
-          const userData = app.getPath('userData');
-          return path.join(userData, 'SKILLs', skillId, subPath);
-        } catch (e) {
-          console.error('[VirtualFS] Failed to get userData path:', e);
-        }
-      }
-    }
-  }
-  return virtualPath;
+  // 只要路径包含 SKILLs 或 skills 目录，即认定为技能描述文件并予以解密。
+  // 这有效避免了开发环境 (HeyClawDev) 与正式环境 (HeyClaw) 跨目录读取时，因 relative 计算越界导致拒绝解密的问题。
+  const normalized = filePath.replace(/\\/g, '/').toLowerCase();
+  return normalized.includes('/skills/') || normalized.includes('/skill.md');
 }
 
 // @ts-ignore
 fs.readFileSync = function (path: any, options: any) {
-  const realPath = resolveVirtualSkillPath(path);
-  const content = originalReadFileSync(realPath, options) as any;
-  if (isBuiltInSkillPath(realPath)) {
+  const content = originalReadFileSync(path, options) as any;
+  if (isBuiltInSkillPath(path)) {
     if (typeof content === 'string' && content.startsWith('HEYCLAW_ENC:')) {
       return decryptSkillContent(content);
     }
@@ -109,7 +62,6 @@ fs.readFileSync = function (path: any, options: any) {
 
 // @ts-ignore
 fs.readFile = function (path: any, options: any, callback: any) {
-  const realPath = resolveVirtualSkillPath(path);
   let actualCallback = callback;
   let actualOptions = options;
   if (typeof options === 'function') {
@@ -119,7 +71,7 @@ fs.readFile = function (path: any, options: any, callback: any) {
   const wrappedCallback = (err: any, data: any) => {
     if (!err) {
       let decryptedData = data;
-      if (isBuiltInSkillPath(realPath)) {
+      if (isBuiltInSkillPath(path)) {
         if (typeof data === 'string' && data.startsWith('HEYCLAW_ENC:')) {
           decryptedData = decryptSkillContent(data);
         } else if (data instanceof Buffer) {
@@ -134,14 +86,13 @@ fs.readFile = function (path: any, options: any, callback: any) {
       actualCallback(err, data);
     }
   };
-  return originalReadFile(realPath, actualOptions, wrappedCallback);
+  return originalReadFile(path, actualOptions, wrappedCallback);
 };
 
 // @ts-ignore
 fs.promises.readFile = async function (path: any, options: any) {
-  const realPath = resolveVirtualSkillPath(path);
-  const content = (await originalPromisesReadFile(realPath, options)) as any;
-  if (isBuiltInSkillPath(realPath)) {
+  const content = (await originalPromisesReadFile(path, options)) as any;
+  if (isBuiltInSkillPath(path)) {
     if (typeof content === 'string' && content.startsWith('HEYCLAW_ENC:')) {
       return decryptSkillContent(content);
     }
@@ -173,7 +124,7 @@ fs.copyFileSync = function (src: any, dest: any, flags: any) {
       originalWriteFileSync(dest, encrypted, 'utf8');
       return;
     } catch (e) {
-      console.error('[VirtualFS] copyFileSync hook failed, fallback:', e);
+      console.error('[SkillCryptoFS] copyFileSync hook failed, fallback:', e);
     }
   }
   return originalCopyFileSync(src, dest, flags);
