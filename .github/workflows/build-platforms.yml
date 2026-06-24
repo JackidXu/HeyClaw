@@ -173,25 +173,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  # ========== 自动部署到宝塔服务器 ==========
-  deploy-to-bt:
+  # ========== 自动部署到阿里云 OSS ==========
+  deploy-to-oss:
     needs: [build-macos, build-windows]
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-
-      - name: Configure SSH KeepAlive
-        run: |
-          mkdir -p ~/.ssh
-          cat <<EOF >> ~/.ssh/config
-          Host *
-            ServerAliveInterval 15
-            ServerAliveCountMax 3
-            ConnectTimeout 30
-          EOF
-          chmod 600 ~/.ssh/config
 
       - name: Download All Artifacts
         uses: actions/download-artifact@v4
@@ -220,21 +209,18 @@ jobs:
           if [ -n "$CDN_PREFIX" ]; then
             # 去除末尾斜杠
             CDN_PREFIX="${CDN_PREFIX%/}"
-            # 假定文件在 OSS 存储桶中的目录是 downloads/
-            WIN_URL="${CDN_PREFIX}/downloads/${WIN_FILE}"
-            MAC_ARM64_URL="${CDN_PREFIX}/downloads/${MAC_ARM64_FILE}"
-            MAC_X64_URL="${CDN_PREFIX}/downloads/${MAC_X64_FILE}"
+            # 文件在 OSS 存储桶中的目录是 heyclaw/downloads/
+            WIN_URL="${CDN_PREFIX}/heyclaw/downloads/${WIN_FILE}"
+            MAC_ARM64_URL="${CDN_PREFIX}/heyclaw/downloads/${MAC_ARM64_FILE}"
+            MAC_X64_URL="${CDN_PREFIX}/heyclaw/downloads/${MAC_X64_FILE}"
           else
             WIN_URL="${WIN_FILE}"
             MAC_ARM64_URL="${MAC_ARM64_FILE}"
             MAC_X64_URL="${MAC_X64_FILE}"
           fi
           
-          # 创建用于同步到宝塔的目录
-          mkdir -p bt-dist
-          
-          # 写入 version.json
-          cat <<EOF > bt-dist/version.json
+          # 写入 version.json 到 oss-dist 目录以供一并上传到 OSS
+          cat <<EOF > oss-dist/version.json
           {
             "version": "${TAG_NAME}",
             "date": "$(date +'%Y-%m-%d')",
@@ -246,12 +232,7 @@ jobs:
           }
           EOF
           
-          # 复制下载页 index.html 到 bt-dist 目录
-          cp download-page/index.html bt-dist/index.html
-          
-          # 打印 bt-dist 和 oss-dist 目录下的内容进行验证
-          echo "=== Files to deploy to Baota (bt-dist) ==="
-          ls -la bt-dist/
+          # 打印 oss-dist 目录下的内容进行验证
           echo "=== Files to upload to OSS (oss-dist) ==="
           ls -la oss-dist/
 
@@ -263,15 +244,4 @@ jobs:
           access-key-secret: ${{ secrets.OSS_ACCESS_KEY_SECRET }}
 
       - name: Upload Artifacts to Aliyun OSS
-        run: ossutil cp -r oss-dist/ oss://${{ secrets.OSS_BUCKET }}/downloads/
-
-      - name: Deploy to Baota Server via Rsync
-        uses: easingthemes/ssh-deploy@main
-        with:
-          SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_KEY }}
-          REMOTE_HOST: ${{ secrets.SERVER_HOST }}
-          REMOTE_USER: ${{ secrets.SERVER_USER }}
-          REMOTE_PORT: ${{ secrets.SERVER_PORT || 22 }}
-          SOURCE: "bt-dist/"
-          TARGET: ${{ secrets.SERVER_DOWNLOAD_DIR }}
-          ARGS: "-rlgoDzvO"
+        run: ossutil cp -r oss-dist/ oss://${{ secrets.OSS_BUCKET }}/heyclaw/downloads/
