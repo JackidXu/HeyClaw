@@ -33,6 +33,7 @@ const KitsManager: React.FC<KitsManagerProps> = ({ onTryAsking }) => {
   const [installedKits, setInstalledKits] = useState<Record<string, InstalledKit>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [mainTab, setMainTab] = useState<'marketplace' | 'localKit'>('marketplace');
   const [activeTab, setActiveTab] = useState<string>('market');
   const [categories, setCategories] = useState<KitCategory[]>([]);
   const [selectedKit, setSelectedKit] = useState<MarketplaceKit | null>(null);
@@ -69,15 +70,23 @@ const KitsManager: React.FC<KitsManagerProps> = ({ onTryAsking }) => {
   }, [loadData]);
 
   const filteredKits = useMemo(() => {
-    let results = kits;
-    // Tab filtering
-    const firstCategoryId = categories[0]?.id;
-    if (activeTab === firstCategoryId) {
-      results = results.filter((kit) => !kit.category || kit.category === activeTab);
-    } else {
-      results = results.filter((kit) => kit.category === activeTab);
+    // 1. 首先依据主 Tab 大类过滤
+    let results = kits.filter((kit) => {
+      const type = kit._type || 'marketplace';
+      return type === mainTab;
+    });
+
+    // 2. 如果是市场大类，则应用子分类过滤
+    if (mainTab === 'marketplace') {
+      const firstCategoryId = categories[0]?.id;
+      if (activeTab === firstCategoryId) {
+        results = results.filter((kit) => !kit.category || kit.category === activeTab);
+      } else {
+        results = results.filter((kit) => kit.category === activeTab);
+      }
     }
-    // Search filtering
+
+    // 3. 最后应用搜索词过滤
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       results = results.filter((kit) => {
@@ -87,7 +96,7 @@ const KitsManager: React.FC<KitsManagerProps> = ({ onTryAsking }) => {
       });
     }
     return results;
-  }, [kits, activeTab, categories, searchQuery]);
+  }, [kits, mainTab, activeTab, categories, searchQuery]);
 
   const handleInstall = async (kit: MarketplaceKit) => {
     setOperatingKitId(kit.id);
@@ -400,6 +409,38 @@ const KitsManager: React.FC<KitsManagerProps> = ({ onTryAsking }) => {
 
       {/* Sticky toolbar: Search + Marketplace tab */}
       <div className="sticky top-0 z-10 space-y-4 bg-background pb-4">
+        {/* 专家大类主 Tab 切换 */}
+        <div className="flex items-center space-x-6 border-b border-border/60 pb-3 select-none">
+          <button
+            type="button"
+            onClick={() => setMainTab('marketplace')}
+            className={`relative py-1 text-sm font-semibold transition-colors focus:outline-none ${
+              mainTab === 'marketplace'
+                ? 'text-foreground font-semibold'
+                : 'text-secondary hover:text-foreground font-medium'
+            }`}
+          >
+            云端市场专家
+            {mainTab === 'marketplace' && (
+              <div className="absolute bottom-[-13px] left-0 right-0 h-0.5 rounded-full bg-primary" />
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={() => setMainTab('localKit')}
+            className={`relative py-1 text-sm font-semibold transition-colors focus:outline-none ${
+              mainTab === 'localKit'
+                ? 'text-foreground font-semibold'
+                : 'text-secondary hover:text-foreground font-medium'
+            }`}
+          >
+            本地内置专家
+            {mainTab === 'localKit' && (
+              <div className="absolute bottom-[-13px] left-0 right-0 h-0.5 rounded-full bg-primary" />
+            )}
+          </button>
+        </div>
+
         {/* Search */}
         <div className="flex items-center gap-3">
           <div className="relative flex-1">
@@ -424,23 +465,25 @@ const KitsManager: React.FC<KitsManagerProps> = ({ onTryAsking }) => {
         </div>
 
         {/* Market section */}
-        <div className="flex items-center gap-6">
-          {categories.map((cat) => (
-            <button
-              key={cat.id}
-              type="button"
-              onClick={() => setActiveTab(cat.id)}
-              className={`relative px-2.5 pb-2.5 pt-0.5 text-[13px] font-semibold transition-colors focus:outline-none ${
-                activeTab === cat.id ? 'text-foreground font-semibold' : 'text-secondary hover:text-foreground'
-              }`}
-            >
-              {resolveLocalizedText(cat.name)}
-              {activeTab === cat.id && (
-                <div className="absolute bottom-[-1px] left-0 right-0 h-0.5 rounded-full bg-primary" />
-              )}
-            </button>
-          ))}
-        </div>
+        {mainTab === 'marketplace' && categories.length > 0 && (
+          <div className="flex items-center gap-6">
+            {categories.map((cat) => (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => setActiveTab(cat.id)}
+                className={`relative px-2.5 pb-2.5 pt-0.5 text-[13px] font-semibold transition-colors focus:outline-none ${
+                  activeTab === cat.id ? 'text-foreground font-semibold' : 'text-secondary hover:text-foreground'
+                }`}
+              >
+                {resolveLocalizedText(cat.name)}
+                {activeTab === cat.id && (
+                  <div className="absolute bottom-[-1px] left-0 right-0 h-0.5 rounded-full bg-primary" />
+                )}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Kit grid */}

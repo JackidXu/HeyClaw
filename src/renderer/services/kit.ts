@@ -47,7 +47,10 @@ class KitService {
         return { kits: [], categories: [] };
       }
 
-      const kits: MarketplaceKit[] = value.kits ?? [];
+      const local = (value.localKit || []).map((k: any) => ({ ...k, _type: 'localKit' as const }));
+      const market = (value.marketplace || []).map((k: any) => ({ ...k, _type: 'marketplace' as const }));
+      const kits = [...local, ...market];
+
       const categories: KitCategory[] = value.categories ?? [];
       this.marketplaceCache = kits;
       this.categoriesCache = categories;
@@ -59,16 +62,18 @@ class KitService {
   }
 
   async installKit(kit: MarketplaceKit): Promise<{ success: boolean; error?: string }> {
-    if (!kit.skills?.bundle) {
+    const isLocal = kit._type === 'localKit';
+
+    if (!isLocal && !kit.skills?.bundle) {
       return { success: false, error: 'Kit has no skill bundle URL' };
     }
 
     const result = await window.electron.kits.install({
       kitId: kit.id,
-      bundleUrl: kit.skills.bundle,
+      bundleUrl: isLocal ? '' : (kit.skills?.bundle || ''),
       version: kit.version ?? '0.0.0',
-      skillListIds: kit.skills.list.map(s => s.id),
-      skillList: kit.skills.list,
+      skillListIds: (kit.skills?.list || []).map(s => s.id),
+      skillList: kit.skills?.list || [],
       mcpServers: kit.mcpServers ?? null,
       connectors: kit.connectors ?? null,
     });

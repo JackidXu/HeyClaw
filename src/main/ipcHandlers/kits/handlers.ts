@@ -101,18 +101,20 @@ function appendBuiltInKitsToStoreResponse(data: string): string {
     typeof rawValue === 'string'
       ? (JSON.parse(rawValue) as Record<string, unknown>)
       : (rawValue as Record<string, unknown>);
-  const kits = Array.isArray(value.kits) ? value.kits : [];
-  const withoutDuplicate = kits.filter(
+
+  // 新数据结构下，我们将 buildComputerUseMarketplaceKit 拼装到 marketplace 数组里
+  const marketplace = Array.isArray(value.marketplace) ? value.marketplace : [];
+  const withoutDuplicate = marketplace.filter(
     kit =>
       !kit ||
       typeof kit !== 'object' ||
       (kit as Record<string, unknown>).id !== ComputerUseKitId.BuiltIn,
   );
-
   const nextValue = {
     ...value,
-    kits: [...withoutDuplicate, buildComputerUseMarketplaceKit()],
+    marketplace: [...withoutDuplicate, buildComputerUseMarketplaceKit()],
   };
+
   valueContainer.value = typeof rawValue === 'string' ? JSON.stringify(nextValue) : nextValue;
   return JSON.stringify(parsed);
 }
@@ -306,7 +308,7 @@ export function registerKitHandlers(deps: KitHandlerDeps): void {
     ) => {
       const { kitId, bundleUrl, version, skillListIds: _skillListIds } = params;
       const isComputerUseKit = kitId === ComputerUseKitId.BuiltIn;
-      console.log(`[KitStore] Installing kit "${kitId}" v${version} from ${bundleUrl}`);
+      console.log(`[KitStore] Installing kit "${kitId}" v${version} from ${bundleUrl || 'local'}`);
 
       let tempRoot: string | null = null;
       let skillWatchingStopped = false;
@@ -319,89 +321,107 @@ export function registerKitHandlers(deps: KitHandlerDeps): void {
           throw new Error('Computer Use kit is only available on Windows x64.');
         }
 
-        // 1. Download zip
-        tempRoot = fs.mkdtempSync(path.join(app.getPath('temp'), 'lobsterai-kit-'));
-        const buffer = await downloadBuffer(bundleUrl);
-        if (isComputerUseKit) {
-          if (buffer.length !== ComputerUseKitBundleIntegrity.SizeBytes) {
-            throw new Error('Computer Use kit bundle size verification failed');
-          }
-          if (sha256Buffer(buffer) !== ComputerUseKitBundleIntegrity.Sha256) {
-            throw new Error('Computer Use kit bundle checksum verification failed');
-          }
-        }
-        const zipPath = path.join(tempRoot, 'kit-bundle.zip');
-        const extractRoot = path.join(tempRoot, 'extracted');
-        fs.writeFileSync(zipPath, buffer);
-        fs.mkdirSync(extractRoot, { recursive: true });
-
-        // 2. Extract
-        await extractZip(zipPath, { dir: extractRoot });
-
-        // Handle single-directory wrapper (e.g. zip contains one root folder)
-        let sourceRoot = extractRoot;
-        const extractedEntries = fs
-          .readdirSync(extractRoot)
-          .map(entry => path.join(extractRoot, entry))
-          .filter(p => {
-            try {
-              return fs.statSync(p).isDirectory();
-            } catch {
-              return false;
-            }
-          });
-        if (extractedEntries.length === 1) {
-          sourceRoot = extractedEntries[0];
-        }
-
-        // 3. Discover skill directories
-        const skillDirs = collectSkillDirs(sourceRoot);
-        if (skillDirs.length === 0) {
-          throw new Error('No skills found in kit bundle (no SKILL.md detected)');
-        }
-
-        if (isComputerUseKit) {
-          const runtimeResult = await installComputerUseRuntime();
-          if (!runtimeResult.success) {
-            throw new Error(runtimeResult.error || 'Computer Use runtime installation failed');
-          }
-        }
-
-        const skillManager = getSkillManager();
-        skillManager.stopWatching();
-        skillWatchingStopped = true;
-        if (isComputerUseKit) {
-          removeComputerUseSkillArtifacts(getStore());
-        }
-
-        // 4. Copy skills to user SKILLs directory
-        const root = ensureSkillsRoot();
+        const isLocal = !bundleUrl;
         const installedSkillIds: string[] = [];
         const installedSkillMetadata: Record<string, KitSkillMetadata> = {};
         const sourceSkillMetadata = normalizeKitSkillMetadataList(params.skillList);
 
-        for (const skillDir of skillDirs) {
-          const folderName = normalizeFolderName(path.basename(skillDir));
-          let targetDir = path.resolve(root, folderName);
-          let suffix = 1;
-          while (fs.existsSync(targetDir)) {
-            targetDir = path.resolve(root, `${folderName}-${suffix}`);
-            suffix += 1;
+        if (!isLocal) {
+          // 1. Download zip
+          tempRoot = fs.mkdtempSync(path.join(app.getPath('temp'), 'lobsterai-kit-'));
+          const buffer = await downloadBuffer(bundleUrl);
+          if (isComputerUseKit) {
+            if (buffer.length !== ComputerUseKitBundleIntegrity.SizeBytes) {
+              throw new Error('Computer Use kit bundle size verification failed');
+            }
+            if (sha256Buffer(buffer) !== ComputerUseKitBundleIntegrity.Sha256) {
+              throw new Error('Computer Use kit bundle checksum verification failed');
+            }
           }
-          cpRecursiveSync(skillDir, targetDir);
-          normalizeWindowsAttrs(targetDir);
-          const installedSkillId = path.basename(targetDir);
-          installedSkillIds.push(installedSkillId);
+          const zipPath = path.join(tempRoot, 'kit-bundle.zip');
+          const extractRoot = path.join(tempRoot, 'extracted');
+          fs.writeFileSync(zipPath, buffer);
+          fs.mkdirSync(extractRoot, { recursive: true });
 
-          const sourceSkillId = path.basename(skillDir);
-          const metadata =
-            sourceSkillMetadata.get(sourceSkillId) ?? sourceSkillMetadata.get(folderName);
-          if (metadata?.name || metadata?.description) {
-            installedSkillMetadata[installedSkillId] = {
-              id: installedSkillId,
-              ...(metadata.name ? { name: metadata.name } : {}),
-              ...(metadata.description ? { description: metadata.description } : {}),
-            };
+          // 2. Extract
+          await extractZip(zipPath, { dir: extractRoot });
+
+          // Handle single-directory wrapper (e.g. zip contains one root folder)
+          let sourceRoot = extractRoot;
+          const extractedEntries = fs
+            .readdirSync(extractRoot)
+            .map(entry => path.join(extractRoot, entry))
+            .filter(p => {
+              try {
+                return fs.statSync(p).isDirectory();
+              } catch {
+                return false;
+              }
+            });
+          if (extractedEntries.length === 1) {
+            sourceRoot = extractedEntries[0];
+          }
+
+          // 3. Discover skill directories
+          const skillDirs = collectSkillDirs(sourceRoot);
+          if (skillDirs.length === 0) {
+            throw new Error('No skills found in kit bundle (no SKILL.md detected)');
+          }
+
+          if (isComputerUseKit) {
+            const runtimeResult = await installComputerUseRuntime();
+            if (!runtimeResult.success) {
+              throw new Error(runtimeResult.error || 'Computer Use runtime installation failed');
+            }
+          }
+
+          const skillManager = getSkillManager();
+          skillManager.stopWatching();
+          skillWatchingStopped = true;
+          if (isComputerUseKit) {
+            removeComputerUseSkillArtifacts(getStore());
+          }
+
+          // 4. Copy skills to user SKILLs directory
+          const root = ensureSkillsRoot();
+
+          for (const skillDir of skillDirs) {
+            const folderName = normalizeFolderName(path.basename(skillDir));
+            let targetDir = path.resolve(root, folderName);
+            let suffix = 1;
+            while (fs.existsSync(targetDir)) {
+              targetDir = path.resolve(root, `${folderName}-${suffix}`);
+              suffix += 1;
+            }
+            cpRecursiveSync(skillDir, targetDir);
+            normalizeWindowsAttrs(targetDir);
+            const installedSkillId = path.basename(targetDir);
+            installedSkillIds.push(installedSkillId);
+
+            const sourceSkillId = path.basename(skillDir);
+            const metadata =
+              sourceSkillMetadata.get(sourceSkillId) ?? sourceSkillMetadata.get(folderName);
+            if (metadata?.name || metadata?.description) {
+              installedSkillMetadata[installedSkillId] = {
+                id: installedSkillId,
+                ...(metadata.name ? { name: metadata.name } : {}),
+                ...(metadata.description ? { description: metadata.description } : {}),
+              };
+            }
+          }
+        } else {
+          // 如果是本地专家，直接启用传入的关联技能，并填充其 metadata
+          const skillListIds = params.skillListIds || [];
+          for (const sId of skillListIds) {
+            installedSkillIds.push(sId);
+            const metadata = sourceSkillMetadata.get(sId);
+            if (metadata?.name || metadata?.description) {
+              installedSkillMetadata[sId] = {
+                id: sId,
+                ...(metadata.name ? { name: metadata.name } : {}),
+                ...(metadata.description ? { description: metadata.description } : {}),
+              };
+            }
           }
         }
 
@@ -448,7 +468,7 @@ export function registerKitHandlers(deps: KitHandlerDeps): void {
         }
 
         // 7. Notify after all installation work and Computer Use config sync are complete.
-        skillManager.startWatching();
+        getSkillManager().startWatching();
         skillWatchingRestarted = true;
         notifySkillsChanged();
 

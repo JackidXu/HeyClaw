@@ -7,7 +7,7 @@ export interface KitSkillRef {
 }
 
 export interface KitSkillBundle {
-  bundle: string;
+  bundle?: string;
   list: KitSkillRef[];
 }
 
@@ -18,6 +18,7 @@ export interface KitTag {
 
 export interface MarketplaceKit {
   id: string;
+  _type?: 'localKit' | 'marketplace';
   name: string | LocalizedText;
   description: string | LocalizedText;
   icon?: string;
