@@ -141,6 +141,11 @@ echo "[openclaw-runtime] Skipping release:check (not needed for embedded builds)
 
 echo "[2/7] Packing npm tarball"
 # Skip prepack rebuild — build and ui:build already ran in step [1/7].
+# Remove dist/extensions in source to prevent packaging tens of thousands of plugin node_modules files, which hangs Windows builds.
+if [ -d "dist/extensions" ]; then
+  echo "[openclaw-runtime] Removing dist/extensions in source to avoid packaging redundant node_modules"
+  rm -rf dist/extensions
+fi
 OPENCLAW_PREPACK_PREPARED=1 npm pack --pack-destination "$PACK_DIR"
 TARBALL="$(ls -1t "$PACK_DIR"/openclaw-*.tgz | head -n 1)"
 if [[ -z "$TARBALL" || ! -f "$TARBALL" ]]; then
