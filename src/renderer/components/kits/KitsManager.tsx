@@ -33,7 +33,7 @@ const KitsManager: React.FC<KitsManagerProps> = ({ onTryAsking }) => {
   const [installedKits, setInstalledKits] = useState<Record<string, InstalledKit>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [mainTab, setMainTab] = useState<'marketplace' | 'localKit'>('marketplace');
+  const [mainTab, setMainTab] = useState<'installed' | 'marketplace'>('installed');
   const [activeTab, setActiveTab] = useState<string>('market');
   const [categories, setCategories] = useState<KitCategory[]>([]);
   const [selectedKit, setSelectedKit] = useState<MarketplaceKit | null>(null);
@@ -71,10 +71,10 @@ const KitsManager: React.FC<KitsManagerProps> = ({ onTryAsking }) => {
 
   const filteredKits = useMemo(() => {
     // 1. 首先依据主 Tab 大类过滤
-    let results = kits.filter((kit) => {
-      const type = kit._type || 'marketplace';
-      return type === mainTab;
-    });
+    let results = kits;
+    if (mainTab === 'installed') {
+      results = kits.filter((kit) => !!installedKits[kit.id]);
+    }
 
     // 2. 如果是市场大类，则应用子分类过滤
     if (mainTab === 'marketplace') {
@@ -96,7 +96,7 @@ const KitsManager: React.FC<KitsManagerProps> = ({ onTryAsking }) => {
       });
     }
     return results;
-  }, [kits, mainTab, activeTab, categories, searchQuery]);
+  }, [kits, installedKits, mainTab, activeTab, categories, searchQuery]);
 
   const handleInstall = async (kit: MarketplaceKit) => {
     setOperatingKitId(kit.id);
@@ -413,6 +413,20 @@ const KitsManager: React.FC<KitsManagerProps> = ({ onTryAsking }) => {
         <div className="flex items-center space-x-6 border-b border-border/60 pb-3 select-none">
           <button
             type="button"
+            onClick={() => setMainTab('installed')}
+            className={`relative py-1 text-sm font-semibold transition-colors focus:outline-none ${
+              mainTab === 'installed'
+                ? 'text-foreground font-semibold'
+                : 'text-secondary hover:text-foreground font-medium'
+            }`}
+          >
+            已安装
+            {mainTab === 'installed' && (
+              <div className="absolute bottom-[-13px] left-0 right-0 h-0.5 rounded-full bg-primary" />
+            )}
+          </button>
+          <button
+            type="button"
             onClick={() => setMainTab('marketplace')}
             className={`relative py-1 text-sm font-semibold transition-colors focus:outline-none ${
               mainTab === 'marketplace'
@@ -420,22 +434,8 @@ const KitsManager: React.FC<KitsManagerProps> = ({ onTryAsking }) => {
                 : 'text-secondary hover:text-foreground font-medium'
             }`}
           >
-            云端市场专家
+            专家市场
             {mainTab === 'marketplace' && (
-              <div className="absolute bottom-[-13px] left-0 right-0 h-0.5 rounded-full bg-primary" />
-            )}
-          </button>
-          <button
-            type="button"
-            onClick={() => setMainTab('localKit')}
-            className={`relative py-1 text-sm font-semibold transition-colors focus:outline-none ${
-              mainTab === 'localKit'
-                ? 'text-foreground font-semibold'
-                : 'text-secondary hover:text-foreground font-medium'
-            }`}
-          >
-            本地内置专家
-            {mainTab === 'localKit' && (
               <div className="absolute bottom-[-13px] left-0 right-0 h-0.5 rounded-full bg-primary" />
             )}
           </button>
