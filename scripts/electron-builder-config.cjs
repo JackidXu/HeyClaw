@@ -96,12 +96,12 @@ delete config.extraResources;
 
 config.dmg = {
   ...(config.dmg || {}),
-  artifactName: `HeyClaw-darwin-\${arch}-\${version}-${keyfrom}.\${ext}`,
+  artifactName: `HeyClaw-mac-\${arch}-\${version}-${keyfrom}.\${ext}`,
 };
 
 config.nsis = {
   ...(config.nsis || {}),
-  artifactName: `HeyClaw-Setup-\${arch}-\${version}-${keyfrom}.\${ext}`,
+  artifactName: `HeyClaw-win-\${arch}-\${version}-${keyfrom}.\${ext}`,
 };
 
 console.log(`[Keyfrom] configured artifact keyfrom as ${keyfrom}`);
