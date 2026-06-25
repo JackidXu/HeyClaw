@@ -571,6 +571,8 @@ const PLAN_MODE_SAFE_GIT_COMMANDS = new Set([
   'show',
   'status',
 ]);
+const ASSISTANT_STREAM_RESET_MIN_DROP_CHARS = 40;
+const ASSISTANT_STREAM_RESET_RATIO = 0.7;
 
 function isPlanModeSystemPrompt(systemPrompt: string): boolean {
   return containsPlanModePrompt(systemPrompt)
@@ -767,6 +769,13 @@ export function isPlanModeResponseComplete(text: string): boolean {
   ];
   const sectionCount = sectionPatterns.filter((pattern) => pattern.test(content)).length;
   return structuralLineCount >= 8 || (structuralLineCount >= 5 && sectionCount >= 3);
+}
+
+export function isSignificantAssistantStreamReset(previousLength: number, nextLength: number): boolean {
+  if (previousLength <= 5 || nextLength >= previousLength) return false;
+  const drop = previousLength - nextLength;
+  return drop >= ASSISTANT_STREAM_RESET_MIN_DROP_CHARS
+    && nextLength <= previousLength * ASSISTANT_STREAM_RESET_RATIO;
 }
 
 function buildPlanModeOutboundReminder(): string {
@@ -6498,8 +6507,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     // Detect text reset: new model call starts → text length drops significantly.
     // Only trigger when hwm is meaningful (> 5 chars) to avoid false positives
     // from early chat delta / agent event interleaving.
-    if (text.length < turn.agentAssistantTextLength
-        && turn.agentAssistantTextLength > 5
+    if (isSignificantAssistantStreamReset(turn.agentAssistantTextLength, text.length)
         && turn.assistantMessageId) {
       console.debug('[Debug:textReset] detected:', turn.agentAssistantTextLength, '->',
         text.length, 'splitting. prevText:', turn.currentText.slice(0, 80));

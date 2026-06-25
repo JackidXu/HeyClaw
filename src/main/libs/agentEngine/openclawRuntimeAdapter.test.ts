@@ -24,6 +24,7 @@ import {
   estimateOpenClawChatSendFrameBytes,
   isPlanModeResponseComplete,
   isPlanModeSafeExecCommand,
+  isSignificantAssistantStreamReset,
   normalizeOpenClawRuntimeErrorMessage,
   OPENCLAW_CHAT_SEND_PAYLOAD_SAFE_LIMIT_BYTES,
   OpenClawRuntimeAdapter,
@@ -91,6 +92,59 @@ test('plan mode rejects a preface and accepts a structured implementation plan',
 - 默认交付单文件静态页面，产品图片、地址和电话先使用易替换占位内容。
 </proposed_plan>`;
   expect(isPlanModeResponseComplete(completePlan)).toBe(true);
+});
+
+test('assistant snapshot jitter does not count as a stream reset', () => {
+  expect(isSignificantAssistantStreamReset(545, 544)).toBe(false);
+  expect(isSignificantAssistantStreamReset(1000, 930)).toBe(false);
+  expect(isSignificantAssistantStreamReset(1000, 200)).toBe(true);
+  expect(isSignificantAssistantStreamReset(80, 30)).toBe(true);
+});
+
+test('plan mode assistant snapshot jitter keeps one visible plan message', () => {
+  const firstSnapshot = [
+    '<proposed_plan>',
+    '**Summary**',
+    '',
+    '根据产品图为小红书平台撰写宣传文案。',
+    '',
+    '**Implementation Approach**',
+    '1. 分析图片视觉元素与产品信息。',
+    '2. 规划文案结构、卖点和禁用风险。',
+    '</proposed_plan>',
+    '',
+  ].join('\n');
+  const nextSnapshot = firstSnapshot.trim();
+  expect(nextSnapshot.length).toBeLessThan(firstSnapshot.length);
+
+  const { session, store } = createReconcileStore([
+    { id: 'msg-1', type: 'user', content: '帮我写小红书文案', timestamp: 1, metadata: {} },
+  ]);
+  const adapter = new OpenClawRuntimeAdapter(store, {});
+  const sessionKey = `agent:main:lobsterai:${session.id}`;
+  const turn = createActiveTurn(session.id, sessionKey, 'run-plan-snapshot');
+  turn.planMode = true;
+  adapter.activeTurns.set(session.id, turn);
+  adapter.sessionIdByRunId.set('run-plan-snapshot', session.id);
+
+  adapter.processAgentAssistantText({
+    runId: 'run-plan-snapshot',
+    sessionKey,
+    stream: 'assistant',
+    data: { text: firstSnapshot },
+  });
+  const firstMessageId = turn.assistantMessageId;
+  adapter.processAgentAssistantText({
+    runId: 'run-plan-snapshot',
+    sessionKey,
+    stream: 'assistant',
+    data: { text: nextSnapshot },
+  });
+
+  const assistantMessages = session.messages.filter((message) => message.type === 'assistant');
+  expect(assistantMessages).toHaveLength(1);
+  expect(turn.assistantMessageId).toBe(firstMessageId);
+  expect(turn.committedAssistantText).toBe('');
 });
 
 test('pickPersistedAssistantSegment: stream authority keeps previous when same length or longer', () => {
