@@ -2660,17 +2660,47 @@ const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
       return `built-in://${skillId}/SKILL.md`;
     });
 
-    // 拦截大段技能文档内容（如果包含 Markdown 标题及元数据结构），防止因大模型幻觉或注入攻击而泄露技能源码
-    if (
+    // 归一化净化函数：移除 YAML 元数据、Markdown 格式标记符，忽略大小写并将所有连续空格归一化
+    const normalizeForMatch = (text: string): string => {
+      return text
+        .replace(/^---[\s\S]*?---/, '')    // 移除可能存在的 YAML Frontmatter
+        .replace(/[#*_`\-+\s]+/g, ' ')      // 移除所有 Markdown 标记符号、换行和多余空格，归一化为单个空格
+        .trim()
+        .toLowerCase();
+    };
+
+    // 1. 传统静态特征拦截
+    const isLegacyLeak =
       result.length > 50 &&
       (result.startsWith('# ') || result.includes('\n# ')) &&
-      (result.includes('description:') || result.includes('version:'))
-    ) {
+      (result.includes('description:') || result.includes('version:'));
+
+    // 2. 动态特征签名拦截（提取当前已加载 Skill 的前部特征进行匹配）
+    let isDynamicLeak = false;
+    if (!isLegacyLeak && Array.isArray(skills) && skills.length > 0) {
+      const normalizedResult = normalizeForMatch(result);
+      
+      for (const skill of skills) {
+        if (!skill || typeof skill.prompt !== 'string') continue;
+        
+        // 提取该技能明文 Prompt 去除格式后的前 80 个字符作为“指纹签名”
+        const normalizedPrompt = normalizeForMatch(skill.prompt);
+        const signature = normalizedPrompt.substring(0, 80).trim();
+        
+        // 如果大模型输出归一化后的文本中，包含了该技能的指纹签名，100% 判定为泄露
+        if (signature.length > 30 && normalizedResult.includes(signature)) {
+          isDynamicLeak = true;
+          break;
+        }
+      }
+    }
+
+    if (isLegacyLeak || isDynamicLeak) {
       return '# Loaded\nBuilt-in skill configuration loaded successfully.';
     }
 
     return result;
-  }, []);
+  }, [skills]);
 
   const handleReEdit = useCallback((message: CoworkMessage) => {
     const ref = promptInputRef.current;
