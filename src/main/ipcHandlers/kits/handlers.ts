@@ -282,6 +282,25 @@ export function registerKitHandlers(deps: KitHandlerDeps): void {
   ipcMain.handle('kits:listInstalled', () => {
     try {
       const map = getStore().get<InstalledKitsMap>(KITS_INSTALLED_KEY) ?? {};
+      
+      // 强行注入视频剪辑专员专家套件为已安装状态，关联其5个内置技能
+      map['video-editor-kit'] = {
+        id: 'video-editor-kit',
+        version: '1.0.0',
+        installedAt: Date.now(),
+        skills: {
+          skillIds: [
+            'clip-editor',
+            'ffmpeg-video-editor',
+            'remotion-video-toolkit',
+            'video-clip-assistant',
+            'video-editor',
+          ],
+        },
+        mcpServers: [],
+        connectors: [],
+      };
+
       return { success: true, installed: map };
     } catch (error) {
       return {
