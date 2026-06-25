@@ -41,7 +41,7 @@ jobs:
             ~/Library/Caches/pnpm
             vendor/openclaw-runtime
             vendor/openclaw-plugins
-          key: npm-${{ runner.os }}-${{ matrix.arch }}-${{ hashFiles('package.json') }}
+          key: npm-${{ runner.os }}-${{ matrix.arch }}-${{ hashFiles('package-lock.json') }}
           restore-keys: npm-${{ runner.os }}-${{ matrix.arch }}-
       
       - name: Install pnpm
@@ -100,7 +100,7 @@ jobs:
             ~\AppData\Local\npm-cache
             vendor/openclaw-runtime
             vendor/openclaw-plugins
-          key: npm-${{ runner.os }}-${{ hashFiles('package.json') }}
+          key: npm-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
           restore-keys: npm-${{ runner.os }}-
       
       - name: Install pnpm
