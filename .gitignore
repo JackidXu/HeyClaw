@@ -31,8 +31,7 @@ SKILLs/**/.connection
 SKILLs/**/.server.log
 SKILLs/**/.server.pid
 SKILLs/**/.venv/
-
-package-lock.json
+SKILLs/**/package-lock.json
 
 nul
 .work.env
