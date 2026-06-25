@@ -145,6 +145,7 @@ echo "[2/7] Packing npm tarball"
 if [ -d "dist/extensions" ]; then
   echo "[openclaw-runtime] Removing dist/extensions in source to avoid packaging redundant node_modules"
   rm -rf dist/extensions
+  mkdir -p dist/extensions
 fi
 OPENCLAW_PREPACK_PREPARED=1 npm pack --pack-destination "$PACK_DIR"
 TARBALL="$(ls -1t "$PACK_DIR"/openclaw-*.tgz | head -n 1)"

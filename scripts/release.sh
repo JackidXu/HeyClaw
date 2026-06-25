@@ -24,12 +24,15 @@ echo "对应的 Git Tag: $TAG_NAME"
 # 1. 更新 package.json 中的版本号
 npm version "$CLEAN_VERSION" --no-git-tag-version --allow-same-version
 
-# 2. git 提交 (仅在 package.json 有实际改动时提交，防止 nothing to commit 报错中断)
-if ! git diff --quiet package.json; then
+# 2. git 提交 (仅在 package.json 或 package-lock.json 有实际改动时提交，防止 nothing to commit 报错中断)
+if ! git diff --quiet package.json || ! git diff --quiet package-lock.json; then
   git add package.json
+  if [ -f package-lock.json ] && ! git diff --quiet package-lock.json; then
+    git add package-lock.json
+  fi
   git commit -m "chore: bump version to $CLEAN_VERSION"
 else
-  echo "package.json 版本号已是最新，跳过 Commit 步骤。"
+  echo "版本号已是最新，跳过 Commit 步骤。"
 fi
 
 # 3. 强制创建/覆盖本地 Tag，防止已存在时报错中断
