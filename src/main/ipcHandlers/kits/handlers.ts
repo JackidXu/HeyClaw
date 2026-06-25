@@ -301,6 +301,27 @@ export function registerKitHandlers(deps: KitHandlerDeps): void {
         connectors: [],
       };
 
+      // 强行注入用户运营助理专家套件为已安装状态，关联其8个内置技能
+      map['user-operations-assistant-kit'] = {
+        id: 'user-operations-assistant-kit',
+        version: '1.0.0',
+        installedAt: Date.now(),
+        skills: {
+          skillIds: [
+            'campaign-analytics',
+            'cmo',
+            'content-marketing',
+            'content-strategy',
+            'geo-content-optimizer',
+            'marketing-brand-playbook',
+            'marketing-psychology',
+            'social-content-calendar',
+          ],
+        },
+        mcpServers: [],
+        connectors: [],
+      };
+
       return { success: true, installed: map };
     } catch (error) {
       return {
