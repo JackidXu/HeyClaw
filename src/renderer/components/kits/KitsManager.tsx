@@ -34,7 +34,7 @@ const KitsManager: React.FC<KitsManagerProps> = ({ onTryAsking }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [mainTab, setMainTab] = useState<'installed' | 'marketplace'>('installed');
-  const [activeTab, setActiveTab] = useState<string>('market');
+  const [activeTab, setActiveTab] = useState<string>('all');
   const [categories, setCategories] = useState<KitCategory[]>([]);
   const [selectedKit, setSelectedKit] = useState<MarketplaceKit | null>(null);
   const [operatingKitId, setOperatingKitId] = useState<string | null>(null);
@@ -55,8 +55,9 @@ const KitsManager: React.FC<KitsManagerProps> = ({ onTryAsking }) => {
 
     if (marketCategories.length > 0) {
       setActiveTab((prev) => {
+        if (prev === 'all') return 'all';
         const exists = marketCategories.some((cat) => cat.id === prev);
-        return exists ? prev : marketCategories[0].id;
+        return exists ? prev : 'all';
       });
     }
 
@@ -78,10 +79,7 @@ const KitsManager: React.FC<KitsManagerProps> = ({ onTryAsking }) => {
 
     // 2. 如果是市场大类，则应用子分类过滤
     if (mainTab === 'marketplace') {
-      const firstCategoryId = categories[0]?.id;
-      if (activeTab === firstCategoryId) {
-        results = results.filter((kit) => !kit.category || kit.category === activeTab);
-      } else {
+      if (activeTab !== 'all') {
         results = results.filter((kit) => kit.category === activeTab);
       }
     }
@@ -409,39 +407,7 @@ const KitsManager: React.FC<KitsManagerProps> = ({ onTryAsking }) => {
 
       {/* Sticky toolbar: Search + Marketplace tab */}
       <div className="sticky top-0 z-10 space-y-4 bg-background pb-4">
-        {/* 专家大类主 Tab 切换 */}
-        <div className="flex items-center space-x-6 border-b border-border/60 pb-3 select-none">
-          <button
-            type="button"
-            onClick={() => setMainTab('installed')}
-            className={`relative py-1 text-sm font-semibold transition-colors focus:outline-none ${
-              mainTab === 'installed'
-                ? 'text-foreground font-semibold'
-                : 'text-secondary hover:text-foreground font-medium'
-            }`}
-          >
-            已安装
-            {mainTab === 'installed' && (
-              <div className="absolute bottom-[-13px] left-0 right-0 h-0.5 rounded-full bg-primary" />
-            )}
-          </button>
-          <button
-            type="button"
-            onClick={() => setMainTab('marketplace')}
-            className={`relative py-1 text-sm font-semibold transition-colors focus:outline-none ${
-              mainTab === 'marketplace'
-                ? 'text-foreground font-semibold'
-                : 'text-secondary hover:text-foreground font-medium'
-            }`}
-          >
-            专家市场
-            {mainTab === 'marketplace' && (
-              <div className="absolute bottom-[-13px] left-0 right-0 h-0.5 rounded-full bg-primary" />
-            )}
-          </button>
-        </div>
-
-        {/* Search */}
+        {/* 1. 搜索框置顶 */}
         <div className="flex items-center gap-3">
           <div className="relative flex-1">
             <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-secondary" />
@@ -464,22 +430,69 @@ const KitsManager: React.FC<KitsManagerProps> = ({ onTryAsking }) => {
           </div>
         </div>
 
-        {/* Market section */}
+        {/* 2. 专家大类主 Tab 切换 */}
+        <div className="flex items-center border-b border-border/60 select-none">
+          <button
+            type="button"
+            onClick={() => setMainTab('installed')}
+            className={`px-4 py-2 text-sm font-semibold transition-colors relative focus:outline-none ${
+              mainTab === 'installed'
+                ? 'text-foreground font-semibold'
+                : 'text-secondary hover:text-foreground font-medium'
+            }`}
+          >
+            已安装
+            {Object.keys(installedKits).length > 0 && (
+              <span className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full bg-surface-raised">
+                {Object.keys(installedKits).length}
+              </span>
+            )}
+            <div className={`absolute bottom-0 left-0 right-0 h-0.5 rounded-full transition-colors ${
+              mainTab === 'installed' ? 'bg-primary' : 'bg-transparent'
+            }`} />
+          </button>
+          <button
+            type="button"
+            onClick={() => setMainTab('marketplace')}
+            className={`px-4 py-2 text-sm font-semibold transition-colors relative focus:outline-none ${
+              mainTab === 'marketplace'
+                ? 'text-foreground font-semibold'
+                : 'text-secondary hover:text-foreground font-medium'
+            }`}
+          >
+            专家市场
+            <div className={`absolute bottom-0 left-0 right-0 h-0.5 rounded-full transition-colors ${
+              mainTab === 'marketplace' ? 'bg-primary' : 'bg-transparent'
+            }`} />
+          </button>
+        </div>
+
+        {/* 3. 市场分类药丸小 Tag 筛选，包含“全部” */}
         {mainTab === 'marketplace' && categories.length > 0 && (
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <button
+              type="button"
+              onClick={() => setActiveTab('all')}
+              className={`px-2.5 py-1 text-xs rounded-lg transition-colors focus:outline-none ${
+                activeTab === 'all'
+                  ? 'bg-primary text-white'
+                  : 'bg-surface text-secondary hover:bg-surface-raised border border-border'
+              }`}
+            >
+              全部
+            </button>
             {categories.map((cat) => (
               <button
                 key={cat.id}
                 type="button"
                 onClick={() => setActiveTab(cat.id)}
-                className={`relative px-2.5 pb-2.5 pt-0.5 text-[13px] font-semibold transition-colors focus:outline-none ${
-                  activeTab === cat.id ? 'text-foreground font-semibold' : 'text-secondary hover:text-foreground'
+                className={`px-2.5 py-1 text-xs rounded-lg transition-colors focus:outline-none ${
+                  activeTab === cat.id
+                    ? 'bg-primary text-white'
+                    : 'bg-surface text-secondary hover:bg-surface-raised border border-border'
                 }`}
               >
                 {resolveLocalizedText(cat.name)}
-                {activeTab === cat.id && (
-                  <div className="absolute bottom-[-1px] left-0 right-0 h-0.5 rounded-full bg-primary" />
-                )}
               </button>
             ))}
           </div>
