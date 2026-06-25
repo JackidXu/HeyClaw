@@ -741,7 +741,7 @@ const CoworkView: React.FC<CoworkViewProps> = ({ onRequestAppSettings, onShowSki
                 await agentService.updateAgent(currentAgentId, { workingDirectory: dir });
               }}
               showFolderSelector={true}
-              showModelSelector={false}
+              showModelSelector={true}
               showAgentSelector={true}
               onManageSkills={() => onShowSkills?.()}
               onManageKits={() => onShowKits?.()}
