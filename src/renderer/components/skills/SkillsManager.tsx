@@ -828,7 +828,7 @@ const SkillsManager: React.FC<SkillsManagerProps> = ({ readOnly, onCreateByChat 
 
               <div className="flex items-center justify-between text-[10px] text-secondary">
                 <div className="flex items-center gap-2">
-                {skill.isOfficial && (
+                {skillService.isOfficialSkill(skill) && (
                   <>
                     <span className="px-1.5 py-0.5 rounded bg-primary-muted text-primary font-medium">
                       {i18nService.t('official')}
@@ -1112,32 +1112,42 @@ const SkillsManager: React.FC<SkillsManagerProps> = ({ readOnly, onCreateByChat 
                 const mp = marketplaceSkills.find(m => m.id === selectedSkill.id);
                 return (
                   <>
-                    {selectedSkill.isOfficial && (
-                      <div className="flex items-center text-xs">
-                        <span className="w-16 flex-shrink-0 text-secondary">{i18nService.t('skillDetailSource')}</span>
-                        <span className="px-1.5 py-0.5 rounded bg-primary-muted text-primary font-medium">
-                          {i18nService.t('official')}
-                        </span>
-                        {mp?.source?.author && (
-                          <span className="ml-1.5 px-1.5 py-0.5 rounded bg-surface-raised text-foreground font-medium">
-                            {mp.source.author}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                    {!selectedSkill.isOfficial && mp?.source?.from && (
-                      <div className="flex items-center text-xs">
-                        <span className="w-16 flex-shrink-0 text-secondary">{i18nService.t('skillDetailSource')}</span>
-                        <span className="px-1.5 py-0.5 rounded bg-surface-raised text-foreground font-medium">
-                          {mp.source.from}
-                        </span>
-                        {mp.source.author && (
-                          <span className="ml-1.5 px-1.5 py-0.5 rounded bg-surface-raised text-foreground font-medium">
-                            {mp.source.author}
-                          </span>
-                        )}
-                      </div>
-                    )}
+                    {(() => {
+                      const isOfficial = skillService.isOfficialSkill(selectedSkill);
+                      if (isOfficial) {
+                        return (
+                          <div className="flex items-center text-xs">
+                            <span className="w-16 flex-shrink-0 text-secondary">{i18nService.t('skillDetailSource')}</span>
+                            <span className="px-1.5 py-0.5 rounded bg-primary-muted text-primary font-medium">
+                              {i18nService.t('official')}
+                            </span>
+                            {mp?.source?.author && (
+                              <span className="ml-1.5 px-1.5 py-0.5 rounded bg-surface-raised text-foreground font-medium">
+                                {mp.source.author}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      }
+                      
+                      if (mp?.source?.from) {
+                        return (
+                          <div className="flex items-center text-xs">
+                            <span className="w-16 flex-shrink-0 text-secondary">{i18nService.t('skillDetailSource')}</span>
+                            <span className="px-1.5 py-0.5 rounded bg-surface-raised text-foreground font-medium">
+                              {mp.source.from}
+                            </span>
+                            {mp.source.author && (
+                              <span className="ml-1.5 px-1.5 py-0.5 rounded bg-surface-raised text-foreground font-medium">
+                                {mp.source.author}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      }
+                      
+                      return null;
+                    })()}
                     {mp?.source?.url && (
                       <div className="flex items-start text-xs">
                         <span className="w-16 flex-shrink-0 text-secondary pt-0.5">URL</span>

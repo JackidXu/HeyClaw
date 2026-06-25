@@ -307,6 +307,17 @@ class SkillService {
     if (kitDesc != null) return resolveLocalizedText(kitDesc);
     return fallback;
   }
+
+  isOfficialSkill(skill: { id: string; isOfficial: boolean; isBuiltIn: boolean }): boolean {
+    // 仅凭云端 JSON 中作者是 'HeyClaw' 来判定是否为官方
+    if (this.marketplaceCache) {
+      const mp = this.marketplaceCache.skills.find(s => s.id === skill.id);
+      if (mp) {
+        return mp.source?.author?.trim() === 'HeyClaw';
+      }
+    }
+    return false;
+  }
 }
 
 export const skillService = new SkillService();
