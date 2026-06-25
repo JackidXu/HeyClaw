@@ -1184,7 +1184,9 @@ const isRemoteZipUrl = (source: string): boolean => {
 };
 
 const downloadZipUrl = async (zipUrl: string, tempRoot: string): Promise<string> => {
-  const response = await session.defaultSession.fetch(zipUrl, {
+  // 对 URL 进行转义以支持中文字符包名下载
+  const safeUrl = encodeURI(zipUrl);
+  const response = await session.defaultSession.fetch(safeUrl, {
     method: 'GET',
     headers: { 'User-Agent': 'HeyClaw Skill Downloader' },
   });
