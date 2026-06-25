@@ -328,7 +328,9 @@ const App: React.FC = () => {
         }
         mark('model resolution done');
 
-        const agreed = await window.electron.store.get('privacy_agreed');
+        // TODO: 以后开放服务协议弹窗时，恢复下面这行真实的存储读取
+        // const agreed = await window.electron.store.get('privacy_agreed');
+        const agreed = true;
         setPrivacyAgreed(agreed === true);
         mark('privacy check done');
 

@@ -4112,6 +4112,8 @@ const Settings: React.FC<SettingsProps> = ({
             {/* Footer */}
             <div className="mt-auto w-full pt-14 pb-2 flex flex-col items-center">
               <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-sm text-secondary">
+                {/* TODO: 以后开放服务条款时，取消下方关于页面服务条款链接及分隔符的注释 */}
+                {/* 
                 <button
                   type="button"
                   onClick={(e) => {
@@ -4123,6 +4125,7 @@ const Settings: React.FC<SettingsProps> = ({
                   {i18nService.t('aboutServiceTerms')}
                 </button>
                 <span className="text-xs opacity-40">|</span>
+                */}
                 <button
                   type="button"
                   onClick={(e) => {
