@@ -471,6 +471,8 @@ const SkillsManager: React.FC<SkillsManagerProps> = ({ readOnly, onCreateByChat 
       }
       if (result.skills) {
         dispatch(setSkills(result.skills));
+        setSelectedMarketplaceSkill(null);
+        showToast(i18nService.t('skillUpgradeSuccess') || '升级成功');
       }
     } catch {
       setSkillActionError(i18nService.t('skillUpgradeFailed'));
@@ -1078,6 +1080,11 @@ const SkillsManager: React.FC<SkillsManagerProps> = ({ readOnly, onCreateByChat 
                 </button>
               ) : null;
             })()}
+            {skillActionError && (
+              <div className="mt-3 text-xs text-red-500 text-center bg-red-500/10 py-2 px-3 rounded-lg border border-red-500/20 break-all">
+                {skillActionError}
+              </div>
+            )}
         </Modal>
       , document.body)}
 
