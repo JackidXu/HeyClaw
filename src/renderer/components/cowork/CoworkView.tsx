@@ -503,17 +503,29 @@ const CoworkView: React.FC<CoworkViewProps> = ({ onRequestAppSettings, onShowSki
     }
   };
 
-  // When the mapped skill is deactivated from input area, restore the QuickActionBar
+  // 记录上一次激活的技能 ID，以便检测用户是否在输入框主动取消了技能激活
+  const prevActiveSkillIdsRef = React.useRef<string[]>(activeSkillIds);
+
+  // 当在输入区取消激活关联的技能时，恢复 QuickActionBar 展示
   useEffect(() => {
     if (!selectedActionId) return;
     const action = quickActions.find(a => a.id === selectedActionId);
     if (action) {
-      const skillStillActive = activeSkillIds.includes(action.skillMapping);
-      if (!skillStillActive) {
+      const prevActiveSkillIds = prevActiveSkillIdsRef.current;
+      const wasSkillActive = prevActiveSkillIds.includes(action.skillMapping);
+      const isSkillActive = activeSkillIds.includes(action.skillMapping);
+      
+      // 只有当技能原本处于激活状态，但现在被用户取消激活时，才清空选中状态以展示 QuickActionBar
+      if (wasSkillActive && !isSkillActive) {
         dispatch(clearSelection());
       }
     }
   }, [activeSkillIds, dispatch, quickActions, selectedActionId]);
+
+  // 在副作用执行完毕后，同步更新上一次激活的技能 ID
+  useEffect(() => {
+    prevActiveSkillIdsRef.current = activeSkillIds;
+  }, [activeSkillIds]);
 
   // Handle prompt selection from QuickAction
   const handleQuickActionPromptSelect = (prompt: string) => {
