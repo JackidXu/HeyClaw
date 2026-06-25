@@ -3,14 +3,12 @@ import type {
   Prompt,
   QuickAction,
   QuickActionsConfig,
-  QuickActionsI18n,
 } from '../types/quickAction';
-import { getQuickActionsI18nUrl, getQuickActionsUrl } from './endpoints';
+import { getQuickActionsUrl } from './endpoints';
 import { i18nService } from './i18n';
 
 class QuickActionService {
   private config: QuickActionsConfig | null = null;
-  private i18nData: QuickActionsI18n | null = null;
   private listeners = new Set<() => void>();
 
   /**
@@ -23,7 +21,7 @@ class QuickActionService {
 
     try {
       const response = await window.electron.api.fetch({
-        url: getQuickActionsUrl(),
+        url: `${getQuickActionsUrl()}?t=${Date.now()}`,
         method: 'GET',
         headers: {},
       });
@@ -40,54 +38,27 @@ class QuickActionService {
   }
 
   /**
-   * 加载国际化数据
-   */
-  async loadI18n(): Promise<QuickActionsI18n> {
-    if (this.i18nData) {
-      return this.i18nData;
-    }
-
-    try {
-      const response = await window.electron.api.fetch({
-        url: getQuickActionsI18nUrl(),
-        method: 'GET',
-        headers: {},
-      });
-      if (!response.ok) {
-        throw new Error(`Failed to load quick actions i18n: ${response.statusText}`);
-      }
-      this.i18nData = response.data as QuickActionsI18n;
-      return this.i18nData;
-    } catch (error) {
-      console.error('Failed to load quick actions i18n:', error);
-      // 返回空数据作为降级
-      return { zh: {}, en: {} };
-    }
-  }
-
-  /**
    * 获取所有快捷操作（已本地化）
    */
   async getLocalizedActions(): Promise<LocalizedQuickAction[]> {
     const config = await this.loadConfig();
-    const i18nData = await this.loadI18n();
     const language = i18nService.getLanguage();
+    const isEn = language === 'en';
 
     return config.actions.map(action => {
-      const actionI18n = i18nData[language]?.[action.id];
-
       return {
-        ...action,
-        label: actionI18n?.label || action.id,
-        prompts: action.prompts.map(prompt => {
-          const promptI18n = actionI18n?.prompts?.[prompt.id];
-
+        id: action.id,
+        icon: action.icon,
+        color: action.color,
+        skillMapping: action.skillMapping,
+        label: isEn ? action.labelEn || action.labelZh : action.labelZh,
+        prompts: (action.prompts || []).map(prompt => {
           return {
             id: prompt.id,
-            label: promptI18n?.label || prompt.id,
-            description: promptI18n?.description,
-            prompt: promptI18n?.prompt || '',
-            tags: promptI18n?.tags,
+            label: isEn ? prompt.labelEn || prompt.labelZh : prompt.labelZh,
+            description: isEn ? prompt.descriptionEn : prompt.descriptionZh,
+            prompt: isEn ? prompt.promptEn || prompt.promptZh : prompt.promptZh,
+            tags: prompt.tags,
             icon: prompt.icon,
           };
         }),
@@ -168,7 +139,6 @@ class QuickActionService {
    */
   clearCache(): void {
     this.config = null;
-    this.i18nData = null;
     this.notifyListeners();
   }
 

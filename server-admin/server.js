@@ -64,6 +64,132 @@ function formatTimestamp(date = new Date()) {
   return `${y}-${m}-${d}_${h}-${min}-${s}`;
 }
 
+const defaultQuickActionsConfigObj = {
+  version: 1,
+  actions: [
+    {
+      id: "ai-search",
+      icon: "MagnifyingGlassIcon",
+      color: "#1890ff",
+      skillMapping: "",
+      labelZh: "AI 搜索优化",
+      labelEn: "AI Search Optimization",
+      prompts: [
+        {
+          id: "outline-extraction",
+          icon: "📝",
+          labelZh: "网页大纲提取",
+          labelEn: "Extract Outline",
+          descriptionZh: "自动提取网页核心脉络与框架",
+          descriptionEn: "Extract core structure and points of the web page",
+          promptZh: "请提取以下网页的核心大纲与关键观点，并用结构化的列表呈现。",
+          promptEn: "Please extract the main outline and key arguments of the following web page and present them in a structured list."
+        },
+        {
+          id: "paper-retrieval",
+          icon: "🎓",
+          labelZh: "学术论文分析",
+          labelEn: "Paper Analysis",
+          descriptionZh: "解析论文学术价值与核心结论",
+          descriptionEn: "Analyze academic value and core conclusions of the paper",
+          promptZh: "请帮我深入分析以下论文的核心结论、创新点以及潜在的局限性。",
+          promptEn: "Please analyze the core conclusions, innovations, and potential limitations of the following paper."
+        }
+      ]
+    },
+    {
+      id: "short-video",
+      icon: "DevicePhoneMobileIcon",
+      color: "#eb2f96",
+      skillMapping: "",
+      labelZh: "短视频 / 图文",
+      labelEn: "Short Video / Post",
+      prompts: [
+        {
+          id: "xiaohongshu-copy",
+          icon: "✍️",
+          labelZh: "爆款小红书文案",
+          labelEn: "Xiaohongshu Post",
+          descriptionZh: "一键生成高点击率种草图文文案",
+          descriptionEn: "Generate viral marketing posts for Xiaohongshu",
+          promptZh: "请基于以下产品亮点，撰写一篇符合小红书风格的爆款种草文案。要求包含吸睛标题、丰富Emoji、以及相关的热门Tag。",
+          promptEn: "Please write a viral marketing post for Xiaohongshu based on the product highlights below. Include an eye-catching title, rich emojis, and relevant hashtags."
+        },
+        {
+          id: "video-script",
+          icon: "🎬",
+          labelZh: "短视频口播脚本",
+          labelEn: "Short Video Script",
+          descriptionZh: "30秒黄金流失率防退短剧场脚本",
+          descriptionEn: "Create a 30-second viral video hook and script",
+          promptZh: "请基于以下主题，帮我创作一个30秒的短视频口播脚本。包含前3秒黄金吸睛钩子（Hook）、黄金痛点分析以及行动呼吁（CTA）。",
+          promptEn: "Please write a 30-second short video script based on the theme below. Include a 3-second hook, pain-point analysis, and call-to-action."
+        }
+      ]
+    },
+    {
+      id: "boss-ip",
+      icon: "UserIcon",
+      color: "#fa8c16",
+      skillMapping: "",
+      labelZh: "老板IP营销",
+      labelEn: "Boss IP Marketing",
+      prompts: [
+        {
+          id: "moments-copy",
+          icon: "💬",
+          labelZh: "朋友圈商业文案",
+          labelEn: "Moments Post",
+          descriptionZh: "高级且不失温度的行业领袖风朋友圈",
+          descriptionEn: "Write high-quality business posts for executive moments",
+          promptZh: "请根据以下商业心得，撰写一条适合企业高管或创始人的微信朋友圈文案。风格要求专业、亲和、有干货，避免微商味。",
+          promptEn: "Please write a WeChat Moments post suitable for an executive or founder based on the business insights below. The style should be professional and engaging."
+        },
+        {
+          id: "ip-positioning",
+          icon: "🎯",
+          labelZh: "个人品牌定位",
+          labelEn: "IP Positioning",
+          descriptionZh: "诊断并输出个人差异化IP标签",
+          descriptionEn: "Analyze and define personal branding labels",
+          promptZh: "请根据我提供的工作背景与擅长领域，为我设计一份差异化的个人品牌（IP）定位报告，包含核心人设、内容主线和变现路径建议。",
+          promptEn: "Please design a personal brand positioning report based on my background and expertise, including core persona, content pillars, and monetization routes."
+        }
+      ]
+    },
+    {
+      id: "private-domain",
+      icon: "ArrowPathRoundedSquareIcon",
+      color: "#52c41a",
+      skillMapping: "",
+      labelZh: "私域流量运营",
+      labelEn: "Private Domain Operation",
+      prompts: [
+        {
+          id: "welcome-words",
+          icon: "👋",
+          labelZh: "社群欢迎词模板",
+          labelEn: "Group Welcome Message",
+          descriptionZh: "高转化群规与入群即服务体验",
+          descriptionEn: "Design engaging welcome messages for new group members",
+          promptZh: "请为我设计一个针对新社群成员的自动欢迎语，要包含群规指引、福利领取方式以及让人感到温暖的社群调性。",
+          promptEn: "Please design an automated welcome message for new community members, including group guidelines, welfare acquisition, and a welcoming tone."
+        },
+        {
+          id: "follow-up",
+          icon: "📞",
+          labelZh: "售后跟进与回访",
+          labelEn: "Post-Sale Follow-up",
+          descriptionZh: "真诚不打扰的高复购回访话术",
+          descriptionEn: "Craft warm follow-up scripts to drive repeat purchase",
+          promptZh: "请根据以下产品的客诉反馈，帮我设计一套真诚、有温度且不显推销痕迹的售后回访与关怀话术。",
+          promptEn: "Please write a sincere post-sale follow-up script based on the customer feedback below, aiming to show care without being pushy."
+        }
+      ]
+    }
+  ]
+};
+
 // 上一次定时备份日期
 let lastBackupDate = '';
 
@@ -77,7 +203,7 @@ async function checkAndPerformDailyBackup() {
   if (!storeClient) return; // 未配置云端，直接跳过自动同步备份
 
   try {
-    for (const fileName of ['kit-store.json', 'skill-store.json']) {
+    for (const fileName of ['kit-store.json', 'skill-store.json', 'quick-actions.json']) {
       const cloudPath = `heyclaw/server-assets/${fileName}`;
       try {
         const result = await storeClient.get(cloudPath);
@@ -266,6 +392,7 @@ const server = http.createServer(async (req, res) => {
 
       let kitsData = defaultKits;
       let skillsData = defaultSkills;
+      let quickActionsData = JSON.stringify(defaultQuickActionsConfigObj);
 
       if (storeClient) {
         const kitCloudPath = 'heyclaw/server-assets/kit-store.json';
@@ -345,18 +472,42 @@ const server = http.createServer(async (req, res) => {
             throw err;
           }
         }
+
+        // 读取云端快速提问配置 (合一结构)
+        const quickActionsCloudPath = 'heyclaw/server-assets/quick-actions.json';
+
+        try {
+          const result = await storeClient.get(quickActionsCloudPath);
+          quickActionsData = result.content.toString('utf8');
+        } catch (err) {
+          if (err.name === 'NoSuchKeyError' || err.code === 'NoSuchKey') {
+            const localPath = path.join(DATA_DIR, 'quick-actions.json');
+            const initData = fs.existsSync(localPath) ? fs.readFileSync(localPath, 'utf8') : JSON.stringify(defaultQuickActionsConfigObj, null, 2);
+            console.log(`[Admin] Cloud file ${quickActionsCloudPath} not found, migrating from local or default...`);
+            await storeClient.put(quickActionsCloudPath, Buffer.from(initData, 'utf8'));
+            quickActionsData = initData;
+          } else {
+            throw err;
+          }
+        }
       } else {
         // 本地降级回退
         const kitPath = path.join(DATA_DIR, 'kit-store.json');
         const skillPath = path.join(DATA_DIR, 'skill-store.json');
         kitsData = fs.existsSync(kitPath) ? fs.readFileSync(kitPath, 'utf8') : defaultKits;
         skillsData = fs.existsSync(skillPath) ? fs.readFileSync(skillPath, 'utf8') : defaultSkills;
+
+        const configPath = path.join(DATA_DIR, 'quick-actions.json');
+        quickActionsData = fs.existsSync(configPath) ? fs.readFileSync(configPath, 'utf8') : JSON.stringify(defaultQuickActionsConfigObj, null, 2);
       }
+
+      const configObj = JSON.parse(quickActionsData);
 
       return sendJson(res, {
         success: true,
         kits: JSON.parse(kitsData),
         skills: JSON.parse(skillsData),
+        quickActions: configObj.actions || []
       });
     } catch (err) {
       console.error('[Admin] Get data failed:', err);
@@ -368,8 +519,29 @@ const server = http.createServer(async (req, res) => {
   if (pathname === '/api/save' && req.method === 'POST') {
     try {
       const { type, payload } = await readJsonBody(req);
-      if (type !== 'kits' && type !== 'skills') {
+      if (type !== 'kits' && type !== 'skills' && type !== 'quickActions') {
         return sendJson(res, { success: false, error: '不支持的数据类型' }, 400);
+      }
+
+      if (type === 'quickActions') {
+        // 安全备份：保存前创建单一云端备份
+        await createCloudBackup('quick-actions.json');
+
+        const newConfig = {
+          version: 1,
+          actions: payload
+        };
+        const configStr = JSON.stringify(newConfig, null, 2);
+
+        if (storeClient) {
+          await storeClient.put('heyclaw/server-assets/quick-actions.json', Buffer.from(configStr, 'utf8'));
+          console.log('[Admin] Successfully updated cloud file quick-actions.json.');
+        } else {
+          fs.writeFileSync(path.join(DATA_DIR, 'quick-actions.json'), configStr, 'utf8');
+          console.log('[Admin] Successfully updated local file quick-actions.json.');
+        }
+
+        return sendJson(res, { success: true });
       }
 
       const fileName = type === 'kits' ? 'kit-store.json' : 'skill-store.json';
@@ -410,16 +582,22 @@ const server = http.createServer(async (req, res) => {
 
         const files = (result.objects || [])
           .map((obj) => {
-            const fileName = path.basename(obj.name);
-            return {
-              fileName: fileName,
-              size: obj.size,
-              createdAt: new Date(obj.lastModified).getTime(),
-              type: fileName.startsWith('kit-store') ? 'kits' : 'skills',
-            };
-          })
-          .filter(file => file.fileName.endsWith('.json'))
-          .sort((a, b) => b.createdAt - a.createdAt); // 按时间倒序
+             const fileName = path.basename(obj.name);
+             let type = 'skills';
+             if (fileName.startsWith('kit-store')) {
+               type = 'kits';
+             } else if (fileName.startsWith('quick-actions')) {
+               type = 'quickActions';
+             }
+             return {
+               fileName: fileName,
+               size: obj.size,
+               createdAt: new Date(obj.lastModified).getTime(),
+               type: type,
+             };
+           })
+           .filter(file => file.fileName.endsWith('.json'))
+           .sort((a, b) => b.createdAt - a.createdAt); // 按时间倒序
 
         return sendJson(res, { success: true, backups: files });
       } else {
@@ -428,16 +606,22 @@ const server = http.createServer(async (req, res) => {
           ? fs.readdirSync(BACKUP_DIR)
               .filter((file) => file.endsWith('.json'))
               .map((file) => {
-                const filePath = path.join(BACKUP_DIR, file);
-                const stat = fs.statSync(filePath);
-                return {
-                  fileName: file,
-                  size: stat.size,
-                  createdAt: stat.mtimeMs,
-                  type: file.startsWith('kit-store') ? 'kits' : 'skills',
-                };
-              })
-              .sort((a, b) => b.createdAt - a.createdAt)
+                 const filePath = path.join(BACKUP_DIR, file);
+                 const stat = fs.statSync(filePath);
+                 let type = 'skills';
+                 if (file.startsWith('kit-store')) {
+                   type = 'kits';
+                 } else if (file.startsWith('quick-actions')) {
+                   type = 'quickActions';
+                 }
+                 return {
+                   fileName: file,
+                   size: stat.size,
+                   createdAt: stat.mtimeMs,
+                   type: type,
+                 };
+               })
+               .sort((a, b) => b.createdAt - a.createdAt)
           : [];
         return sendJson(res, { success: true, backups: files });
       }
@@ -454,9 +638,13 @@ const server = http.createServer(async (req, res) => {
         return sendJson(res, { success: false, error: '非法的备份文件名' }, 400);
       }
 
-      // 区分类型，并替换目标文件
-      const type = fileName.startsWith('kit-store') ? 'kits' : 'skills';
-      const targetName = type === 'kits' ? 'kit-store.json' : 'skill-store.json';
+       // 区分类型，并替换目标文件
+       let targetName = 'skill-store.json';
+       if (fileName.startsWith('kit-store')) {
+         targetName = 'kit-store.json';
+       } else if (fileName.startsWith('quick-actions')) {
+         targetName = 'quick-actions.json';
+       }
       
       // 1. 安全锁：恢复之前，再次对当前最新的云端版本做一次快照备份，防备二次覆盖搞丢
       const secureBackup = await createCloudBackup(targetName);

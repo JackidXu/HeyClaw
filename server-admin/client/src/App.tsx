@@ -9,6 +9,8 @@ import SkillEditModal from './components/SkillEditModal';
 import CategoryManagerModal from './components/CategoryManagerModal';
 import TagManagerModal from './components/TagManagerModal';
 import BackupList from './components/BackupList';
+import QuickActionList from './components/QuickActionList';
+import QuickActionEditModal from './components/QuickActionEditModal';
 
 const { Header, Content } = Layout;
 
@@ -20,20 +22,23 @@ const API_BASE =
 
 function MainConsole() {
   const [token, setToken] = useState<string>(localStorage.getItem('admin_token') || '');
-  const [activeTab, setActiveTab] = useState<'kits' | 'skills' | 'backups'>('kits');
+  const [activeTab, setActiveTab] = useState<'kits' | 'skills' | 'quickActions' | 'backups'>('kits');
   
   const [loading, setLoading] = useState(false);
 
   // 云端拉取的数据
   const [kitsContainer, setKitsContainer] = useState<any>(null);
   const [skillsContainer, setSkillsContainer] = useState<any>(null);
+  const [quickActions, setQuickActions] = useState<any[]>([]);
   const [backups, setBackups] = useState<any[]>([]);
 
   // 模态弹窗控制
   const [editingKit, setEditingKit] = useState<any | null>(null);
   const [editingSkill, setEditingSkill] = useState<any | null>(null);
+  const [editingQuickAction, setEditingQuickAction] = useState<any | null>(null);
   const [isNewKit, setIsNewKit] = useState(false);
   const [isNewSkill, setIsNewSkill] = useState(false);
+  const [isNewQuickAction, setIsNewQuickAction] = useState(false);
 
   const [isManagingCategories, setIsManagingCategories] = useState(false);
   const [isManagingTags, setIsManagingTags] = useState(false);
@@ -66,6 +71,7 @@ function MainConsole() {
       if (data.success) {
         setKitsContainer(data.kits);
         setSkillsContainer(data.skills);
+        setQuickActions(data.quickActions || []);
       } else {
         message.error('拉取数据失败: ' + data.error);
       }
@@ -98,6 +104,73 @@ function MainConsole() {
       fetchBackups();
     }
   }, [token]);
+
+  // 保存快速提问配置
+  const handleQuickActionSave = async (values: any) => {
+    let updatedList = [...quickActions];
+    if (isNewQuickAction) {
+      if (updatedList.some(item => item.id === values.id)) {
+        message.error('该快速提问分类 ID 已存在，请换一个 ID');
+        return;
+      }
+      updatedList.push(values);
+    } else {
+      updatedList = updatedList.map(item => item.id === values.id ? values : item);
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/save`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ type: 'quickActions', payload: updatedList })
+      });
+      const data = await res.json();
+      if (data.success) {
+        message.success('快速提问配置已成功保存！并已自动执行双向云端物理备份。');
+        setQuickActions(updatedList);
+        setEditingQuickAction(null);
+        fetchBackups(); // 自动刷新备份历史
+      } else {
+        message.error('保存失败: ' + data.error);
+      }
+    } catch (err) {
+      message.error('保存快速提问请求异常');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 删除快速提问分类
+  const handleQuickActionDelete = async (id: string) => {
+    const updatedList = quickActions.filter(item => item.id !== id);
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/save`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ type: 'quickActions', payload: updatedList })
+      });
+      const data = await res.json();
+      if (data.success) {
+        message.success('分类删除成功，云端已同步更新并创建备份。');
+        setQuickActions(updatedList);
+        fetchBackups();
+      } else {
+        message.error('删除失败: ' + data.error);
+      }
+    } catch (err) {
+      message.error('删除快速提问请求异常');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // 保存容器数据
   const saveContainer = async (type: 'kits' | 'skills', containerPayload: any) => {
@@ -468,6 +541,37 @@ function MainConsole() {
       )
     },
     {
+      key: 'quickActions',
+      label: (
+        <span>
+          <ApartmentOutlined />
+          快速提问管理
+        </span>
+      ),
+      children: (
+        <QuickActionList
+          quickActions={quickActions}
+          onEdit={(action) => {
+            setIsNewQuickAction(false);
+            setEditingQuickAction(action);
+          }}
+          onDelete={handleQuickActionDelete}
+          onNewQuickAction={() => {
+            setIsNewQuickAction(true);
+            setEditingQuickAction({
+              id: '',
+              icon: '',
+              color: '#1890ff',
+              skillMapping: '',
+              labelZh: '',
+              labelEn: '',
+              prompts: []
+            });
+          }}
+        />
+      )
+    },
+    {
       key: 'backups',
       label: (
         <span>
@@ -554,6 +658,15 @@ function MainConsole() {
         marketTags={getMarketTags()}
         onCancel={() => setIsManagingTags(false)}
         onSave={handleTagsSave}
+      />
+
+      {/* 快速提问编辑模态框 */}
+      <QuickActionEditModal
+        visible={!!editingQuickAction}
+        action={editingQuickAction}
+        isNew={isNewQuickAction}
+        onCancel={() => setEditingQuickAction(null)}
+        onSave={handleQuickActionSave}
       />
     </Layout>
   );

@@ -28,7 +28,6 @@ export const getKitStoreUrl = () => 'https://scrm0.cdn.banchengyun.com/heyclaw/s
 
 // 快速发问
 export const getQuickActionsUrl = () => 'https://scrm0.cdn.banchengyun.com/heyclaw/server-assets/quick-actions.json';
-export const getQuickActionsI18nUrl = () => 'https://scrm0.cdn.banchengyun.com/heyclaw/server-assets/quick-actions-i18n.json';
 
 // 登录地址
 export const getLoginOvermindUrl = () => isTestModeEnabled()

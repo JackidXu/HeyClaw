@@ -382,27 +382,23 @@ export default function KitEditModal({
               const mode = getFieldValue('iconMode');
               if (mode === 'preset') {
                 return (
-                  <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '16px', alignItems: 'center', marginBottom: 16 }}>
-                    <Form.Item
-                      label="选择内置预设角色"
-                      name="presetIcon"
-                      rules={[{ required: true, message: '请选择预设角色' }]}
-                      style={{ margin: 0 }}
-                    >
-                      <Select placeholder="请选择预设角色">
-                        <Option value="hotspot">追热点达人 (hotspot)</Option>
-                        <Option value="iptopic">老板IP选题王 (iptopic)</Option>
-                        <Option value="coverdesign">封面图设计师 (coverdesign)</Option>
-                        <Option value="alchemist">文案炼金术士 (alchemist)</Option>
-                        <Option value="layoutocd">排版强迫症 (layoutocd)</Option>
-                        <Option value="scriptdirector">口播脚本导演 (scriptdirector)</Option>
-                        <Option value="datatrans">数据翻译官 (datatrans)</Option>
-                      </Select>
-                    </Form.Item>
-                    <div style={{ fontSize: '12px', color: '#8c8c8c', background: '#fafafa', padding: '6px 10px', borderRadius: 6, border: '1px solid #f0f0f0' }}>
-                      💡 角色使用桌面端内置拟人化动效 SVG 头像。
-                    </div>
-                  </div>
+                  <Form.Item
+                    label="选择内置预设角色"
+                    name="presetIcon"
+                    rules={[{ required: true, message: '请选择预设角色' }]}
+                    style={{ marginBottom: 16 }}
+                    extra="💡 角色使用桌面端内置拟人化动效 SVG 头像。"
+                  >
+                    <Select placeholder="请选择预设角色">
+                      <Option value="hotspot">追热点达人 (hotspot)</Option>
+                      <Option value="iptopic">老板IP选题王 (iptopic)</Option>
+                      <Option value="coverdesign">封面图设计师 (coverdesign)</Option>
+                      <Option value="alchemist">文案炼金术士 (alchemist)</Option>
+                      <Option value="layoutocd">排版强迫症 (layoutocd)</Option>
+                      <Option value="scriptdirector">口播脚本导演 (scriptdirector)</Option>
+                      <Option value="datatrans">数据翻译官 (datatrans)</Option>
+                    </Select>
+                  </Form.Item>
                 );
               }
 

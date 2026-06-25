@@ -44,7 +44,7 @@ export default function LoginCard({ onLoginSuccess }: LoginCardProps) {
       <Card title={null} style={{ width: 400, borderRadius: 12, boxShadow: '0 8px 24px rgba(0, 0, 0, 0.05)' }}>
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
           <h2 style={{ margin: '0 0 8px 0', color: '#1890ff', fontSize: '24px' }}>HeyClaw Cloud</h2>
-          <div style={{ color: '#8c8c8c' }}>专家套件与技能市场管理控制台</div>
+          <div style={{ color: '#8c8c8c' }}>管理后台</div>
         </div>
 
         {errorMsg && <Alert message={errorMsg} type="error" showIcon style={{ marginBottom: 16 }} />}

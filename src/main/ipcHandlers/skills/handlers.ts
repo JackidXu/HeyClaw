@@ -162,7 +162,7 @@ export function registerSkillHandlers(deps: SkillHandlerDeps): void {
   );
 
   ipcMain.handle('skills:fetchMarketplace', async () => {
-    const url = getSkillStoreUrl();
+    const url = `${getSkillStoreUrl()}?t=${Date.now()}`;
     console.log(`[SkillMarketplace] fetching from: ${url}`);
     try {
       const http = await import('http');
