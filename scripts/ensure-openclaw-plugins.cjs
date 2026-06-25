@@ -470,7 +470,7 @@ function main() {
       const source = resolvePluginInstallSource(plugin);
       log(`Installing ${source.pinnedDisplaySpec} via OpenClaw CLI...`);
 
-      const maxRetries = 3;
+      const maxRetries = 5;
       let attempt = 0;
       let success = false;
       let lastError = null;
@@ -478,9 +478,10 @@ function main() {
       while (attempt < maxRetries && !success) {
         attempt++;
         if (attempt > 1) {
-          log(`Retrying plugin install for ${id} (attempt ${attempt}/${maxRetries})...`);
-          // 在重试前等待 3 秒以避免连续触发 Rate Limit（子进程同步等待）
-          spawnSync(process.execPath, ['-e', 'Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 3000)']);
+          const delayMs = Math.pow(2, attempt - 2) * 4000;
+          log(`Retrying plugin install for ${id} (attempt ${attempt}/${maxRetries}) after waiting ${delayMs / 1000}s...`);
+          // 在重试前进行指数退避等待，以避免连续触发 Rate Limit（子进程同步等待）
+          spawnSync(process.execPath, ['-e', `Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ${delayMs})`]);
         }
 
         // Use a temporary OPENCLAW_STATE_DIR so the CLI installs plugins
