@@ -11,23 +11,23 @@ export const isTestModeEnabled = () => {
 
 // 自动更新
 export const getUpdateCheckUrl = () =>
-  'https://scrm0.cdn.banchengyun.com/heyclaw/downloads/version.json';
+  `https://scrm0.cdn.banchengyun.com/heyclaw/downloads/version.json?_t=${Date.now()}`;
 
 // 手动检查更新
 export const getManualUpdateCheckUrl = () =>
-  'https://scrm0.cdn.banchengyun.com/heyclaw/downloads/version.json';
+  `https://scrm0.cdn.banchengyun.com/heyclaw/downloads/version.json?_t=${Date.now()}`;
 
 export const getFallbackDownloadUrl = () =>
   'https://claw.chaohui.ai/';
 
 // Skill 商店
-export const getSkillStoreUrl = () => 'https://scrm0.cdn.banchengyun.com/heyclaw/server-assets/skill-store.json';
+export const getSkillStoreUrl = () => `https://scrm0.cdn.banchengyun.com/heyclaw/server-assets/skill-store.json?_t=${Date.now()}`;
 
 // Kit 商店
-export const getKitStoreUrl = () => 'https://scrm0.cdn.banchengyun.com/heyclaw/server-assets/kit-store.json';
+export const getKitStoreUrl = () => `https://scrm0.cdn.banchengyun.com/heyclaw/server-assets/kit-store.json?_t=${Date.now()}`;
 
 // 快速发问
-export const getQuickActionsUrl = () => 'https://scrm0.cdn.banchengyun.com/heyclaw/server-assets/quick-actions.json';
+export const getQuickActionsUrl = () => `https://scrm0.cdn.banchengyun.com/heyclaw/server-assets/quick-actions.json?_t=${Date.now()}`;
 
 // 登录地址
 export const getLoginOvermindUrl = () => isTestModeEnabled()

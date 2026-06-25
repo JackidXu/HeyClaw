@@ -519,6 +519,12 @@ export class AppUpdateCoordinator {
         } else {
           downloadUrl = `https://scrm0.cdn.banchengyun.com/heyclaw/downloads/${filename}`;
         }
+
+        // 只要是请求我们自己的 CDN 域名，一律追加时间戳以防缓存
+        if (downloadUrl.includes('scrm0.cdn.banchengyun.com')) {
+          const separator = downloadUrl.includes('?') ? '&' : '?';
+          downloadUrl = `${downloadUrl}${separator}_t=${Date.now()}`;
+        }
       } else {
         downloadUrl = getFallbackDownloadUrl();
       }
