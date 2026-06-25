@@ -216,7 +216,7 @@ const SkillsPopover: React.FC<SkillsPopoverProps> = ({
                         isActive ? 'text-primary' : 'text-foreground'
                       }`}
                     >
-                      {skill.name}
+                      {skillService.getLocalizedSkillName(skill)}
                     </span>
                     {skillService.isOfficialSkill(skill) && (
                       <span className={asSubmenu

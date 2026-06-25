@@ -37,6 +37,7 @@ class SkillService {
   private skills: Skill[] = [];
   private initialized = false;
   private localSkillDescriptions: Map<string, string | LocalizedText> = new Map();
+  private localSkillNames: Map<string, string> = new Map();
   private marketplaceSkillDescriptions: Map<string, string | LocalizedText> = new Map();
   private installedKitSkillDescriptions: Map<string, string | LocalizedText> = new Map();
   private marketplaceCache: { skills: MarketplaceSkill[]; tags: MarketTag[] } | null = null;
@@ -255,12 +256,16 @@ class SkillService {
       }
       const json = JSON.parse(result.data);
       const value = json?.data?.value;
-      // Store local skill descriptions for i18n lookup
+      // 存储本地技能的描述和名称，用于国际化与别名查找
       const localSkills: LocalSkillInfo[] = Array.isArray(value?.localSkill) ? value.localSkill : [];
       this.localSkillDescriptions.clear();
+      this.localSkillNames.clear();
       for (const ls of localSkills) {
         this.localSkillDescriptions.set(ls.name, ls.description);
         this.localSkillDescriptions.set(ls.id, ls.description);
+        if (ls.name) {
+          this.localSkillNames.set(ls.id, ls.name);
+        }
       }
       const skills: MarketplaceSkill[] = Array.isArray(value?.marketplace) ? value.marketplace : [];
       const tags: MarketTag[] = Array.isArray(value?.marketTags) ? value.marketTags : [];
@@ -306,6 +311,20 @@ class SkillService {
     const kitDesc = this.installedKitSkillDescriptions.get(skillId);
     if (kitDesc != null) return resolveLocalizedText(kitDesc);
     return fallback;
+  }
+
+  getLocalizedSkillName(skill: { id: string; name: string }): string {
+    if (this.marketplaceCache) {
+      const mp = this.marketplaceCache.skills.find(s => s.id === skill.id);
+      if (mp && mp.name) {
+        return mp.name;
+      }
+    }
+    const localName = this.localSkillNames.get(skill.id);
+    if (localName) {
+      return localName;
+    }
+    return skill.name;
   }
 
   isOfficialSkill(skill: { id: string; isOfficial: boolean; isBuiltIn: boolean }): boolean {

@@ -217,7 +217,7 @@ const SkillsManager: React.FC<SkillsManagerProps> = ({ readOnly, onCreateByChat 
   const filteredSkills = useMemo(() => {
     const query = skillSearchQuery.trim().replace(/\s+/g, ' ').toLowerCase();
     return skills.filter(skill => {
-      const matchesSearch = skill.name.toLowerCase().includes(query)
+      const matchesSearch = skillService.getLocalizedSkillName(skill).toLowerCase().includes(query)
         || skillService.getLocalizedSkillDescription(skill.id, skill.name, skill.description).toLowerCase().includes(query);
       return matchesSearch;
     });
@@ -793,7 +793,7 @@ const SkillsManager: React.FC<SkillsManagerProps> = ({ readOnly, onCreateByChat 
                     <SkillIcon className="h-4 w-4 text-secondary" />
                   </div>
                   <span className="text-sm font-medium text-foreground truncate">
-                    {skill.name}
+                    {skillService.getLocalizedSkillName(skill)}
                   </span>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
@@ -1097,7 +1097,7 @@ const SkillsManager: React.FC<SkillsManagerProps> = ({ readOnly, onCreateByChat 
                 </div>
                 <div className="min-w-0">
                   <div className="text-base font-semibold text-foreground truncate">
-                    {selectedSkill.name}
+                    {skillService.getLocalizedSkillName(selectedSkill)}
                   </div>
                 </div>
               </div>

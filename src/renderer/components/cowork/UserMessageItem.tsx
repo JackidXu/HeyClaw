@@ -10,6 +10,7 @@ import { buildKitReferences } from '../../services/kitCapability';
 import type { CoworkImageAttachment, CoworkMessage, CoworkMessageMetadata } from '../../types/cowork';
 import type { MarketplaceKit } from '../../types/kit';
 import type { Skill } from '../../types/skill';
+import { skillService } from '../../services/skill';
 import { formatMessageDateTime } from '../../utils/tokenFormat';
 import { parseUserMessageForDisplay } from '../../utils/userMessageDisplay';
 import EditIcon from '../icons/EditIcon';
@@ -115,7 +116,7 @@ const UserMessageSkillBadges: React.FC<{ skills: Skill[] }> = ({ skills }) => {
         >
           <SkillIcon className="h-3.5 w-3.5 shrink-0 text-primary" />
           <span className="min-w-0 truncate">
-            {skill.name}
+            {skillService.getLocalizedSkillName(skill)}
           </span>
         </div>
       ))}
