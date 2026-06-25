@@ -125,20 +125,18 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
   const isLoggedIn = useSelector((state: RootState) => state.auth.isLoggedIn);
   const selectedModel = controlled ? value ?? null : globalSelectedModel;
   const selectedModelKey = selectedModel ? getModelIdentityKey(selectedModel) : '';
-  const availableModels = useSelector((state: RootState) => state.model.availableModels);
-  const serverModels = availableModels.filter(m => m.isServerModel);
-  const userModels = availableModels.filter(m => !m.isServerModel);
+  const rawAvailableModels = useSelector((state: RootState) => state.model.availableModels);
+  const availableModels = rawAvailableModels.filter(m => !m.isServerModel);
+  const serverModels: Model[] = [];
+  const userModels = availableModels;
   const modelGroups = [
-    ...(serverModels.length > 0
-      ? [{ key: ModelSelectorGroup.Server, label: i18nService.t('modelGroupServer') }]
-      : []),
     ...(userModels.length > 0
       ? [{ key: ModelSelectorGroup.User, label: i18nService.t('modelGroupUser') }]
       : []),
   ];
-  const shouldShowGroupTabs = serverModels.length > 0;
+  const shouldShowGroupTabs = false;
   const isGroupAvailable = (group: ModelSelectorGroup): boolean => (
-    group === ModelSelectorGroup.Server ? serverModels.length > 0 : userModels.length > 0
+    group === ModelSelectorGroup.Server ? false : userModels.length > 0
   );
   const getModelGroup = (model: Model | null): ModelSelectorGroup | null => {
     if (!model) return null;
