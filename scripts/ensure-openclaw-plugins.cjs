@@ -470,105 +470,125 @@ function main() {
       const source = resolvePluginInstallSource(plugin);
       log(`Installing ${source.pinnedDisplaySpec} via OpenClaw CLI...`);
 
-      // Use a temporary OPENCLAW_STATE_DIR so the CLI installs plugins
-      // into a staging directory rather than the user's global config.
-      const stagingDir = fs.mkdtempSync(path.join(os.tmpdir(), `openclaw-plugin-staging-`));
+      const maxRetries = 3;
+      let attempt = 0;
+      let success = false;
+      let lastError = null;
 
-      try {
-        let installSpec;
-
-        if (source.kind === 'git') {
-          log('  Cloning plugin from Git source before install.');
-          installSpec = gitCloneAndPack(npmSpec, version, stagingDir);
-        } else if (source.kind === 'packed') {
-          if (source.registry) {
-            log(`  Packing from custom registry: ${source.registry}`);
-          }
-          installSpec = npmPack(source.packSpec, source.registry, stagingDir);
-        } else {
-          installSpec = source.installSpec;
+      while (attempt < maxRetries && !success) {
+        attempt++;
+        if (attempt > 1) {
+          log(`Retrying plugin install for ${id} (attempt ${attempt}/${maxRetries})...`);
+          // 在重试前等待 3 秒以避免连续触发 Rate Limit（子进程同步等待）
+          spawnSync(process.execPath, ['-e', 'Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 3000)']);
         }
 
-        runOpenClawCli(
-          ['plugins', 'install', installSpec, '--force', '--dangerously-force-unsafe-install'],
-          {
-            env: {
-              OPENCLAW_STATE_DIR: stagingDir,
-              // Prevent npm from auto-installing peerDependencies (npm v7+).
-              // Channel plugins declare openclaw as a peerDep, but the host
-              // gateway already provides the SDK at runtime.  Without this,
-              // npm installs the full openclaw SDK + transitive deps (~738 MB)
-              // into each plugin's node_modules.
-              npm_config_legacy_peer_deps: 'true',
-            },
-            stdio: 'inherit',
-          }
-        );
+        // Use a temporary OPENCLAW_STATE_DIR so the CLI installs plugins
+        // into a staging directory rather than the user's global config.
+        const stagingDir = fs.mkdtempSync(path.join(os.tmpdir(), `openclaw-plugin-staging-`));
 
-        // The CLI installs to {OPENCLAW_STATE_DIR}/extensions/{pluginId}/
-        const installedDir = path.join(stagingDir, 'extensions', id);
-        if (!fs.existsSync(installedDir)) {
-          // Some plugins use a different directory name than the declared id.
-          // Scan the extensions directory for the installed plugin.
-          const extDir = path.join(stagingDir, 'extensions');
-          const entries = fs.existsSync(extDir) ? fs.readdirSync(extDir) : [];
-          if (entries.length === 0) {
-            throw new Error(`No plugin found in staging directory after install`);
-          }
-          // Use the first (and likely only) directory
-          const actualDir = path.join(extDir, entries[0]);
-          if (!fs.existsSync(path.join(actualDir, 'openclaw.plugin.json')) &&
-              !fs.existsSync(path.join(actualDir, 'package.json'))) {
-            throw new Error(`Installed plugin directory ${entries[0]} has no plugin manifest`);
-          }
-          // Copy the actual directory
-          if (fs.existsSync(cacheDir)) {
-            fs.rmSync(cacheDir, { recursive: true, force: true });
-          }
-          ensureDir(path.dirname(cacheDir));
-          copyDirRecursive(actualDir, cacheDir);
-          fixBinSymlinks(cacheDir);
-        } else {
-          // Replace cache dir with new content
-          if (fs.existsSync(cacheDir)) {
-            fs.rmSync(cacheDir, { recursive: true, force: true });
-          }
-          ensureDir(path.dirname(cacheDir));
-          copyDirRecursive(installedDir, cacheDir);
-          fixBinSymlinks(cacheDir);
-        }
+        try {
+          let installSpec;
 
-        // Write install info for cache validation
-        fs.writeFileSync(
-          installInfoPath,
-          JSON.stringify(
+          if (source.kind === 'git') {
+            log('  Cloning plugin from Git source before install.');
+            installSpec = gitCloneAndPack(npmSpec, version, stagingDir);
+          } else if (source.kind === 'packed') {
+            if (source.registry) {
+              log(`  Packing from custom registry: ${source.registry}`);
+            }
+            installSpec = npmPack(source.packSpec, source.registry, stagingDir);
+          } else {
+            installSpec = source.installSpec;
+          }
+
+          runOpenClawCli(
+            ['plugins', 'install', installSpec, '--force', '--dangerously-force-unsafe-install'],
             {
-              pluginId: id,
-              npmSpec,
-              version,
-              installedAt: new Date().toISOString(),
-            },
-            null,
-            2
-          ) + '\n',
-          'utf-8'
-        );
+              env: {
+                OPENCLAW_STATE_DIR: stagingDir,
+                // Prevent npm from auto-installing peerDependencies (npm v7+).
+                // Channel plugins declare openclaw as a peerDep, but the host
+                // gateway already provides the SDK at runtime.  Without this,
+                // npm installs the full openclaw SDK + transitive deps (~738 MB)
+                // into each plugin's node_modules.
+                npm_config_legacy_peer_deps: 'true',
+              },
+              stdio: 'inherit',
+            }
+          );
 
-        log(`Downloaded and cached ${id}@${version}.`);
-      } catch (err) {
+          // The CLI installs to {OPENCLAW_STATE_DIR}/extensions/{pluginId}/
+          const installedDir = path.join(stagingDir, 'extensions', id);
+          if (!fs.existsSync(installedDir)) {
+            // Some plugins use a different directory name than the declared id.
+            // Scan the extensions directory for the installed plugin.
+            const extDir = path.join(stagingDir, 'extensions');
+            const entries = fs.existsSync(extDir) ? fs.readdirSync(extDir) : [];
+            if (entries.length === 0) {
+              throw new Error(`No plugin found in staging directory after install`);
+            }
+            // Use the first (and likely only) directory
+            const actualDir = path.join(extDir, entries[0]);
+            if (!fs.existsSync(path.join(actualDir, 'openclaw.plugin.json')) &&
+                !fs.existsSync(path.join(actualDir, 'package.json'))) {
+              throw new Error(`Installed plugin directory ${entries[0]} has no plugin manifest`);
+            }
+            // Copy the actual directory
+            if (fs.existsSync(cacheDir)) {
+              fs.rmSync(cacheDir, { recursive: true, force: true });
+            }
+            ensureDir(path.dirname(cacheDir));
+            copyDirRecursive(actualDir, cacheDir);
+            fixBinSymlinks(cacheDir);
+          } else {
+            // Replace cache dir with new content
+            if (fs.existsSync(cacheDir)) {
+              fs.rmSync(cacheDir, { recursive: true, force: true });
+            }
+            ensureDir(path.dirname(cacheDir));
+            copyDirRecursive(installedDir, cacheDir);
+            fixBinSymlinks(cacheDir);
+          }
+
+          // Write install info for cache validation
+          fs.writeFileSync(
+            installInfoPath,
+            JSON.stringify(
+              {
+                pluginId: id,
+                npmSpec,
+                version,
+                installedAt: new Date().toISOString(),
+              },
+              null,
+              2
+            ) + '\n',
+            'utf-8'
+          );
+
+          log(`Downloaded and cached ${id}@${version}.`);
+          success = true;
+        } catch (err) {
+          lastError = err;
+          log(`Attempt ${attempt} failed for plugin ${id}: ${err.message}`);
+        } finally {
+          // Clean up staging directory
+          try {
+            fs.rmSync(stagingDir, { recursive: true, force: true });
+          } catch {
+            // best-effort cleanup
+          }
+        }
+      }
+
+      if (!success) {
         if (optional) {
-          log(`WARNING: Failed to install optional plugin ${id}: ${err.message}`);
+          log(`WARNING: Failed to install optional plugin ${id} after ${maxRetries} attempts: ${lastError.message}`);
           log(`Skipping ${id} — it may not be available from this network.`);
           continue;
         }
-        die(`Failed to install plugin ${id}: ${err.message}`);
-      } finally {
-        // Clean up staging directory
-        try {
-          fs.rmSync(stagingDir, { recursive: true, force: true });
-        } catch {
-          // best-effort cleanup
-        }
+        die(`Failed to install plugin ${id} after ${maxRetries} attempts: ${lastError.message}`);
       }
     }
 
