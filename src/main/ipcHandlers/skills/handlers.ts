@@ -20,36 +20,12 @@ export interface SkillHandlerDeps {
   } | null;
 }
 
-const MY_SKILLS = new Set([
-  'campaign-analytics',
-  'cmo',
-  'content-marketing',
-  'content-strategy',
-  'geo-content-optimizer',
-  'marketing-brand-playbook',
-  'marketing-psychology',
-  'social-content-calendar',
-  'short-form-video',
-  'clip-editor',
-  'ffmpeg-video-editor',
-  'remotion-video-toolkit',
-  'video-clip-assistant',
-  'video-editor',
-  'hook-and-headline-writing'
-]);
-
 export function registerSkillHandlers(deps: SkillHandlerDeps): void {
   const { getSkillManager, getSkillStoreUrl, getOpenClawRuntimeAdapter } = deps;
 
   ipcMain.handle('skills:list', () => {
     try {
-      const allSkills = getSkillManager().listSkills();
-      // TODO: 以后如需开放有道原本内置的默认技能，直接恢复返回 allSkills 即可。目前通过白名单过滤，只返回我自己的 15 个专有技能，在 UI 界面上彻底隐藏其他有道技能。
-      const skills = allSkills.filter(s => {
-        if (!s) return false;
-        // 如果是内置技能，必须在白名单内；非内置技能（如手动上传的第三方技能）直接保留。
-        return !s.isBuiltIn || MY_SKILLS.has(s.id);
-      });
+      const skills = getSkillManager().listSkills();
       return { success: true, skills };
     } catch (error) {
       return {
