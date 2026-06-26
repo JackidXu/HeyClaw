@@ -1,7 +1,7 @@
 ---
 name: 'Content Strategy'
 description: 'Plan content that drives traffic, builds authority, and generates leads by being either searchable, shareable, or both.'
-version: 1.0.0
+version: 1.1.0
 ---
 
 # Content Strategy
