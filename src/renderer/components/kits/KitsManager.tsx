@@ -317,7 +317,7 @@ const KitsManager: React.FC<KitsManagerProps> = ({ onTryAsking }) => {
             style={{ animationDelay: `${[0, 0.5, 1.2, 1.8][index % 4]}s` }} 
           />
           {kit.motto && (
-            <div className="text-[10px] text-secondary text-center line-clamp-2 leading-tight opacity-75 select-none font-normal z-10 px-1 italic">
+            <div className="text-[10px] text-secondary text-center line-clamp-2 leading-tight opacity-75 select-none font-normal z-1 px-1 italic">
               “{resolveLocalizedText(kit.motto)}”
             </div>
           )}
