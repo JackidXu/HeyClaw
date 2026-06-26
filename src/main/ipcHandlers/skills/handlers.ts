@@ -45,7 +45,11 @@ export function registerSkillHandlers(deps: SkillHandlerDeps): void {
     try {
       const allSkills = getSkillManager().listSkills();
       // TODO: 以后如需开放有道原本内置的默认技能，直接恢复返回 allSkills 即可。目前通过白名单过滤，只返回我自己的 15 个专有技能，在 UI 界面上彻底隐藏其他有道技能。
-      const skills = allSkills.filter(s => s && MY_SKILLS.has(s.id));
+      const skills = allSkills.filter(s => {
+        if (!s) return false;
+        // 如果是内置技能，必须在白名单内；非内置技能（如手动上传的第三方技能）直接保留。
+        return !s.isBuiltIn || MY_SKILLS.has(s.id);
+      });
       return { success: true, skills };
     } catch (error) {
       return {
