@@ -189,4 +189,76 @@ jobs:
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ========== 自动部署到阿里云 OSS ==========
+  deploy-to-oss:
+    needs: [build-macos, build-windows]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Download All Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist-files
+
+      - name: Flatten Dist Directory & Generate version.json
+        run: |
+          # 创建准备 OSS 上传和大文件寻找的临时目录
+          mkdir -p oss-dist
+          find dist-files/ -type f -name "*.dmg" -exec cp {} oss-dist/ \;
+          find dist-files/ -type f -name "*.exe" -exec cp {} oss-dist/ \;
           
+          # 提取当前 tag 的版本号
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+          
+          # 寻找对应的包文件名
+          WIN_FILE=$(cd oss-dist && ls *.exe | head -n 1)
+          MAC_ARM64_FILE=$(cd oss-dist && ls *arm64*.dmg | head -n 1)
+          MAC_X64_FILE=$(cd oss-dist && ls *x64*.dmg | head -n 1)
+          
+          # 从 Secrets 读取 CDN 前缀
+          CDN_PREFIX="${{ secrets.CDN_URL_PREFIX }}"
+          
+          # 如果配置了 CDN 前缀，就使用绝对链接；否则回退为相对路径文件名
+          if [ -n "$CDN_PREFIX" ]; then
+            # 去除末尾斜杠
+            CDN_PREFIX="${CDN_PREFIX%/}"
+            # 文件在 OSS 存储桶中的目录是 heyclaw/downloads/
+            WIN_URL="${CDN_PREFIX}/heyclaw/downloads/${WIN_FILE}"
+            MAC_ARM64_URL="${CDN_PREFIX}/heyclaw/downloads/${MAC_ARM64_FILE}"
+            MAC_X64_URL="${CDN_PREFIX}/heyclaw/downloads/${MAC_X64_FILE}"
+          else
+            WIN_URL="${WIN_FILE}"
+            MAC_ARM64_URL="${MAC_ARM64_FILE}"
+            MAC_X64_URL="${MAC_X64_FILE}"
+          fi
+          
+          # 写入 version.json 到 oss-dist 目录以供一并上传到 OSS
+          cat <<EOF > oss-dist/version.json
+          {
+            "version": "${TAG_NAME}",
+            "date": "$(date +'%Y-%m-%d')",
+            "files": {
+              "windows": "${WIN_URL}",
+              "mac_x64": "${MAC_X64_URL}",
+              "mac_arm64": "${MAC_ARM64_URL}"
+            }
+          }
+          EOF
+          
+          # 打印 oss-dist 目录下的内容进行验证
+          echo "=== Files to upload to OSS (oss-dist) ==="
+          ls -la oss-dist/
+
+      - name: Setup OSSUTIL
+        uses: manyuanrong/setup-ossutil@master
+        with:
+          endpoint: ${{ secrets.OSS_ENDPOINT }}
+          access-key-id: ${{ secrets.OSS_ACCESS_KEY_ID }}
+          access-key-secret: ${{ secrets.OSS_ACCESS_KEY_SECRET }}
+
+      - name: Upload Artifacts to Aliyun OSS
+        run: ossutil cp -f -r oss-dist/ oss://${{ secrets.OSS_BUCKET }}/heyclaw/downloads/
