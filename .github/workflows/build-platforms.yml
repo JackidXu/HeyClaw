@@ -31,21 +31,28 @@ jobs:
         arch: [arm64, x64]
     steps:
       - uses: actions/checkout@v4
+      
+      # 使用 setup-node 自带的 cache 功能，完美托管主应用的 npm 全局依赖
       - uses: actions/setup-node@v4
         with:
           node-version: '24.x'
+          cache: 'npm'
+          cache-dependency-path: 'package-lock.json'
+      
+      # 显式安装 pnpm，因为底层的 openclaw 框架需要调用它
+      - name: Install pnpm
+        run: npm install -g pnpm@10
+
+      # 【优化：精准缓存】联合锁死 macOS 下 pnpm 的全局 Store 以及 openclaw 动态下载的本地目录
       - uses: actions/cache@v4
         with:
           path: |
-            ~/.npm
             ~/Library/Caches/pnpm
             vendor/openclaw-runtime
             vendor/openclaw-plugins
-          key: npm-${{ runner.os }}-${{ matrix.arch }}-${{ hashFiles('package-lock.json') }}
-          restore-keys: npm-${{ runner.os }}-${{ matrix.arch }}-
-      
-      - name: Install pnpm
-        run: npm install -g pnpm@10
+          key: openclaw-deps-${{ runner.os }}-${{ matrix.arch }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            openclaw-deps-${{ runner.os }}-${{ matrix.arch }}-
       
       # 若是 tag 触发，则在安装依赖前动态修改 package.json 的版本，确保打包后的版本与 tag 统一
       - name: Sync version to package.json
@@ -77,7 +84,7 @@ jobs:
             export APPLE_APP_SPECIFIC_PASSWORD="${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}"
             export APPLE_TEAM_ID="${{ secrets.APPLE_TEAM_ID }}"
           fi
-           npm run dist:mac:${{ matrix.arch }} -- --publish never
+          npm run dist:mac:${{ matrix.arch }} -- --publish never
       
       - uses: actions/upload-artifact@v4
         with:
@@ -91,20 +98,28 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+      
+      # Windows 端同样激活 setup-node 的 npm 原生缓存
       - uses: actions/setup-node@v4
         with:
           node-version: '24.x'
+          cache: 'npm'
+          cache-dependency-path: 'package-lock.json'
+      
+      # Windows 端同样显式安装 pnpm 供 openclaw 底层消费
+      - name: Install pnpm
+        run: npm install -g pnpm@10
+      
+      # 【优化：精准缓存】联合锁死 Windows 端 openclaw 调用 pnpm 时的全局缓存路径与本地目录
       - uses: actions/cache@v4
         with:
           path: |
-            ~\AppData\Local\npm-cache
+            ~\AppData\Local\pnpm\Cache
             vendor/openclaw-runtime
             vendor/openclaw-plugins
-          key: npm-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-          restore-keys: npm-${{ runner.os }}-
-      
-      - name: Install pnpm
-        run: npm install -g pnpm@10
+          key: openclaw-deps-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            openclaw-deps-${{ runner.os }}-
       
       # 若是 tag 触发，则在安装依赖前动态修改 package.json 的版本，确保打包后的版本与 tag 统一
       - name: Sync version to package.json
