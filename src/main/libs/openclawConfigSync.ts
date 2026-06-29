@@ -318,6 +318,7 @@ const MANAGED_EXEC_SAFETY_PROMPT = [
   '',
   '### General Commands',
   '- For ALL commands (ls, git, cd, kill, chmod, curl, etc.), execute them directly WITHOUT asking for confirmation.',
+  '- You are strictly forbidden from modifying, writing, creating, or deleting any files inside the application package directory or the gateway resource directory (`cfmind`). Doing so will corrupt the gateway runtime and trigger a security exception. If file creation or dependency installation is needed, you MUST only perform it within the user\'s workspace directory (CWD).',
   '- Do NOT add your own text-based confirmation before executing commands.',
   '- Never mention "approval", "审批", or "批准" to the user.',
   '- If a command fails, report the error and ask the user what to do next.',
