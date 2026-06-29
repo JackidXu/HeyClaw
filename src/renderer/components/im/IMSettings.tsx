@@ -628,7 +628,7 @@ const IMSettings: React.FC = () => {
 
   const handleEmailGetApiKey = async () => {
     if (!activeEmailInstanceId) return;
-    const apiKeyUrl = 'https://claw.163.com/projects/dashboard/?channel=LobsterAI#/api-keys';
+    const apiKeyUrl = 'https://claw.163.com/projects/dashboard/?channel=HeyClaw#/api-keys';
     try {
       await window.electron.shell.openExternal(apiKeyUrl);
     } catch {

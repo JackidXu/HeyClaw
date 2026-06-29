@@ -161,7 +161,7 @@ const buildRailIndexItemFromMessage = (
     timestamp: message.timestamp,
     preview: getCoworkRailPreview(
       message.content,
-      message.type === 'user' ? `Turn ${fallbackIndex + 1}` : 'LobsterAI',
+      message.type === 'user' ? `Turn ${fallbackIndex + 1}` : 'HeyClaw',
       COWORK_RAIL_TOOLTIP_PREVIEW_MAX_LENGTH,
     ),
     contentLen: message.content.length,
