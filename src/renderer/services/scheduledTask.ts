@@ -1,3 +1,4 @@
+import { ScheduledTaskDataStatus } from '../../scheduledTask/constants';
 import type {
   RunFilter,
   ScheduledTask,
@@ -15,9 +16,12 @@ import {
   appendRuns,
   removeTask,
   setAllRuns,
+  setAllRunsError,
+  setAllRunsStatus,
   setError,
-  setLoading,
   setRuns,
+  setTaskListError,
+  setTaskListStatus,
   setTasks,
   updateTask,
   updateTaskState,
@@ -54,11 +58,13 @@ function checkTasksForAnomalies(tasks: ScheduledTask[]): void {
   showToast(msg);
 }
 
-class ScheduledTaskService {
+export class ScheduledTaskService {
   private cleanupFns: (() => void)[] = [];
   private initialized = false;
+  private taskListRequestId = 0;
   private allRunsRequestId = 0;
   private runRequestIds = new Map<string, number>();
+  private lastAllRunsRequest: { limit?: number; filter?: RunFilter } | null = null;
 
   async init(): Promise<void> {
     if (this.initialized) return;
@@ -98,7 +104,14 @@ class ScheduledTaskService {
 
     // Listen for full refresh events (e.g., after first poll or migration)
     const cleanupRefresh = api.onRefresh(() => {
-      this.loadTasks();
+      void this.loadTasks();
+      if (this.lastAllRunsRequest) {
+        void this.loadAllRuns(
+          this.lastAllRunsRequest.limit,
+          0,
+          this.lastAllRunsRequest.filter,
+        );
+      }
     });
     this.cleanupFns.push(cleanupRefresh);
   }
@@ -107,17 +120,28 @@ class ScheduledTaskService {
     const api = window.electron?.scheduledTasks;
     if (!api) return;
 
-    store.dispatch(setLoading(true));
+    const requestId = this.taskListRequestId + 1;
+    this.taskListRequestId = requestId;
+    store.dispatch(setTaskListStatus(ScheduledTaskDataStatus.Loading));
     try {
       const result = await api.list();
+      if (this.taskListRequestId !== requestId) return;
+      if (result.ready === false) {
+        store.dispatch(setTaskListStatus(ScheduledTaskDataStatus.Starting));
+        return;
+      }
       if (result.success && result.tasks) {
         checkTasksForAnomalies(result.tasks);
         store.dispatch(setTasks(result.tasks));
+      } else {
+        const message = result.error || 'Failed to load scheduled tasks';
+        store.dispatch(setTaskListError(message));
       }
     } catch (err: unknown) {
-      store.dispatch(setError(err instanceof Error ? err.message : String(err)));
-    } finally {
-      store.dispatch(setLoading(false));
+      if (this.taskListRequestId !== requestId) return;
+      const message = err instanceof Error ? err.message : String(err);
+      store.dispatch(setTaskListError(message));
+      store.dispatch(setError(message));
     }
   }
 
@@ -246,11 +270,20 @@ class ScheduledTaskService {
     const api = window.electron?.scheduledTasks;
     if (!api) return;
 
+    const isInitialRequest = !offset || offset <= 0;
+    if (isInitialRequest) {
+      this.lastAllRunsRequest = { limit, filter };
+      store.dispatch(setAllRunsStatus(ScheduledTaskDataStatus.Loading));
+    }
     const requestId = this.allRunsRequestId + 1;
     this.allRunsRequestId = requestId;
     try {
       const result = await api.listAllRuns(limit, offset, filter);
       if (this.allRunsRequestId !== requestId) return;
+      if (result.ready === false) {
+        store.dispatch(setAllRunsStatus(ScheduledTaskDataStatus.Starting));
+        return;
+      }
       if (result.success && result.runs) {
         const hasMore = (result.runs as unknown[]).length >= (limit ?? 50);
         if (offset && offset > 0) {
@@ -258,10 +291,16 @@ class ScheduledTaskService {
         } else {
           store.dispatch(setAllRuns({ runs: result.runs, hasMore }));
         }
+      } else if (isInitialRequest) {
+        store.dispatch(setAllRunsError(result.error || 'Failed to load scheduled task history'));
       }
     } catch (err: unknown) {
       if (this.allRunsRequestId !== requestId) return;
-      store.dispatch(setError(err instanceof Error ? err.message : String(err)));
+      const message = err instanceof Error ? err.message : String(err);
+      if (isInitialRequest) {
+        store.dispatch(setAllRunsError(message));
+      }
+      store.dispatch(setError(message));
     }
   }
 

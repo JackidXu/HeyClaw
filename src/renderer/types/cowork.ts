@@ -38,6 +38,14 @@ export type CoworkMessageType = 'user' | 'assistant' | 'tool_use' | 'tool_result
 export type CoworkExecutionMode = 'auto' | 'local' | 'sandbox';
 export type CoworkAgentEngine = 'openclaw';
 
+export const CoworkCollaborationMode = {
+  Default: 'default',
+  Plan: 'plan',
+} as const;
+
+export type CoworkCollaborationMode =
+  typeof CoworkCollaborationMode[keyof typeof CoworkCollaborationMode];
+
 export const OpenClawSessionKeepAlive = {
   OneDay: '1d',
   SevenDays: '7d',
@@ -79,6 +87,11 @@ export interface CoworkMessageMetadata {
   model?: string;
   agentName?: string;
   selectedTextSnippets?: CoworkSelectedTextSnippet[];
+  localMediaAttachments?: Array<{
+    localPath: string;
+    mimeType?: string;
+    name?: string;
+  }>;
   [key: string]: unknown;
 }
 
@@ -302,6 +315,7 @@ export interface SubagentSessionSummary {
   parentSessionId: string;
   status: 'running' | 'done' | 'error';
   createdAt: number;
+  endedAt: number | null;
 }
 
 // Start session options

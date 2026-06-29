@@ -157,38 +157,38 @@ Mermaid 首版按纯文本图表定义处理，不支持打包或加载任何本
 
 ### 场景 1：分享 Markdown 文件
 
-Given 用户在 Artifact 面板打开 `README.md`。  
-When 用户点击分享。  
+Given 用户在 Artifact 面板打开 `README.md`。
+When 用户点击分享。
 Then 客户端上传 `sourceType=markdown_file` 的 zip，包含入口 Markdown 和可收集的本地图片资源；服务端返回分享链接和分享码，访问者输入分享码后在 `/s/{shareId}/` 看到 Markdown 渲染结果、图片和下载入口。
 
 ### 场景 2：分享 Mermaid 图
 
-Given 用户在 Artifact 面板打开 `flow.mmd`。  
-When 用户点击分享。  
+Given 用户在 Artifact 面板打开 `flow.mmd`。
+When 用户点击分享。
 Then 分享页使用 Mermaid 渲染 SVG 图，提供缩放、重置和下载源文件入口；语法错误时展示错误说明和源文件下载入口。
 
 ### 场景 3：内容更新复用旧链接
 
-Given 同一个本地 `README.md` 已分享过。  
-When 用户修改文件后再次点击分享并更新内容。  
+Given 同一个本地 `README.md` 已分享过。
+When 用户修改文件后再次点击分享并更新内容。
 Then 客户端通过 `sourceType + clientSourceKey` 找到旧分享并调用 `PUT /api/html-shares/{shareId}`，服务端保留 `shareId` 和 URL，更新内容版本和审核状态。
 
 ### 场景 4：管理员预览
 
-Given 管理员在分享管理后台打开 Markdown/Mermaid 分享。  
-When 管理员点击预览。  
+Given 管理员在分享管理后台打开 Markdown/Mermaid 分享。
+When 管理员点击预览。
 Then 后台调用现有 preview token 接口，公共页使用管理员 preview cookie 放行，不暴露分享码。
 
 ### 场景 5：过大文件降级
 
-Given 用户分享一个 8 MiB Markdown 文件，服务端配置 `html-share.text.preview.max-render-bytes=2097152`。  
-When 访问者打开分享页。  
+Given 用户分享一个 8 MiB Markdown 文件，服务端配置 `html-share.text.preview.max-render-bytes=2097152`。
+When 访问者打开分享页。
 Then 公共页不请求 preview bundle，只展示文件名、大小、不可预览原因和下载按钮。
 
 ### 场景 6：Markdown 依赖本地图片
 
-Given `README.md` 中包含 `![架构图](./images/arch.png)`，且 `arch.png` 位于当前项目目录下。  
-When 用户创建分享。  
+Given `README.md` 中包含 `![架构图](./images/arch.png)`，且 `arch.png` 位于当前项目目录下。
+When 用户创建分享。
 Then 客户端把 `arch.png` 复制进 zip 的 `_lobster_assets/` 目录，并把 Markdown 中的图片引用改写为 `_lobster_assets/<hash>.png`。访问者打开分享页时，图片从 `/s/{shareId}/content/_lobster_assets/<hash>.png` 加载。
 
 如果 Markdown 中包含 `![secret](/Users/admin/private.png)`、`![remote](https://example.com/a.png)` 或指向工作区外的相对路径，客户端不打包该资源；分享页显示“该图片未随分享发布”的占位提示。

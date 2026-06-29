@@ -756,6 +756,7 @@ interface IElectronAPI {
         sessionKey: string | null;
         status: 'running' | 'done' | 'error';
         createdAt: number;
+        endedAt: number | null;
       }>;
       error?: string;
     }>;
@@ -971,7 +972,7 @@ interface IElectronAPI {
   };
   autoLaunch: {
     get: () => Promise<{ enabled: boolean }>;
-    set: (enabled: boolean) => Promise<{ success: boolean; error?: string }>;
+    set: (enabled: boolean) => Promise<{ success: boolean; enabled?: boolean; error?: string; errorCode?: string }>;
   };
   preventSleep: {
     get: () => Promise<{ enabled: boolean }>;
@@ -1254,6 +1255,7 @@ interface IElectronAPI {
   scheduledTasks: {
     list: () => Promise<{
       success: boolean;
+      ready?: boolean;
       tasks?: import('../../scheduledTask/types').ScheduledTask[];
       error?: string;
     }>;
@@ -1304,6 +1306,7 @@ interface IElectronAPI {
       filter?: import('../../scheduledTask/types').RunFilter,
     ) => Promise<{
       success: boolean;
+      ready?: boolean;
       runs?: import('../../scheduledTask/types').ScheduledTaskRunWithName[];
       error?: string;
     }>;
@@ -1360,7 +1363,20 @@ interface IElectronAPI {
     getAccessToken: () => Promise<string | null>;
     getModels: () => Promise<{
       success: boolean;
-      models?: Array<{ modelId: string; modelName: string; provider: string; apiFormat: string }>;
+      models?: Array<{
+        modelId: string;
+        modelName: string;
+        provider: string;
+        apiFormat: string;
+        supportsImage?: boolean;
+        supportsThinking?: boolean;
+        contextWindow?: number;
+        explicitContextCache?: boolean;
+        costMultiplier?: number;
+        description?: string;
+        accessible?: boolean;
+        restrictionHint?: string;
+      }>;
     }>;
     getPricingCatalog: () => Promise<{
       success: boolean;

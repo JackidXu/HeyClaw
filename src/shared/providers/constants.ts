@@ -57,7 +57,7 @@ export const OpenClawProviderId = {
   OpenAICodex: 'openai-codex',
   DeepSeek: 'deepseek',
   Qianfan: 'qianfan',
-  Qwen: 'qwen-portal', // OpenClaw normalizes 'qwen' → 'qwen-portal'; use canonical ID to avoid config diff loop
+  Qwen: 'qwen',
   Zai: 'zai', // OpenClaw official provider ID for Zhipu/GLM
   Volcengine: 'volcengine',
   Minimax: 'minimax',
@@ -157,6 +157,7 @@ interface ProviderDefInput {
     readonly id: string;
     readonly name: string;
     readonly supportsImage: boolean;
+    readonly supportsThinking?: boolean;
     readonly contextWindow?: number;
   }[];
   /**
@@ -168,6 +169,7 @@ interface ProviderDefInput {
     readonly id: string;
     readonly name: string;
     readonly supportsImage: boolean;
+    readonly supportsThinking?: boolean;
     readonly contextWindow?: number;
   }[];
   /**
@@ -206,9 +208,9 @@ const PROVIDER_DEFINITIONS = [
     region: 'china',
     enPriority: 0,
     defaultModels: [
-      { id: 'deepseek-v4-flash', name: 'DeepSeek V4 Flash', supportsImage: false, contextWindow: DEEPSEEK_V4_CONTEXT_WINDOW },
-      { id: 'deepseek-v4-pro', name: 'DeepSeek V4 Pro', supportsImage: false, contextWindow: DEEPSEEK_V4_CONTEXT_WINDOW },
-      { id: 'deepseek-reasoner', name: 'DeepSeek Reasoner', supportsImage: false },
+      { id: 'deepseek-v4-flash', name: 'DeepSeek V4 Flash', supportsImage: false, supportsThinking: true, contextWindow: DEEPSEEK_V4_CONTEXT_WINDOW },
+      { id: 'deepseek-v4-pro', name: 'DeepSeek V4 Pro', supportsImage: false, supportsThinking: true, contextWindow: DEEPSEEK_V4_CONTEXT_WINDOW },
+      { id: 'deepseek-reasoner', name: 'DeepSeek Reasoner', supportsImage: false, supportsThinking: true },
     ],
   },
   {
@@ -235,10 +237,10 @@ const PROVIDER_DEFINITIONS = [
     region: 'china',
     enPriority: 0,
     defaultModels: [
-      { id: 'kimi-k2.6', name: 'Kimi K2.6', supportsImage: true },
-      { id: 'kimi-k2.5', name: 'Kimi K2.5', supportsImage: true },
+      { id: 'kimi-k2.6', name: 'Kimi K2.6', supportsImage: true, supportsThinking: true },
+      { id: 'kimi-k2.5', name: 'Kimi K2.5', supportsImage: true, supportsThinking: true },
     ],
-    codingPlanModels: [{ id: 'kimi-for-coding', name: 'Kimi K2.5', supportsImage: true }],
+    codingPlanModels: [{ id: 'kimi-for-coding', name: 'Kimi K2.5', supportsImage: true, supportsThinking: true }],
   },
   {
     id: ProviderName.Qwen,
@@ -286,9 +288,9 @@ const PROVIDER_DEFINITIONS = [
     region: 'china',
     enPriority: 0,
     defaultModels: [
-      { id: 'glm-5.1', name: 'GLM 5.1', supportsImage: false },
-      { id: 'glm-5', name: 'GLM 5', supportsImage: false },
-      { id: 'glm-4.7', name: 'GLM 4.7', supportsImage: false },
+      { id: 'glm-5.1', name: 'GLM 5.1', supportsImage: false, supportsThinking: true },
+      { id: 'glm-5', name: 'GLM 5', supportsImage: false, supportsThinking: true },
+      { id: 'glm-4.7', name: 'GLM 4.7', supportsImage: false, supportsThinking: true },
     ],
   },
   {
@@ -307,7 +309,7 @@ const PROVIDER_DEFINITIONS = [
     region: 'china',
     enPriority: 0,
     defaultModels: [
-      { id: 'MiniMax-M3', name: 'MiniMax M3', supportsImage: true, contextWindow: 1_000_000 },
+      { id: 'MiniMax-M3', name: 'MiniMax M3', supportsImage: true, supportsThinking: true, contextWindow: 1_000_000 },
       { id: 'MiniMax-M2.7', name: 'MiniMax M2.7', supportsImage: false },
       { id: 'MiniMax-M2.5', name: 'MiniMax M2.5', supportsImage: false },
     ],
@@ -332,10 +334,10 @@ const PROVIDER_DEFINITIONS = [
     region: 'china',
     enPriority: 0,
     defaultModels: [
-      { id: 'doubao-seed-2-0-pro-260215', name: 'Doubao-Seed-2.0-pro', supportsImage: true },
-      { id: 'ark-code-latest', name: 'Auto', supportsImage: true },
-      { id: 'doubao-seed-2-0-lite-260215', name: 'Doubao-Seed-2.0-lite', supportsImage: true },
-      { id: 'doubao-seed-2-0-mini-260215', name: 'Doubao-Seed-2.0-mini', supportsImage: true },
+      { id: 'doubao-seed-2-0-pro-260215', name: 'Doubao-Seed-2.0-pro', supportsImage: true, supportsThinking: true },
+      { id: 'ark-code-latest', name: 'Auto', supportsImage: true, supportsThinking: true },
+      { id: 'doubao-seed-2-0-lite-260215', name: 'Doubao-Seed-2.0-lite', supportsImage: true, supportsThinking: true },
+      { id: 'doubao-seed-2-0-mini-260215', name: 'Doubao-Seed-2.0-mini', supportsImage: true, supportsThinking: true },
     ],
   },
   {
@@ -369,9 +371,9 @@ const PROVIDER_DEFINITIONS = [
     enPriority: 0,
     defaultModels: [
       { id: 'kimi-k2.5', name: 'Kimi K2.5', supportsImage: false },
-      { id: 'glm-5.1', name: 'GLM 5.1', supportsImage: false },
+      { id: 'glm-5.1', name: 'GLM 5.1', supportsImage: false, supportsThinking: true },
       { id: 'minimax-m2.5', name: 'MiniMax M2.5', supportsImage: false },
-      { id: 'deepseek-v4-flash', name: 'DeepSeek V4 Flash', supportsImage: false, contextWindow: DEEPSEEK_V4_CONTEXT_WINDOW },
+      { id: 'deepseek-v4-flash', name: 'DeepSeek V4 Flash', supportsImage: false, supportsThinking: true, contextWindow: DEEPSEEK_V4_CONTEXT_WINDOW },
       { id: 'ernie-4.5-turbo-20260402', name: 'ERNIE 4.5 Turbo', supportsImage: false },
     ],
   },
@@ -408,8 +410,8 @@ const PROVIDER_DEFINITIONS = [
     region: 'china',
     enPriority: 0,
     defaultModels: [
-      { id: 'mimo-v2.5-pro', name: 'MiMo V2.5 Pro', supportsImage: false, contextWindow: 1_000_000 },
-      { id: 'mimo-v2.5', name: 'MiMo V2.5', supportsImage: true, contextWindow: 1_000_000 },
+      { id: 'mimo-v2.5-pro', name: 'MiMo V2.5 Pro', supportsImage: false, supportsThinking: true, contextWindow: 1_000_000 },
+      { id: 'mimo-v2.5', name: 'MiMo V2.5', supportsImage: true, supportsThinking: true, contextWindow: 1_000_000 },
     ],
   },
   {
@@ -476,8 +478,8 @@ const PROVIDER_DEFINITIONS = [
     region: 'global',
     enPriority: 1,
     defaultModels: [
-      { id: 'gpt-5.4', name: 'GPT-5.4', supportsImage: true },
-      { id: 'gpt-5.5', name: 'GPT-5.5', supportsImage: true },
+      { id: 'gpt-5.4', name: 'GPT-5.4', supportsImage: true, supportsThinking: true },
+      { id: 'gpt-5.5', name: 'GPT-5.5', supportsImage: true, supportsThinking: true },
     ],
   },
   {
@@ -492,9 +494,9 @@ const PROVIDER_DEFINITIONS = [
     region: 'global',
     enPriority: 3,
     defaultModels: [
-      { id: 'gemini-3.1-pro-preview', name: 'Gemini 3.1 Pro', supportsImage: true },
-      { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash', supportsImage: true },
-      { id: 'gemini-3.1-flash-lite', name: 'Gemini 3.1 Flash Lite', supportsImage: true },
+      { id: 'gemini-3.1-pro-preview', name: 'Gemini 3.1 Pro', supportsImage: true, supportsThinking: true },
+      { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash', supportsImage: true, supportsThinking: true },
+      { id: 'gemini-3.1-flash-lite', name: 'Gemini 3.1 Flash Lite', supportsImage: true, supportsThinking: true },
     ],
   },
   {
@@ -509,9 +511,9 @@ const PROVIDER_DEFINITIONS = [
     region: 'global',
     enPriority: 2,
     defaultModels: [
-      { id: 'claude-opus-4-7', name: 'Claude Opus 4.7', supportsImage: true },
-      { id: 'claude-opus-4-6', name: 'Claude Opus 4.6', supportsImage: true },
-      { id: 'claude-sonnet-4-6', name: 'Claude Sonnet 4.6', supportsImage: true },
+      { id: 'claude-opus-4-7', name: 'Claude Opus 4.7', supportsImage: true, supportsThinking: true },
+      { id: 'claude-opus-4-6', name: 'Claude Opus 4.6', supportsImage: true, supportsThinking: true },
+      { id: 'claude-sonnet-4-6', name: 'Claude Sonnet 4.6', supportsImage: true, supportsThinking: true },
     ],
   },
   {
@@ -530,10 +532,10 @@ const PROVIDER_DEFINITIONS = [
     region: 'global',
     enPriority: 0,
     defaultModels: [
-      { id: 'anthropic/claude-sonnet-4.6', name: 'Claude Sonnet 4.6', supportsImage: true },
-      { id: 'anthropic/claude-opus-4.7', name: 'Claude Opus 4.7', supportsImage: true },
-      { id: 'openai/gpt-5.5', name: 'GPT 5.5', supportsImage: true },
-      { id: 'google/gemini-3.1-pro-preview', name: 'Gemini 3.1 Pro', supportsImage: true },
+      { id: 'anthropic/claude-sonnet-4.6', name: 'Claude Sonnet 4.6', supportsImage: true, supportsThinking: true },
+      { id: 'anthropic/claude-opus-4.7', name: 'Claude Opus 4.7', supportsImage: true, supportsThinking: true },
+      { id: 'openai/gpt-5.5', name: 'GPT 5.5', supportsImage: true, supportsThinking: true },
+      { id: 'google/gemini-3.1-pro-preview', name: 'Gemini 3.1 Pro', supportsImage: true, supportsThinking: true },
     ],
   },
 ] as const satisfies readonly ProviderDefInput[];
@@ -578,12 +580,14 @@ export interface ProviderDef {
     readonly id: string;
     readonly name: string;
     readonly supportsImage: boolean;
+    readonly supportsThinking?: boolean;
     readonly contextWindow?: number;
   }[];
   readonly codingPlanModels?: readonly {
     readonly id: string;
     readonly name: string;
     readonly supportsImage: boolean;
+    readonly supportsThinking?: boolean;
     readonly contextWindow?: number;
   }[];
   readonly openClawProviderId: OpenClawProviderId;
@@ -671,6 +675,14 @@ class ProviderRegistryImpl {
     return this.modelCapabilityIndex.get(modelId);
   }
 
+  getProviderModelSupportsThinking(providerName: string, modelId: string): boolean | undefined {
+    const def = this.idIndex.get(providerName);
+    if (!def) return undefined;
+    const model = [...def.defaultModels, ...(def.codingPlanModels ?? [])]
+      .find(candidate => candidate.id === modelId);
+    return model?.supportsThinking;
+  }
+
   getProviderModelContextWindow(providerName: string, modelId: string): number | undefined {
     const def = this.idIndex.get(providerName);
     if (!def) return undefined;
@@ -700,6 +712,21 @@ class ProviderRegistryImpl {
       return true;
     }
     return configuredSupportsImage ?? false;
+  }
+
+  resolveModelSupportsThinking(
+    providerName: string,
+    modelId: string,
+    configuredSupportsThinking?: boolean,
+  ): boolean {
+    const providerModelSupportsThinking = this.getProviderModelSupportsThinking(providerName, modelId);
+    if (providerModelSupportsThinking !== undefined) {
+      return providerModelSupportsThinking;
+    }
+    if (configuredSupportsThinking === true) {
+      return true;
+    }
+    return configuredSupportsThinking ?? false;
   }
 
   resolveModelContextWindow(

@@ -2,6 +2,8 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 import type { CoworkSelectedTextSnippet } from '../../../shared/cowork/selectedText';
 import {
+  CoworkCollaborationMode,
+  type CoworkCollaborationMode as CoworkCollaborationModeType,
   type CoworkConfig,
   type CoworkContextUsage,
   type CoworkMessage,
@@ -21,6 +23,20 @@ export interface DraftAttachment {
   dataUrl?: string;
 }
 
+export const PlanConfirmationState = {
+  Awaiting: 'awaiting',
+  Handled: 'handled',
+} as const;
+export type PlanConfirmationState = typeof PlanConfirmationState[keyof typeof PlanConfirmationState];
+
+export interface PlanConfirmationStatus {
+  sessionId: string;
+  messageId: string;
+  planTextHash: string;
+  state: PlanConfirmationState;
+  updatedAt: number;
+}
+
 interface CoworkState {
   sessions: CoworkSessionSummary[];
   /** Whether more sessions exist on the server beyond what is currently loaded. */
@@ -36,6 +52,10 @@ interface CoworkState {
   draftKitIds: Record<string, string[]>;
   /** Keyed by draftKey, stores active skill IDs per draft so they survive view switches */
   draftSkillIds: Record<string, string[]>;
+  /** Keyed by draftKey, stores the active collaboration mode for the draft/session. */
+  draftCollaborationModes: Record<string, CoworkCollaborationModeType>;
+  /** Keyed by sessionId, stores the latest proposed plan confirmation UI state. */
+  planConfirmations: Record<string, PlanConfirmationStatus>;
   unreadSessionIds: string[];
   isCoworkActive: boolean;
   isStreaming: boolean;
@@ -63,6 +83,8 @@ const initialState: CoworkState = {
   draftSelectedTextSnippets: {},
   draftKitIds: {},
   draftSkillIds: {},
+  draftCollaborationModes: {},
+  planConfirmations: {},
   unreadSessionIds: [],
   isCoworkActive: false,
   isStreaming: false,
@@ -379,10 +401,14 @@ const coworkSlice = createSlice({
 
     deleteSession(state, action: PayloadAction<string>) {
       removeSessionFromState(state, action.payload);
+      delete state.planConfirmations[action.payload];
     },
 
     deleteSessions(state, action: PayloadAction<string[]>) {
       removeSessionsFromState(state, action.payload);
+      for (const sessionId of action.payload) {
+        delete state.planConfirmations[sessionId];
+      }
     },
 
     addMessage(state, action: PayloadAction<{ sessionId: string; message: CoworkMessage; beforeMessageId?: string }>) {
@@ -588,6 +614,48 @@ const coworkSlice = createSlice({
       state.remoteManaged = false;
     },
 
+    setPlanConfirmationAwaiting(
+      state,
+      action: PayloadAction<{ sessionId: string; messageId: string; planTextHash: string }>,
+    ) {
+      const { sessionId, messageId, planTextHash } = action.payload;
+      const existing = state.planConfirmations[sessionId];
+      if (
+        existing?.messageId === messageId
+        && existing.planTextHash === planTextHash
+        && existing.state === PlanConfirmationState.Awaiting
+      ) {
+        return;
+      }
+      state.planConfirmations[sessionId] = {
+        sessionId,
+        messageId,
+        planTextHash,
+        state: PlanConfirmationState.Awaiting,
+        updatedAt: Date.now(),
+      };
+    },
+
+    setPlanConfirmationHandled(
+      state,
+      action: PayloadAction<{ sessionId: string; messageId?: string; planTextHash?: string }>,
+    ) {
+      const { sessionId, messageId, planTextHash } = action.payload;
+      const existing = state.planConfirmations[sessionId];
+      if (!existing) return;
+      if (messageId && existing.messageId !== messageId) return;
+      state.planConfirmations[sessionId] = {
+        ...existing,
+        ...(planTextHash ? { planTextHash } : {}),
+        state: PlanConfirmationState.Handled,
+        updatedAt: Date.now(),
+      };
+    },
+
+    clearPlanConfirmation(state, action: PayloadAction<string>) {
+      delete state.planConfirmations[action.payload];
+    },
+
     setDraftAttachments(state, action: PayloadAction<{ draftKey: string; attachments: DraftAttachment[] }>) {
       const { draftKey, attachments } = action.payload;
       if (attachments.length === 0) {
@@ -656,6 +724,15 @@ const coworkSlice = createSlice({
       }
     },
 
+    setDraftCollaborationMode(state, action: PayloadAction<{ draftKey: string; mode: CoworkCollaborationModeType }>) {
+      const { draftKey, mode } = action.payload;
+      if (mode === CoworkCollaborationMode.Default) {
+        delete state.draftCollaborationModes[draftKey];
+      } else {
+        state.draftCollaborationModes[draftKey] = mode;
+      }
+    },
+
     setMediaModels(state, action: PayloadAction<{ image: MediaModel[]; video: MediaModel[] }>) {
       state.mediaModels = action.payload;
     },
@@ -709,8 +786,12 @@ export const {
   setConfig,
   updateConfig,
   clearCurrentSession,
+  setPlanConfirmationAwaiting,
+  setPlanConfirmationHandled,
+  clearPlanConfirmation,
   setDraftKitIds,
   setDraftSkillIds,
+  setDraftCollaborationMode,
   setMediaModels,
   setMediaSelection,
 } = coworkSlice.actions;

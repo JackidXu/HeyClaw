@@ -2,6 +2,7 @@ import { ArchiveBoxIcon, ArrowPathIcon, ArrowPathRoundedSquareIcon, ChatBubbleLe
 import React, { useCallback,useEffect, useMemo, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
+import { AppSettingsAutoLaunchErrorCode } from '../../shared/appSettings/constants';
 import { type AppUpdateInfo,type AppUpdateRuntimeState,AppUpdateSource,AppUpdateStatus } from '../../shared/appUpdate/constants';
 import {
   type BrowserWebAccessConfig,
@@ -80,6 +81,16 @@ const waitForNextPaint = (): Promise<void> => new Promise(resolve => {
     window.requestAnimationFrame(() => resolve());
   });
 });
+
+const getAutoLaunchErrorMessage = (errorCode?: string): string => {
+  if (errorCode === AppSettingsAutoLaunchErrorCode.RequiresApproval) {
+    return i18nService.t('autoLaunchRequiresApproval');
+  }
+  if (errorCode === AppSettingsAutoLaunchErrorCode.UpdateFailed) {
+    return i18nService.t('autoLaunchUpdateFailed');
+  }
+  return i18nService.t('autoLaunchUpdateFailed');
+};
 
 const formatBackupSize = (sizeBytes?: number): string => {
   if (!Number.isFinite(sizeBytes) || !sizeBytes || sizeBytes <= 0) return '';
@@ -723,6 +734,7 @@ const Settings: React.FC<SettingsProps> = ({
   const [autoLaunch, setAutoLaunchState] = useState(false);
   const [useSystemProxy, setUseSystemProxy] = useState(false);
   const [sqliteAutoBackupEnabled, setSqliteAutoBackupEnabled] = useState(false);
+  const [usageAnalyticsEnabled, setUsageAnalyticsEnabled] = useState(true);
   const [taskCompletionNotificationsEnabled, setTaskCompletionNotificationsEnabled] = useState(true);
   const [browserWebAccess, setBrowserWebAccess] = useState<BrowserWebAccessConfig>(() => ({
     ...defaultBrowserWebAccessConfig,
@@ -813,6 +825,7 @@ const Settings: React.FC<SettingsProps> = ({
   const [newModelName, setNewModelName] = useState('');
   const [newModelId, setNewModelId] = useState('');
   const [newModelSupportsImage, setNewModelSupportsImage] = useState(false);
+  const [newModelSupportsThinking, setNewModelSupportsThinking] = useState(false);
   const [newModelContextWindow, setNewModelContextWindow] = useState<number | undefined>(undefined);
   const [newModelCustomParams, setNewModelCustomParams] = useState<string>('');
   const [modelFormError, setModelFormError] = useState<string | null>(null);
@@ -1144,6 +1157,7 @@ const Settings: React.FC<SettingsProps> = ({
       setLanguage(config.language);
       setUseSystemProxy(config.useSystemProxy ?? false);
       setSqliteAutoBackupEnabled(config.sqliteAutoBackupEnabled === true);
+      setUsageAnalyticsEnabled(config.usageAnalyticsEnabled !== false);
       setTaskCompletionNotificationsEnabled(
         normalizeNotificationSettings(config.notificationSettings).taskCompletionNotificationsEnabled,
       );
@@ -1154,6 +1168,7 @@ const Settings: React.FC<SettingsProps> = ({
 
       // Load auto-launch setting
       window.electron.autoLaunch.get().then(({ enabled }) => {
+        console.log(`[Renderer][Settings] loaded auto-launch setting: enabled=${enabled}`);
         setAutoLaunchState(enabled);
       }).catch(err => {
         console.error('Failed to load auto-launch setting:', err);
@@ -2334,6 +2349,7 @@ const Settings: React.FC<SettingsProps> = ({
         language,
         useSystemProxy,
         sqliteAutoBackupEnabled,
+        usageAnalyticsEnabled,
         notificationSettings: {
           taskCompletionNotificationsEnabled,
         },
@@ -2538,18 +2554,20 @@ const Settings: React.FC<SettingsProps> = ({
     setNewModelName('');
     setNewModelId('');
     setNewModelSupportsImage(false);
+    setNewModelSupportsThinking(false);
     setNewModelContextWindow(undefined);
     setNewModelCustomParams('');
     setModelFormError(null);
   };
 
-  const handleEditModel = (modelId: string, modelName: string, supportsImage?: boolean, contextWindow?: number, customParams?: Record<string, unknown>) => {
+  const handleEditModel = (modelId: string, modelName: string, supportsImage?: boolean, supportsThinking?: boolean, contextWindow?: number, customParams?: Record<string, unknown>) => {
     setIsAddingModel(false);
     setIsEditingModel(true);
     setEditingModelId(modelId);
     setNewModelName(modelName);
     setNewModelId(modelId);
     setNewModelSupportsImage(!!supportsImage);
+    setNewModelSupportsThinking(!!supportsThinking);
     setNewModelContextWindow(contextWindow);
     setNewModelCustomParams(
       customParams && Object.keys(customParams).length > 0
@@ -2630,6 +2648,11 @@ const Settings: React.FC<SettingsProps> = ({
         modelId,
         newModelSupportsImage,
       ),
+      ...(ProviderRegistry.resolveModelSupportsThinking(
+        activeProvider,
+        modelId,
+        newModelSupportsThinking,
+      ) ? { supportsThinking: true } : {}),
       ...(newModelContextWindow !== undefined ? { contextWindow: newModelContextWindow } : {}),
       ...(parsedCustomParams && Object.keys(parsedCustomParams).length > 0
         ? { customParams: parsedCustomParams }
@@ -2653,6 +2676,7 @@ const Settings: React.FC<SettingsProps> = ({
     setNewModelName('');
     setNewModelId('');
     setNewModelSupportsImage(false);
+    setNewModelSupportsThinking(false);
     setNewModelCustomParams('');
     setModelFormError(null);
   };
@@ -2664,6 +2688,7 @@ const Settings: React.FC<SettingsProps> = ({
     setNewModelName('');
     setNewModelId('');
     setNewModelSupportsImage(false);
+    setNewModelSupportsThinking(false);
     setNewModelContextWindow(undefined);
     setNewModelCustomParams('');
     setModelFormError(null);
@@ -3411,15 +3436,22 @@ const Settings: React.FC<SettingsProps> = ({
                 const next = !autoLaunch;
                 setIsUpdatingAutoLaunch(true);
                 try {
+                  console.log(`[Renderer][Settings] updating auto-launch setting: requested=${next}`);
                   const result = await window.electron.autoLaunch.set(next);
+                  console.log(
+                    `[Renderer][Settings] auto-launch update result: success=${result.success}, enabled=${result.enabled ?? 'unknown'}, error=${result.error ?? 'none'}`,
+                  );
                   if (result.success) {
-                    setAutoLaunchState(next);
+                    setAutoLaunchState(result.enabled ?? next);
                   } else {
-                    setError(result.error || 'Failed to update auto-launch setting');
+                    if (typeof result.enabled === 'boolean') {
+                      setAutoLaunchState(result.enabled);
+                    }
+                    setError(getAutoLaunchErrorMessage(result.errorCode));
                   }
                 } catch (err) {
                   console.error('Failed to set auto-launch:', err);
-                  setError('Failed to update auto-launch setting');
+                  setError(i18nService.t('autoLaunchUpdateFailed'));
                 } finally {
                   setIsUpdatingAutoLaunch(false);
                 }
@@ -3484,6 +3516,15 @@ const Settings: React.FC<SettingsProps> = ({
               checked={skipMissedJobs}
               onToggle={() => {
                 setSkipMissedJobs((prev) => !prev);
+              }}
+            />
+
+            <SettingsToggleRow
+              title={i18nService.t('usageAnalyticsEnabled')}
+              description={i18nService.t('usageAnalyticsEnabledDescription')}
+              checked={usageAnalyticsEnabled}
+              onToggle={() => {
+                setUsageAnalyticsEnabled((prev) => !prev);
               }}
             />
 
@@ -4267,6 +4308,8 @@ const Settings: React.FC<SettingsProps> = ({
           setNewModelId={setNewModelId}
           newModelSupportsImage={newModelSupportsImage}
           setNewModelSupportsImage={setNewModelSupportsImage}
+          newModelSupportsThinking={newModelSupportsThinking}
+          setNewModelSupportsThinking={setNewModelSupportsThinking}
           newModelContextWindow={newModelContextWindow}
           setNewModelContextWindow={setNewModelContextWindow}
           newModelCustomParams={newModelCustomParams}

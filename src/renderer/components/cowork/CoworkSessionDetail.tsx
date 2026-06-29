@@ -17,6 +17,7 @@ import {
 import { dedupeArtifactsForDisplay, normalizeFilePathForDedup, normalizeLocalServiceUrlForDedup, parseFileLinksFromMessage, parseFilePathsFromText, parseLocalServiceUrlsFromText, parseMediaTokensFromText, parseRemoteImageArtifactsFromText, parseToolArtifact, parseToolResultMediaArtifacts, shouldParseFilePathsFromToolResult, stripFileLinksFromText } from '../../services/artifactParser';
 import { coworkService } from '../../services/cowork';
 import { i18nService } from '../../services/i18n';
+import { getInstalledKitSkillIds } from '../../services/kitCapability';
 import { RootState } from '../../store';
 import {
   selectCurrentMessagesLength,
@@ -41,13 +42,23 @@ import {
   selectPanelWidth,
   togglePanel,
 } from '../../store/slices/artifactSlice';
-import { addDraftSelectedTextSnippet } from '../../store/slices/coworkSlice';
+import {
+  addDraftSelectedTextSnippet,
+  PlanConfirmationState,
+  setDraftCollaborationMode,
+  setPlanConfirmationAwaiting,
+  setPlanConfirmationHandled,
+} from '../../store/slices/coworkSlice';
 import { setActiveKitIds } from '../../store/slices/kitSlice';
 import { setActiveSkillIds } from '../../store/slices/skillSlice';
 import type { Artifact } from '../../types/artifact';
 import { ArtifactTypeValue, PREVIEWABLE_ARTIFACT_TYPES } from '../../types/artifact';
 import type { CoworkImageAttachment, CoworkMessage, CoworkMessageMetadata } from '../../types/cowork';
-import { CoworkSessionStatusValue } from '../../types/cowork';
+import {
+  CoworkCollaborationMode,
+  type CoworkCollaborationMode as CoworkCollaborationModeType,
+  CoworkSessionStatusValue,
+} from '../../types/cowork';
 import type { MediaAttachmentRef } from '../../types/mediaGeneration';
 import { parseUserMessageForDisplay } from '../../utils/userMessageDisplay';
 import { ArtifactPanel, type BrowserAnnotationPayload } from '../artifacts';
@@ -69,6 +80,9 @@ import {
   COWORK_DETAIL_GUTTER_CLASS,
   hasRenderableAssistantContent,
 } from './messageDisplayUtils';
+import { parseProposedPlanBlock } from './proposedPlanParser';
+import { buildSelectedKitContextPrompt } from './selectedKitContextPrompt';
+import { buildSelectedSkillRoutingPrompt } from './selectedSkillRoutingPrompt';
 import {
   buildCoworkSessionJSON,
   buildCoworkSessionMarkdown,
@@ -81,7 +95,14 @@ import UserMessageItem from './UserMessageItem';
 interface CoworkSessionDetailProps {
   onManageSkills?: () => void;
   onManageKits?: () => void;
-  onContinue: (prompt: string, skillPrompt?: string, imageAttachments?: CoworkImageAttachment[], mediaReferences?: MediaAttachmentRef[], selectedTextSnippets?: CoworkSelectedTextSnippet[]) => boolean | void | Promise<boolean | void>;
+  onContinue: (
+    prompt: string,
+    skillPrompt?: string,
+    imageAttachments?: CoworkImageAttachment[],
+    mediaReferences?: MediaAttachmentRef[],
+    selectedTextSnippets?: CoworkSelectedTextSnippet[],
+    collaborationMode?: CoworkCollaborationModeType,
+  ) => boolean | void | Promise<boolean | void>;
   onStop: () => void;
   isSidebarCollapsed?: boolean;
   onToggleSidebar?: () => void;
@@ -108,6 +129,33 @@ const EXPANDED_CONVERSATION_PREVIEW_ITEM_LIMIT = 8;
 const RAIL_LONG_JUMP_VIEWPORT_MULTIPLIER = 2.5;
 const RAIL_LINE_MIN_WIDTH = 6;
 const RAIL_LINE_MAX_WIDTH = 16;
+
+interface LatestProposedPlan {
+  messageId: string;
+  planTextHash: string;
+}
+
+const hashProposedPlanText = (value: string): string => {
+  let hash = 5381;
+  for (let index = 0; index < value.length; index += 1) {
+    hash = ((hash << 5) + hash) ^ value.charCodeAt(index);
+  }
+  return `${value.length}:${(hash >>> 0).toString(36)}`;
+};
+
+const findLatestProposedPlan = (messages: CoworkMessage[]): LatestProposedPlan | null => {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index];
+    if (message.type !== 'assistant' || !message.content.trim()) continue;
+    const proposedPlan = parseProposedPlanBlock(message.content);
+    if (!proposedPlan.planText?.trim()) continue;
+    return {
+      messageId: message.id,
+      planTextHash: hashProposedPlanText(proposedPlan.planText),
+    };
+  }
+  return null;
+};
 
 type RailItem = {
   key: string;
@@ -853,12 +901,23 @@ const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
   const lastMessageContent = useSelector(selectLastMessageContent);
   const messagesLength = useSelector(selectCurrentMessagesLength);
   const skills = useSelector((state: RootState) => state.skill.skills);
+  const activeSkillIds = useSelector((state: RootState) => state.skill.activeSkillIds);
+  const activeKitIds = useSelector((state: RootState) => state.kit.activeKitIds);
+  const installedKits = useSelector((state: RootState) => state.kit.installedKits);
   const marketplaceKits = useSelector((state: RootState) => state.kit.marketplaceKits);
   const selectedDraftSnippets = useSelector((state: RootState) =>
     currentSession?.id ? state.cowork.draftSelectedTextSnippets[currentSession.id] ?? [] : []
   );
   const contextUsage = useSelector((state: RootState) =>
     currentSession?.id ? state.cowork.contextUsageBySessionId[currentSession.id] : undefined
+  );
+  const draftCollaborationMode = useSelector((state: RootState) =>
+    currentSession?.id
+      ? state.cowork.draftCollaborationModes[currentSession.id] || CoworkCollaborationMode.Default
+      : CoworkCollaborationMode.Default
+  );
+  const planConfirmation = useSelector((state: RootState) =>
+    currentSession?.id ? state.cowork.planConfirmations[currentSession.id] : undefined
   );
   const isContextCompacting = useSelector((state: RootState) =>
     currentSession?.id ? state.cowork.compactingSessionIds.includes(currentSession.id) : false
@@ -930,9 +989,52 @@ const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
 
   // Clear lazy-render height cache when session changes
   const sessionId = currentSession?.id;
+  const latestProposedPlan = useMemo(
+    () => currentSession ? findLatestProposedPlan(currentSession.messages) : null,
+    [currentSession],
+  );
+  const confirmExecutionSkillPrompt = useMemo(() => {
+    const kitSkillIds = activeKitIds.flatMap(kitId => getInstalledKitSkillIds(installedKits[kitId]));
+    const allSkillIds = [...new Set([...activeSkillIds, ...kitSkillIds])];
+    const activeSkills = allSkillIds
+      .map(id => skills.find(skill => skill.id === id))
+      .filter((skill): skill is NonNullable<typeof skill> => skill !== undefined);
+    return [
+      buildSelectedKitContextPrompt(activeKitIds, marketplaceKits, installedKits),
+      buildSelectedSkillRoutingPrompt(activeSkills),
+    ].filter(Boolean).join('\n\n') || undefined;
+  }, [activeKitIds, activeSkillIds, installedKits, marketplaceKits, skills]);
   useEffect(() => {
     clearHeightCache();
   }, [sessionId]);
+
+  useEffect(() => {
+    if (!sessionId || !latestProposedPlan) return;
+    if (draftCollaborationMode !== CoworkCollaborationMode.Plan) return;
+    if (isSessionBusy || currentSession?.status === CoworkSessionStatusValue.Running) return;
+    const isSamePlan = planConfirmation?.messageId === latestProposedPlan.messageId
+      && planConfirmation.planTextHash === latestProposedPlan.planTextHash;
+    if (isSamePlan) return;
+    dispatch(setPlanConfirmationAwaiting({
+      sessionId,
+      messageId: latestProposedPlan.messageId,
+      planTextHash: latestProposedPlan.planTextHash,
+    }));
+    window.electron?.log?.fromRenderer?.(
+      'debug',
+      'CoworkSessionDetail',
+      `Latest proposed plan is awaiting confirmation for session ${sessionId}.`,
+    );
+  }, [
+    currentSession?.status,
+    dispatch,
+    draftCollaborationMode,
+    isSessionBusy,
+    latestProposedPlan,
+    planConfirmation?.messageId,
+    planConfirmation?.planTextHash,
+    sessionId,
+  ]);
 
   useEffect(() => {
     setShowCompactConfirm(false);
@@ -1064,6 +1166,62 @@ const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
       forkedFromMessageId: messageId,
     });
   }, [currentSession?.id, currentSession?.status, isStreaming]);
+
+  const handleConfirmPlan = useCallback(async (messageId: string) => {
+    if (!currentSession?.id || !latestProposedPlan || latestProposedPlan.messageId !== messageId) return;
+    if (isSessionBusy || currentSession.status === CoworkSessionStatusValue.Running) {
+      window.dispatchEvent(new CustomEvent('app:showToast', {
+        detail: i18nService.t('coworkSessionStillRunning'),
+      }));
+      return;
+    }
+    window.electron?.log?.fromRenderer?.(
+      'debug',
+      'CoworkSessionDetail',
+      `Confirmed proposed plan ${messageId} for session ${currentSession.id}.`,
+    );
+    dispatch(setDraftCollaborationMode({
+      draftKey: currentSession.id,
+      mode: CoworkCollaborationMode.Default,
+    }));
+    const result = await onContinue(
+      i18nService.t('coworkPlanConfirmExecutionPrompt'),
+      confirmExecutionSkillPrompt,
+      undefined,
+      undefined,
+      undefined,
+      CoworkCollaborationMode.Default,
+    );
+    if (result === false) {
+      dispatch(setDraftCollaborationMode({
+        draftKey: currentSession.id,
+        mode: CoworkCollaborationMode.Plan,
+      }));
+      return;
+    }
+    dispatch(setPlanConfirmationHandled({
+      sessionId: currentSession.id,
+      messageId,
+    }));
+  }, [confirmExecutionSkillPrompt, currentSession?.id, currentSession?.status, dispatch, isSessionBusy, latestProposedPlan, onContinue]);
+
+  const handleAdjustPlan = useCallback((messageId: string) => {
+    if (!currentSession?.id || !latestProposedPlan || latestProposedPlan.messageId !== messageId) return;
+    dispatch(setPlanConfirmationHandled({
+      sessionId: currentSession.id,
+      messageId,
+    }));
+    dispatch(setDraftCollaborationMode({
+      draftKey: currentSession.id,
+      mode: CoworkCollaborationMode.Plan,
+    }));
+    promptInputRef.current?.focus();
+    window.electron?.log?.fromRenderer?.(
+      'debug',
+      'CoworkSessionDetail',
+      `User chose to adjust proposed plan ${messageId} for session ${currentSession.id}.`,
+    );
+  }, [currentSession?.id, dispatch, latestProposedPlan]);
 
   const handleAssistantTextSelection = useCallback(() => {
     if (remoteManaged) return;
@@ -2460,9 +2618,9 @@ const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
     const distanceToBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
     const prefersReducedMotion = typeof window.matchMedia === 'function'
       && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    console.debug(
-      `[CoworkSessionDetail] scroll to bottom requested for session ${currentSession?.id ?? 'unknown'}; distance was ${Math.max(0, Math.round(distanceToBottom))}px.`,
-    );
+    const scrollLogMessage = `Scroll to bottom requested for session ${currentSession?.id ?? 'unknown'}; distance was ${Math.max(0, Math.round(distanceToBottom))}px.`;
+    console.debug(`[CoworkSessionDetail] ${scrollLogMessage}`);
+    window.electron?.log?.fromRenderer?.('debug', 'CoworkSessionDetail', scrollLogMessage);
     clearScrollToBottomSettleTimers();
     scrollToBottomIntentRef.current = true;
     if (prefersReducedMotion) {
@@ -2489,7 +2647,9 @@ const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
         }
         latestContainer.scrollTo({
           top: latestContainer.scrollHeight,
-          behavior: index === SCROLL_TO_BOTTOM_SETTLE_DELAYS_MS.length - 1 ? 'auto' : 'smooth',
+          behavior: prefersReducedMotion || index === SCROLL_TO_BOTTOM_SETTLE_DELAYS_MS.length - 1
+            ? 'auto'
+            : 'smooth',
         });
       }, delayMs);
       scrollToBottomSettleTimersRef.current.push(timer);
@@ -2884,6 +3044,16 @@ const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
   const resolvedRailIndex = currentRailIndex < 0 || currentRailIndex >= railItems.length
     ? railItems.length - 1
     : currentRailIndex;
+  const planConfirmationMessageId = (
+    latestProposedPlan
+    && draftCollaborationMode === CoworkCollaborationMode.Plan
+    && !isSessionBusy
+    && planConfirmation?.state === PlanConfirmationState.Awaiting
+    && planConfirmation.messageId === latestProposedPlan.messageId
+    && planConfirmation.planTextHash === latestProposedPlan.planTextHash
+  )
+    ? latestProposedPlan.messageId
+    : null;
 
   const renderConversationTurns = () => {
     let railCounter = 0;
@@ -2900,6 +3070,9 @@ const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
             resolveLocalFilePath={resolveLocalFilePath}
             showTypingIndicator
             showCopyButtons={!isStreaming}
+            planConfirmationMessageId={planConfirmationMessageId}
+            onConfirmPlan={handleConfirmPlan}
+            onAdjustPlan={handleAdjustPlan}
           />
         </div>
       );
@@ -2959,6 +3132,9 @@ const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
                 onForkMessage={remoteManaged ? undefined : handleForkMessage}
                 showTypingIndicator={showTypingIndicator}
                 showCopyButtons={!isStreaming || !isLastTurn}
+                planConfirmationMessageId={planConfirmationMessageId}
+                onConfirmPlan={handleConfirmPlan}
+                onAdjustPlan={handleAdjustPlan}
               />
             </div>
           )}

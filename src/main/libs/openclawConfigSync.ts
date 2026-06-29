@@ -90,6 +90,18 @@ export const OPENCLAW_AGENT_TIMEOUT_SECONDS = 3600;
 const DINGTALK_OPENCLAW_CHANNEL = 'dingtalk-connector';
 export const OPENCLAW_BINDING_ANY_ACCOUNT_ID = '*';
 
+const OpenClawContextCacheProvider = {
+  DashScope: 'dashscope',
+  AnthropicCompatible: 'anthropic-compatible',
+} as const;
+
+const OpenClawContextCacheMode = {
+  Explicit: 'explicit',
+} as const;
+
+const EXPLICIT_CONTEXT_CACHE_LOG_PREFIX = '********************';
+const CUSTOM_PROVIDER_NAME_PATTERN = /^custom_[0-9]$/;
+
 function deriveNimAccountId(instance: Pick<NimInstanceConfig, 'nimToken' | 'appKey' | 'account'>): string | null {
   const nimToken = instance.nimToken?.trim();
   if (nimToken) {
@@ -112,6 +124,21 @@ function deriveNimAccountConfigKey(
     return instance.instanceId.trim().slice(0, 8);
   }
   return deriveNimAccountId(instance);
+}
+
+function hasNimRuntimeCredentials(
+  instance: Pick<NimInstanceConfig, 'nimToken' | 'appKey' | 'account' | 'token'>,
+): boolean {
+  return Boolean(
+    (instance.nimToken && instance.nimToken.trim()) ||
+    (instance.appKey && instance.account && instance.token),
+  );
+}
+
+function isEnabledNimRuntimeInstance(
+  instance: Pick<NimInstanceConfig, 'enabled' | 'nimToken' | 'appKey' | 'account' | 'token'>,
+): boolean {
+  return Boolean(instance.enabled && hasNimRuntimeCredentials(instance));
 }
 
 function shouldUseOpenAIResponsesApi(providerName?: string, baseURL?: string): boolean {
@@ -263,6 +290,8 @@ const MANAGED_WEB_SEARCH_POLICY_PROMPT = [
   '',
   'Do not claim you searched the web unless you actually used `browser`, `web_fetch`, or the HeyClaw `web-search` skill.',
 ].join('\n');
+
+const BUNDLED_BROWSER_PLUGIN_ID = 'browser';
 
 const MANAGED_BROWSER_POLICY_PROMPT = [
   '## Browser Policy',
@@ -500,6 +529,28 @@ type OpenClawAgentModelDefault = {
   params?: Record<string, unknown>;
 };
 
+const DASHSCOPE_EXPLICIT_CONTEXT_CACHE_PARAMS: OpenClawAgentModelDefault = {
+  params: {
+    cacheRetention: 'short',
+    contextCacheProvider: OpenClawContextCacheProvider.DashScope,
+    contextCacheMode: OpenClawContextCacheMode.Explicit,
+  },
+};
+
+const ANTHROPIC_COMPATIBLE_EXPLICIT_CONTEXT_CACHE_PARAMS: OpenClawAgentModelDefault = {
+  params: {
+    cacheRetention: 'short',
+    contextCacheProvider: OpenClawContextCacheProvider.AnthropicCompatible,
+    contextCacheMode: OpenClawContextCacheMode.Explicit,
+  },
+};
+
+const ANTHROPIC_EXPLICIT_CONTEXT_CACHE_PARAMS: OpenClawAgentModelDefault = {
+  params: {
+    cacheRetention: 'short',
+  },
+};
+
 const OPENAI_CODEX_BASE_URL = 'https://chatgpt.com/backend-api/codex';
 
 const normalizeBaseUrlPath = (rawBaseUrl: string, pathName: string): string => {
@@ -619,7 +670,7 @@ const resolveDeepSeekModelReasoning = (modelId: string): boolean | undefined => 
 const PROVIDER_REGISTRY: Record<string, ProviderDescriptor> = {
   [ProviderName.LobsteraiServer]: {
     providerId: OpenClawProviderId.LobsteraiServer,
-    resolveApi: () => OpenClawApiConst.OpenAICompletions as OpenClawProviderApi,
+    resolveApi: ({ apiType, baseURL }) => mapApiTypeToOpenClawApi(apiType, undefined, baseURL),
     normalizeBaseUrl: url => {
       const proxyPort = getOpenClawTokenProxyPort();
       return proxyPort ? `http://127.0.0.1:${proxyPort}/v1` : stripChatCompletionsSuffix(url);
@@ -790,6 +841,7 @@ export const buildProviderSelection = (options: {
   authType?: 'apikey' | 'oauth';
   codingPlanEnabled?: boolean;
   supportsImage?: boolean;
+  supportsThinking?: boolean;
   modelName?: string;
   contextWindow?: number;
 }): OpenClawProviderSelection => {
@@ -821,6 +873,11 @@ export const buildProviderSelection = (options: {
     options.modelId,
     options.supportsImage,
   );
+  const supportsThinking = ProviderRegistry.resolveModelSupportsThinking(
+    providerName,
+    options.modelId,
+    options.supportsThinking,
+  );
   const modelInput: string[] = supportsImage ? ['text', 'image'] : ['text'];
   const auth = (
     (options.providerName === ProviderName.Minimax || options.providerName === ProviderName.OpenAI)
@@ -830,9 +887,10 @@ export const buildProviderSelection = (options: {
     : AuthType.ApiKey;
 
   // reasoning：descriptor 动态计算 > modelDefaults 静态值
-  const reasoning = descriptor.resolveModelReasoning
+  const descriptorReasoning = descriptor.resolveModelReasoning
     ? descriptor.resolveModelReasoning(options.modelId, !!options.codingPlanEnabled)
     : descriptor.modelDefaults?.reasoning;
+  const reasoning = supportsThinking ? true : descriptorReasoning;
   const contextWindow = ProviderRegistry.resolveModelContextWindow(
     providerName,
     options.modelId,
@@ -895,6 +953,21 @@ const cloneAgentModelDefault = (
   entry.params ? { params: { ...entry.params } } : {}
 );
 
+const mergeAgentModelDefault = (
+  current: OpenClawAgentModelDefault | undefined,
+  next: OpenClawAgentModelDefault,
+): OpenClawAgentModelDefault => ({
+  ...(current ?? {}),
+  ...(next.params
+    ? {
+        params: {
+          ...(current?.params ?? {}),
+          ...next.params,
+        },
+      }
+    : {}),
+});
+
 const buildCompleteAgentModelDefaults = (
   providers: Record<string, OpenClawProviderSelection['providerConfig']>,
   customDefaults: Record<string, OpenClawAgentModelDefault>,
@@ -940,6 +1013,96 @@ const upsertProviderModel = (
     return;
   }
   providerConfig.models.push(model);
+};
+
+const normalizeServerApiType = (apiFormat?: string): 'anthropic' | 'openai' => (
+  apiFormat === 'anthropic' ? 'anthropic' : 'openai'
+);
+
+const stripExplicitContextCacheProviderSuffix = (modelId: string, provider?: string): string => {
+  const normalizedProvider = provider?.trim();
+  if (!normalizedProvider) return modelId;
+  const suffix = `-${normalizedProvider}`.toLowerCase();
+  const normalized = modelId.toLowerCase();
+  return normalized.endsWith(suffix)
+    ? modelId.slice(0, modelId.length - suffix.length)
+    : modelId;
+};
+
+const normalizeExplicitContextCacheModelId = (modelId: string, provider?: string): string => {
+  const withoutProviderSuffix = stripExplicitContextCacheProviderSuffix(modelId.trim(), provider);
+  const slashIndex = withoutProviderSuffix.lastIndexOf('/');
+  return slashIndex >= 0
+    ? withoutProviderSuffix.slice(slashIndex + 1).trim()
+    : withoutProviderSuffix.trim();
+};
+
+const resolveExplicitContextCacheFamily = (
+  modelId: string,
+  provider?: string,
+): 'qwen' | 'claude' | null => {
+  const baseModelId = normalizeExplicitContextCacheModelId(modelId, provider).toLowerCase();
+  if (baseModelId.startsWith('qwen3.5') || baseModelId.startsWith('qwen3.6')) {
+    return 'qwen';
+  }
+  if (baseModelId.startsWith('claude-')) {
+    return 'claude';
+  }
+  return null;
+};
+
+const shouldApplyProviderExplicitContextCacheDefault = (providerName?: string): boolean => {
+  const normalizedProvider = providerName?.trim();
+  return normalizedProvider === ProviderName.Anthropic
+    || normalizedProvider === ProviderName.Qwen
+    || (!!normalizedProvider && CUSTOM_PROVIDER_NAME_PATTERN.test(normalizedProvider));
+};
+
+const resolveExplicitContextCacheDefault = (options: {
+  api: OpenClawProviderApi;
+  modelId: string;
+  provider?: string;
+  explicitContextCache?: boolean;
+}): OpenClawAgentModelDefault | null => {
+  const family = resolveExplicitContextCacheFamily(options.modelId, options.provider);
+  const enabled = options.explicitContextCache === true
+    || family !== null;
+  if (!enabled || family === null) return null;
+  if (options.api === OpenClawApiConst.OpenAICompletions) {
+    return family === 'qwen'
+      ? DASHSCOPE_EXPLICIT_CONTEXT_CACHE_PARAMS
+      : ANTHROPIC_COMPATIBLE_EXPLICIT_CONTEXT_CACHE_PARAMS;
+  }
+  if (options.api === OpenClawApiConst.AnthropicMessages) {
+    return ANTHROPIC_EXPLICIT_CONTEXT_CACHE_PARAMS;
+  }
+  return null;
+};
+
+const addExplicitContextCacheDefault = (
+  defaults: Record<string, OpenClawAgentModelDefault>,
+  selection: OpenClawProviderSelection,
+  source: {
+    modelId: string;
+    provider?: string;
+    explicitContextCache?: boolean;
+  },
+): void => {
+  const model = selection.providerConfig.models[0];
+  if (!model) return;
+  const contextCacheDefault = resolveExplicitContextCacheDefault({
+    api: model.api,
+    modelId: source.modelId,
+    provider: source.provider,
+    explicitContextCache: source.explicitContextCache,
+  });
+  if (!contextCacheDefault) return;
+
+  const modelKey = `${selection.providerId}/${selection.sessionModelId}`;
+  defaults[modelKey] = mergeAgentModelDefault(defaults[modelKey], contextCacheDefault);
+  console.info(
+    `${EXPLICIT_CONTEXT_CACHE_LOG_PREFIX} [ExplicitCacheConfig] model=${selection.sessionModelId} api=${model.api} provider=${source.provider ?? selection.providerId} params=${JSON.stringify(contextCacheDefault.params ?? {})}`,
+  );
 };
 
 const readPreinstalledPluginIds = (): string[] => {
@@ -1306,10 +1469,16 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
         authType: apiResolution.providerMetadata?.authType,
         codingPlanEnabled: apiResolution.providerMetadata?.codingPlanEnabled,
         supportsImage: apiResolution.providerMetadata?.supportsImage,
+        supportsThinking: apiResolution.providerMetadata?.supportsThinking,
         modelName: apiResolution.providerMetadata?.modelName,
         contextWindow: apiResolution.providerMetadata?.contextWindow,
       });
       primaryModel = providerSelection.primaryModel;
+      if (providerSelection.providerId === OpenClawProviderId.LobsteraiServer) {
+        addExplicitContextCacheDefault(perModelCustomDefaults, providerSelection, {
+          modelId,
+        });
+      }
 
       for (const p of resolveAllEnabledProviderConfigs()) {
         for (const m of p.models) {
@@ -1322,6 +1491,7 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
             authType: p.authType,
             codingPlanEnabled: p.codingPlanEnabled,
             supportsImage: m.supportsImage,
+            supportsThinking: m.supportsThinking,
             modelName: m.name,
             contextWindow: m.contextWindow,
           });
@@ -1333,12 +1503,21 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
           if (!alreadyHas && sel.providerConfig.models.length > 0) {
             existing.models.push(...sel.providerConfig.models);
           }
+          if (shouldApplyProviderExplicitContextCacheDefault(p.providerName)) {
+            addExplicitContextCacheDefault(perModelCustomDefaults, sel, {
+              modelId: m.id,
+              provider: p.providerName,
+            });
+          }
           // Collect per-model custom params for agents.defaults.models.
           // Wrap in extra_body so OpenClaw's streamWithPayloadPatch merges them
           // directly into the outgoing API request body, bypassing the whitelist.
           if (m.customParams && Object.keys(m.customParams).length > 0) {
             const modelKey = `${sel.providerId}/${sel.sessionModelId}`;
-            perModelCustomDefaults[modelKey] = { params: { extra_body: { ...m.customParams } } };
+            perModelCustomDefaults[modelKey] = mergeAgentModelDefault(
+              perModelCustomDefaults[modelKey],
+              { params: { extra_body: { ...m.customParams } } },
+            );
           }
         }
       }
@@ -1366,9 +1545,12 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
             apiKey: 'proxy-managed',
             baseURL: `http://127.0.0.1:${proxyPort}/v1`,
             modelId: firstServerModelId,
-            apiType: 'openai',
+            apiType: normalizeServerApiType(serverModels[0]?.apiFormat),
             providerName: ProviderName.LobsteraiServer,
             supportsImage: serverModels[0]?.supportsImage,
+            supportsThinking: serverModels[0]?.supportsThinking,
+            modelName: serverModels[0]?.modelName,
+            contextWindow: serverModels[0]?.contextWindow,
           });
           const lobsteraiProviderConfig =
             allProvidersMap[providerId] ?? {
@@ -1381,15 +1563,22 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
             upsertProviderModel(lobsteraiProviderConfig, firstServerSel.providerConfig.models[0]);
           } else {
             for (const sm of serverModels) {
+              const serverApiType = normalizeServerApiType(sm.apiFormat);
               const serverSel = buildProviderSelection({
                 apiKey: 'proxy-managed',
                 baseURL: `http://127.0.0.1:${proxyPort}/v1`,
                 modelId: sm.modelId,
-                apiType: 'openai',
+                apiType: serverApiType,
                 providerName: ProviderName.LobsteraiServer,
                 supportsImage: sm.supportsImage,
-                modelName: sm.modelId,
+                supportsThinking: sm.supportsThinking,
+                modelName: sm.modelName || sm.modelId,
                 contextWindow: sm.contextWindow,
+              });
+              addExplicitContextCacheDefault(perModelCustomDefaults, serverSel, {
+                modelId: sm.modelId,
+                provider: sm.provider,
+                explicitContextCache: sm.explicitContextCache,
               });
               upsertProviderModel(lobsteraiProviderConfig, serverSel.providerConfig.models[0]);
             }
@@ -1462,6 +1651,7 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
     const feishuInstances = this.getFeishuInstances();
 
     const qqInstances = this.getQQInstances();
+    const discordInstances = this.getDiscordInstances();
 
     const wecomInstances = this.getWecomInstances();
 
@@ -1513,6 +1703,7 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
       },
       models: {
         mode: 'replace',
+        pricing: { enabled: false },
         providers: allProvidersMap,
       },
       agents: {
@@ -1525,6 +1716,7 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
             mode: sandboxMode,
           },
           workspace: path.resolve(mainWorkspacePath),
+          mediaMaxMb: 30,
           ...(taskWorkingDirectory ? { cwd: path.resolve(taskWorkingDirectory) } : {}),
           ...(coworkConfig.embeddingEnabled ? {
             memorySearch: {
@@ -1581,6 +1773,7 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
       },
       cron: {
         enabled: true,
+        store: path.join(this.engineManager.getStateDir(), 'cron', 'jobs.json'),
         skipMissedJobs: coworkConfig.skipMissedJobs === true,
         maxConcurrentRuns: 3,
         sessionRetention: '7d',
@@ -1610,13 +1803,15 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
           )),
         );
         const qqbotPluginEnabled = qqInstances.some(i => i.enabled && i.appId);
-
+        const discordPluginEnabled = discordInstances.some(i => i.enabled && i.botToken);
+        const userPlugins = this.getUserPlugins();
 
         const pluginEntries: Record<string, unknown> = {
           // Preserve ALL existing plugin entries so runtime auto-injected
           // plugins (moonshot, minimax, volcengine, browser, etc.) survive
           // config rewrites.  Our managed entries below override stale values.
           ...cleanedExistingEntries,
+          [BUNDLED_BROWSER_PLUGIN_ID]: { enabled: true },
           qqbot: { enabled: qqbotPluginEnabled },
           ...Object.fromEntries(
             preinstalledPlugins.map(plugin => {
@@ -1627,11 +1822,12 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
                 if (pluginMatches(plugin, DINGTALK_OPENCLAW_CHANNEL, 'dingtalk')) return dingTalkInstances.some(i => i.enabled && i.clientId);
                 if (pluginMatches(plugin, 'openclaw-lark', 'feishu-openclaw-plugin'))
                   return feishuInstances.some(i => i.enabled && i.appId);
-                if (pluginMatches(plugin, 'openclaw-qqbot')) return qqInstances.some(i => i.enabled && i.appId);
+                if (pluginMatches(plugin, 'openclaw-qqbot', 'qqbot')) return qqbotPluginEnabled;
+                if (pluginMatches(plugin, 'discord')) return discordPluginEnabled;
                 if (pluginMatches(plugin, 'wecom-openclaw-plugin')) return wecomInstances.some(i => i.enabled && i.botId);
                 if (pluginMatches(plugin, 'moltbot-popo')) return popoInstances.some(i => i.enabled && i.appKey);
                 if (pluginMatches(plugin, 'openclaw-nim-channel', NIM_CHANNEL_PLUGIN_ID, 'nim'))
-                  return nimInstances.some(i => i.enabled && ((i.nimToken && i.nimToken.trim()) || (i.appKey && i.account && i.token)));
+                  return nimInstances.some(isEnabledNimRuntimeInstance);
                 if (pluginMatches(plugin, 'openclaw-netease-bee')) return !!(neteaseBeeChanConfig?.enabled && neteaseBeeChanConfig.clientId && neteaseBeeChanConfig.secret);
                 if (pluginMatches(plugin, 'openclaw-weixin')) return true; // Always keep enabled for QR login discovery
                 if (pluginMatches(plugin, 'clawemail-email', EMAIL_PLUGIN_ID)) return !!emailConfig?.instances.some(i => i.enabled && i.email);
@@ -1651,7 +1847,7 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
           ...(hasQwenProvider && qwenPortalAuthPluginId ? { [qwenPortalAuthPluginId]: { enabled: true } } : {}),
           // User-installed plugins: merge enabled state and config from user_plugins table
           ...Object.fromEntries(
-            this.getUserPlugins().map(p => [p.pluginId, {
+            userPlugins.map(p => [p.pluginId, {
               enabled: p.enabled,
               ...(p.config && Object.keys(p.config).length > 0 ? { config: p.config } : {}),
             }]),
@@ -1661,6 +1857,16 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
           // a process that always fails.  See openclaw/openclaw#62588.
           'acpx': { enabled: false },
         };
+        const existingAllow = Array.isArray((existingPlugins as Record<string, unknown>).allow)
+          ? ((existingPlugins as Record<string, unknown>).allow as unknown[])
+              .filter((id): id is string => typeof id === 'string' && id.length > 0)
+          : [];
+        const trustedPluginAllow = Array.from(new Set([
+          ...existingAllow,
+          BUNDLED_BROWSER_PLUGIN_ID,
+          ...preinstalledPlugins.map(plugin => plugin.pluginId),
+          ...userPlugins.filter(plugin => plugin.enabled).map(plugin => plugin.pluginId),
+        ])).sort();
 
         return Object.keys(pluginEntries).length > 0
           ? {
@@ -1684,6 +1890,7 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
                 // from dist/extensions/ at build time (see prune-openclaw-runtime.cjs).
                 // OpenClaw validates deny IDs against discovered plugins, so denying
                 // a removed plugin causes "Config invalid: plugin not found" errors.
+                allow: trustedPluginAllow,
                 deny: [],
                 entries: pluginEntries,
               },
@@ -1812,7 +2019,6 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
     // When disabled, omit the channel key entirely so OpenClaw won't load the plugin.
 
     // Sync Discord OpenClaw channel config — multi-instance via accounts
-    const discordInstances = this.getDiscordInstances();
     const enabledDiscordInstances = discordInstances.filter(i => i.enabled && i.botToken);
     if (enabledDiscordInstances.length > 0) {
       const accounts: Record<string, unknown> = {};
@@ -2160,9 +2366,7 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
       }
     }
     // Sync NIM OpenClaw channel config (via openclaw-nim plugin) — multi-instance via accounts
-    const configuredNimInstances = nimInstances.filter((inst) =>
-      Boolean((inst.nimToken && inst.nimToken.trim()) || (inst.appKey && inst.account && inst.token))
-    );
+    const configuredNimInstances = nimInstances.filter(isEnabledNimRuntimeInstance);
     if (configuredNimInstances.length > 0) {
       const accounts: Record<string, Record<string, unknown>> = {};
       configuredNimInstances.forEach((inst, idx) => {
@@ -2171,7 +2375,7 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
           ? inst.nimToken.trim()
           : `${inst.appKey}|${inst.account}|\${${tokenEnvVar}}`;
         const nimInstance: Record<string, unknown> = {
-          enabled: inst.enabled ?? false,
+          enabled: true,
           nimToken,
           antispamEnabled: inst.antispamEnabled ?? true,
         };
@@ -2477,11 +2681,13 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
       }
     }
 
-    // NIM
-    const nimInstances = this.getNimInstances().filter((inst) => inst.enabled && inst.token);
+    // NIM — indexes must match the enabled instances written to channels.nim.accounts.
+    const nimInstances = this.getNimInstances().filter(isEnabledNimRuntimeInstance);
     for (let idx = 0; idx < nimInstances.length; idx++) {
+      const inst = nimInstances[idx];
+      if (inst.nimToken?.trim() || !inst.token) continue;
       const key = idx === 0 ? 'LOBSTER_NIM_TOKEN' : `LOBSTER_NIM_TOKEN_${idx}`;
-      env[key] = nimInstances[idx].token;
+      env[key] = inst.token;
     }
 
     const D = gwDiagTs;

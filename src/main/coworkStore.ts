@@ -408,6 +408,11 @@ export interface CoworkMessageMetadata {
   model?: string;
   agentName?: string;
   selectedTextSnippets?: CoworkSelectedTextSnippet[];
+  localMediaAttachments?: Array<{
+    localPath: string;
+    mimeType?: string;
+    name?: string;
+  }>;
   [key: string]: unknown;
 }
 
@@ -1012,7 +1017,11 @@ export class CoworkStore {
       throw new Error(`Message ${forkedFromMessageId} not found in session ${options.sourceSessionId}`);
     }
 
-    const sourceMessages = this.getForkSourceMessages(options.sourceSessionId, messageLimitSequence);
+    const sourceMessages = this.getForkSourceMessages(
+      options.sourceSessionId,
+      messageLimitSequence,
+      forkedFromMessageId,
+    );
     const forkedMessageIds = new Map(sourceMessages.map(row => [row.id, uuidv4()]));
     const contextMessages = this.getForkContextMessages(
       options.sourceSessionId,
@@ -1083,7 +1092,7 @@ export class CoworkStore {
           id,
           row.type,
           row.content,
-          this.sanitizeForkMessageMetadata(row.metadata, forkedMessageIds),
+          this.sanitizeForkMessageMetadata(row.type, row.metadata, forkedMessageIds),
           row.created_at,
           row.sequence,
         );
@@ -1159,7 +1168,11 @@ export class CoworkStore {
     return [];
   }
 
-  private getForkSourceMessages(sessionId: string, maxSequence: number | null): CoworkMessageRow[] {
+  private getForkSourceMessages(
+    sessionId: string,
+    maxSequence: number | null,
+    forkedFromMessageId: string | null,
+  ): CoworkMessageRow[] {
     const where = maxSequence == null ? '' : 'AND sequence <= ?';
     const params: (string | number)[] = maxSequence == null ? [sessionId] : [sessionId, maxSequence];
     const rows = this.getAll<CoworkMessageRow>(
@@ -1172,15 +1185,23 @@ export class CoworkStore {
       params,
     );
 
-    return rows.filter((row) => this.shouldCopyForkMessage(row));
+    return rows.filter((row) => this.shouldCopyForkMessage(row, forkedFromMessageId));
   }
 
-  private shouldCopyForkMessage(row: CoworkMessageRow): boolean {
+  private shouldCopyForkMessage(row: CoworkMessageRow, forkedFromMessageId: string | null): boolean {
     if (!row.metadata) return true;
     try {
       const metadata = JSON.parse(row.metadata) as CoworkMessageMetadata;
       if (metadata.kind === CoworkSystemMessageKind.ForkCompactionSummary) {
         return false;
+      }
+      if (row.id === forkedFromMessageId && row.content.trim()) {
+        if (row.type === 'assistant' && metadata.isStreaming === true) {
+          console.warn(
+            `[CoworkFork] preserving selected assistant message ${row.id} despite stale streaming metadata.`,
+          );
+        }
+        return true;
       }
       return row.type !== 'assistant' || metadata.isStreaming !== true;
     } catch {
@@ -1189,6 +1210,7 @@ export class CoworkStore {
   }
 
   private sanitizeForkMessageMetadata(
+    messageType: string,
     metadataJson: string | null,
     forkedMessageIds: Map<string, string>,
   ): string | null {
@@ -1196,7 +1218,9 @@ export class CoworkStore {
     try {
       const metadata = JSON.parse(metadataJson) as CoworkMessageMetadata;
       const sanitized: CoworkMessageMetadata = { ...metadata };
+      const wasStreamingAssistant = messageType === 'assistant' && sanitized.isStreaming === true;
       delete sanitized.isStreaming;
+      if (wasStreamingAssistant) sanitized.isFinal = true;
       delete sanitized.toolUseId;
       delete sanitized.mediaStatusDetails;
       delete sanitized.pendingApproval;
