@@ -94,7 +94,7 @@ const KitsManager: React.FC<KitsManagerProps> = ({ onTryAsking }) => {
       });
     }
     return results;
-  }, [kits, installedKits, mainTab, activeTab, categories, searchQuery]);
+  }, [kits, installedKits, mainTab, activeTab, searchQuery]);
 
   const handleInstall = async (kit: MarketplaceKit) => {
     setOperatingKitId(kit.id);
