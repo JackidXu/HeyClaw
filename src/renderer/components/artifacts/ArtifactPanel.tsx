@@ -599,12 +599,7 @@ const ArtifactPanel: React.FC<ArtifactPanelProps> = ({
   const htmlShareButtonClass = selectedHtmlShare
     ? 'p-1 rounded bg-primary/10 text-primary transition-colors hover:bg-primary/20 disabled:cursor-not-allowed disabled:opacity-50'
     : 'p-1 rounded text-secondary transition-colors hover:bg-surface hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50';
-  const canShareHtmlArtifact = Boolean(
-    htmlShareArtifact &&
-      selectedShareSourceType &&
-      selectedShareLookupKey &&
-      hasShareableArtifactSource(htmlShareArtifact, selectedShareSourceType),
-  );
+  const canShareHtmlArtifact = false;
   const browserHtmlAutoRefreshFilePath =
     isBrowserTabActive && browserHtmlArtifact?.type === ArtifactTypeValue.Html
       ? browserHtmlArtifact.filePath

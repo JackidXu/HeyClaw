@@ -23,11 +23,10 @@ const MediaPollingIndicator: React.FC<{
   const [cancelling, setCancelling] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
   const pollCount = group.pollCount > 1 ? group.pollCount : undefined;
-  const collapsedPollCount = group.polls.length;
+
   const isVideo = group.toolName.includes('video');
 
-  const canCancel = !group.isComplete && group.taskId
-    && (group.lastStatus === 'queued' || (group.lastStatus == null && collapsedPollCount <= 1));
+  const canCancel = false;
 
   const label = group.isComplete
     ? i18nService.t('mediaGenerationComplete')

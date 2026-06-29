@@ -101,7 +101,6 @@ import SelectedTextSnippetBadge from './SelectedTextSnippetBadge';
 import { buildPlanModeSystemPrompt } from './skillSystemPrompt';
 import { usePersistAgentModelSelection } from './usePersistAgentModelSelection';
 import { useCoworkVoiceInput } from './voiceInput/useCoworkVoiceInput';
-import VoiceInputButton from './voiceInput/VoiceInputButton';
 import VoiceInputRecordingStatus from './voiceInput/VoiceInputRecordingStatus';
 import { getCoworkVoiceRecordingUiState } from './voiceInput/voiceInputUiState';
 
@@ -522,7 +521,8 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
   });
 
   const isAsrSubscribed = authQuota?.subscriptionStatus === AuthSubscriptionStatus.Active;
-  const isAsrQuotaExhaustedToday = asrQuota.status === AsrQuotaStatus.Exhausted
+  // ASR 服务暂不可用，保留变量定义以便未来快速恢复
+  const _isAsrQuotaExhaustedToday = asrQuota.status === AsrQuotaStatus.Exhausted
     && asrQuota.dayKey === getLocalAsrQuotaDayKey();
   const voiceInputLocksEditing = isVoiceRecording || isVoiceRecognizing;
 
@@ -538,7 +538,8 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
     ensureFreshAsrQuota();
   }, [dispatch, ensureFreshAsrQuota, isLoggedIn]);
 
-  const handleVoiceInputClick = useCallback(() => {
+  // ASR 服务暂不可用，handleVoiceInputClick 暂时不使用
+  const _handleVoiceInputClick = useCallback(() => {
     if (isVoiceRecording) {
       void handleVoiceInput();
       return;
@@ -1791,18 +1792,8 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
     </div>
   ) : null;
 
-  const renderVoiceInputButton = (buttonClassName: string, iconClassName: string) => (
-    <VoiceInputButton
-      buttonClassName={buttonClassName}
-      iconClassName={iconClassName}
-      isLoggedIn={isLoggedIn}
-      disabled={disabled}
-      isQuotaExhausted={isAsrQuotaExhaustedToday}
-      isRecording={isVoiceRecording}
-      isRecognizing={isVoiceRecognizing}
-      onClick={handleVoiceInputClick}
-    />
-  );
+  // ASR 语音转文字服务尚未接入 HeyClaw 自有体系，暂时隐藏语音输入按钮
+  const renderVoiceInputButton = (_buttonClassName: string, _iconClassName: string) => null;
   const hasPromptText = Boolean(value.trim());
   const voiceRecordingUiState = getCoworkVoiceRecordingUiState({
     isLarge,
