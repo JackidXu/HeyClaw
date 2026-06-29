@@ -550,6 +550,8 @@ const translations: Record<LanguageType, Record<string, string>> = {
     coworkExpandedConversationPreviewCollapse: '收起会话预览',
     coworkExpandedConversationPreviewEmpty: '暂无会话内容',
     coworkExpandedConversationStatusRunning: '执行中',
+    coworkRailUnloadedMessageTitle: '未加载消息',
+    coworkRailUnloadedMessageHint: '点击加载该位置附近的消息',
     artifactBrowserBlankPage: '空白页',
     artifactBrowserShowDeviceToolbar: '显示设备工具栏',
     artifactBrowserHideDeviceToolbar: '隐藏设备工具栏',
@@ -1303,6 +1305,10 @@ const translations: Record<LanguageType, Record<string, string>> = {
 
     // Cowork 错误消息
     coworkErrorAuthInvalid: 'API 密钥无效或已过期，请在设置中检查并更新您的 API 密钥。',
+    coworkErrorOAuthInvalid: 'OAuth 授权已失效或权限不足，请重新授权后重试。',
+    coworkErrorModelAccessDenied: '当前账号无权访问该模型，请切换模型或检查服务商账号权限。',
+    coworkErrorQuotaExhausted:
+      '大模型额度已用完，请联系管理员，或在设置中配置您的自定义 API Key。',
     coworkErrorFreeQuotaExhausted:
       '大模型额度已耗尽，请联系管理员进行手动充值，或在设置中配置您的自定义 API Key。',
     coworkErrorInsufficientBalance: 'API 余额不足，请联系管理员进行手动充值，或在设置中配置您的自定义 API Key。',
@@ -3109,6 +3115,8 @@ const translations: Record<LanguageType, Record<string, string>> = {
     coworkExpandedConversationPreviewCollapse: 'Collapse conversation preview',
     coworkExpandedConversationPreviewEmpty: 'No conversation yet',
     coworkExpandedConversationStatusRunning: 'Running',
+    coworkRailUnloadedMessageTitle: 'Unloaded message',
+    coworkRailUnloadedMessageHint: 'Click to load messages around this position',
     artifactBrowserBlankPage: 'Blank page',
     artifactBrowserShowDeviceToolbar: 'Show device toolbar',
     artifactBrowserHideDeviceToolbar: 'Hide device toolbar',
@@ -3604,7 +3612,7 @@ const translations: Record<LanguageType, Record<string, string>> = {
     // Multi-Agent management
     createAgent: 'Create Agent',
     myAgents: 'My Agents',
-    defaultAgentDisplayName: 'Primary Agent',
+    defaultAgentDisplayName: 'Main Agent',
     myAgentSidebarPinned: 'Pinned',
     myAgentSidebarExpandMore: 'Show more',
     myAgentSidebarCollapse: 'Show less',
@@ -3901,6 +3909,12 @@ const translations: Record<LanguageType, Record<string, string>> = {
     // Cowork error messages
     coworkErrorAuthInvalid:
       'Invalid or expired API key. Please check and update your API key in settings.',
+    coworkErrorOAuthInvalid:
+      'OAuth authorization is invalid or missing required access. Re-authenticate and try again.',
+    coworkErrorModelAccessDenied:
+      'This account is not allowed to access the selected model. Switch models or check provider account permissions.',
+    coworkErrorQuotaExhausted:
+      'Your credits have been used up. Please contact your administrator, or configure your own API Key in Settings.',
     coworkErrorFreeQuotaExhausted:
       'The quota has been used up. Please contact your administrator for manual recharge, or configure your own API Key in Settings.',
     coworkErrorInsufficientBalance: 'Insufficient API balance. Please contact your administrator for manual recharge, or configure your own API Key in Settings.',
@@ -4344,7 +4358,7 @@ const translations: Record<LanguageType, Record<string, string>> = {
     connecting: 'Connecting',
     pendingSave: 'Pending save',
     imAgentBinding: 'Responding Agent',
-    imAgentBindingDefault: 'Default (Primary Agent)',
+    imAgentBindingDefault: 'Default (Main Agent)',
     imAgentBindingHint:
       'Select the Agent that responds to messages on this platform. Different Agents have different personas and skill configurations.',
     kickedByOtherClient: 'Account logged in elsewhere',
@@ -4840,7 +4854,7 @@ const translations: Record<LanguageType, Record<string, string>> = {
     scheduledTasksFormDescription: 'Description',
     scheduledTasksFormDescriptionPlaceholder: 'Optional task description',
     scheduledTasksFormAgentId: 'Agent ID',
-    scheduledTasksFormAgentIdPlaceholder: 'Optional, leave blank to use Primary Agent',
+    scheduledTasksFormAgentIdPlaceholder: 'Optional, leave blank to use Main Agent',
     scheduledTasksFormScheduleType: 'Plan',
     scheduledTasksFormScheduleModeEvery: 'Every',
     scheduledTasksFormScheduleModeAt: 'At',

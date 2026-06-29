@@ -55,6 +55,10 @@ const translations: Record<LanguageType, Record<string, string>> = {
 
     // Cowork error messages (shared with renderer via classifyErrorKey)
     coworkErrorAuthInvalid: 'API 密钥无效或已过期，请检查配置。',
+    coworkErrorOAuthInvalid: 'OAuth 授权已失效或权限不足，请重新授权后重试。',
+    coworkErrorModelAccessDenied: '当前账号无权访问该模型，请切换模型或检查服务商账号权限。',
+    coworkErrorQuotaExhausted:
+      '大模型额度已用完，请联系管理员，或在设置中配置您的自定义 API Key。',
     coworkErrorFreeQuotaExhausted:
       '大模型额度已耗尽，请联系管理员进行手动充值，或在设置中配置您的自定义 API Key。',
     coworkErrorInsufficientBalance: 'API 余额不足，请联系管理员进行手动充值，或在设置中配置您的自定义 API Key。',
@@ -336,6 +340,10 @@ const translations: Record<LanguageType, Record<string, string>> = {
 
     // Cowork error messages
     coworkErrorAuthInvalid: 'Invalid or expired API key. Please check your configuration.',
+    coworkErrorOAuthInvalid: 'OAuth authorization is invalid or missing required access. Re-authenticate and try again.',
+    coworkErrorModelAccessDenied: 'This account is not allowed to access the selected model. Switch models or check provider account permissions.',
+    coworkErrorQuotaExhausted:
+      'Your credits have been used up. Please contact your administrator, or configure your own API Key in Settings.',
     coworkErrorFreeQuotaExhausted:
       'The quota has been used up. Please contact your administrator for manual recharge, or configure your own API Key in Settings.',
     coworkErrorInsufficientBalance: 'Insufficient API balance. Please contact your administrator for manual recharge, or configure your own API Key in Settings.',
