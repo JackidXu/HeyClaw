@@ -303,6 +303,16 @@ const MANAGED_BROWSER_POLICY_PROMPT = [
   '- If a browser call fails because the sandbox browser is unavailable, retry the same action with `target="host"`.',
 ].join('\n');
 
+const MANAGED_BINARY_FILE_READ_POLICY_PROMPT = [
+  '## Binary File Reading Policy',
+  '',
+  '- Never attempt to directly read the raw text contents of binary or spreadsheet files (such as `.xlsx`, `.xls`, `.pdf`, `.zip`, `.tar`, `.gz`, `.tgz`, `.rar`, `.7z`, `.png`, `.jpg`, `.jpeg`, `.gif`, `.mp3`, `.mp4` etc.) using tools like `view_file` or `read`.',
+  '- Reading raw bytes of binary files will output corrupt/garbled characters and completely explode the conversation context window, leading to critical service errors.',
+  '- If you need to read or analyze a spreadsheet (e.g. `.xlsx`, `.xls`, `.csv`), write and execute a Python script to parse it (e.g. using `pandas` or `openpyxl`) and print only the structured summary or schema.',
+  '- If you need to read a `.pdf` or extract content from a compressed archive, write and execute a Python script to extract and summarize the text locally.',
+  '- If you violate this rule and attempt to call file-reading tools on binary files directly, the tool execution will be blocked and will return an error.',
+].join('\n');
+
 const MANAGED_EXEC_SAFETY_PROMPT = [
   '## Command Execution & User Interaction Policy',
   '',
@@ -3034,6 +3044,7 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
 
       sections.push(MANAGED_WEB_SEARCH_POLICY_PROMPT);
       sections.push(MANAGED_BROWSER_POLICY_PROMPT);
+      sections.push(MANAGED_BINARY_FILE_READ_POLICY_PROMPT);
       sections.push(MANAGED_EXEC_SAFETY_PROMPT);
       sections.push(MANAGED_MEMORY_POLICY_PROMPT);
       sections.push(buildManagedSkillCreationPrompt(resolveSkillCreationPath()));

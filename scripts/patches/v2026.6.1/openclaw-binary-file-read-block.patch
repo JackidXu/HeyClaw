@@ -1,0 +1,28 @@
+diff --git a/src/agents/agent-tools.read.ts b/src/agents/agent-tools.read.ts
+index fe09d6939c..07e8020573 100644
+--- a/src/agents/agent-tools.read.ts
++++ b/src/agents/agent-tools.read.ts
+@@ -862,6 +862,23 @@ export function createOpenClawReadTool(
+         ? stripMalformedXmlArgValueSuffixFromKeys(record, ["path"])
+         : undefined;
+       assertRequiredParams(normalizedRecord, REQUIRED_PARAM_GROUPS.read, base.name);
++
++      const filePathForCheck = typeof normalizedRecord?.path === "string" ? normalizedRecord.path : "";
++      if (filePathForCheck) {
++        const lastDotIdx = filePathForCheck.lastIndexOf(".");
++        if (lastDotIdx !== -1) {
++          const ext = filePathForCheck.slice(lastDotIdx).toLowerCase();
++          const blockedExtensions = [".xlsx", ".xls", ".pdf", ".zip", ".gz", ".tar", ".tgz", ".rar", ".7z"];
++          if (blockedExtensions.includes(ext)) {
++            throw new Error(
++              `Reading binary or formatted files directly via tool is prohibited. ` +
++              `Reading '${ext}' file raw bytes will output garbled content and break your context window. ` +
++              `Instead, you MUST write and execute a Python script to programmatically parse and extract the relevant content from this file (e.g., pandas/openpyxl for Excel, pypdf for PDF) and output only the text summary.`
++            );
++          }
++        }
++      }
++
+       const result = await executeReadWithAdaptivePaging({
+         base,
+         toolCallId,
