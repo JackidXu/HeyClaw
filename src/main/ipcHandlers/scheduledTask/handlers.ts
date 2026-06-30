@@ -8,7 +8,40 @@ import {
 } from '../../../scheduledTask/constants';
 import type { CronJobService } from '../../../scheduledTask/cronJobService';
 import { PlatformRegistry } from '../../../shared/platform';
+import { resolveAllEnabledProviderConfigs } from '../../libs/claudeSettings';
+import { buildProviderSelection } from '../../libs/openclawConfigSync';
 import { listScheduledTaskChannels } from './helpers';
+
+function resolveFallbackModelForAuto(model: string | undefined): string | undefined {
+  if (model === 'auto' || model === 'system/auto') {
+    try {
+      const enabledProviders = resolveAllEnabledProviderConfigs();
+      for (const provider of enabledProviders) {
+        const fallbackModel = provider.models.find((m) => m.id?.trim());
+        if (fallbackModel) {
+          const mid = fallbackModel.id.trim();
+          const sel = buildProviderSelection({
+            apiKey: provider.apiKey,
+            baseURL: provider.baseURL,
+            modelId: mid,
+            apiType: provider.apiType,
+            providerName: provider.providerName,
+            authType: provider.authType,
+            codingPlanEnabled: provider.codingPlanEnabled,
+            supportsImage: fallbackModel.supportsImage,
+            supportsThinking: fallbackModel.supportsThinking,
+            modelName: fallbackModel.name,
+            contextWindow: fallbackModel.contextWindow,
+          });
+          return sel.primaryModel;
+        }
+      }
+    } catch (e) {
+      console.warn('[ScheduledTaskHandler] failed to resolve fallback model for auto:', e);
+    }
+  }
+  return model;
+}
 
 export interface ScheduledTaskHandlerDeps {
   getCronJobService: () => CronJobService;
@@ -104,12 +137,6 @@ export function registerScheduledTaskHandlers(deps: ScheduledTaskHandlerDeps): v
 
   ipcMain.handle(ScheduledTaskIpc.List, async () => {
     try {
-      // If OpenClaw gateway is not connected yet, return empty list immediately
-      // to avoid blocking the renderer init. Tasks will be loaded later via the
-      // onRefresh listener when the gateway becomes available.
-      if (!getOpenClawRuntimeAdapter()?.getGatewayClient()) {
-        return { success: true, ready: false, tasks: [] };
-      }
       const tasks = await getCronJobService().listJobs();
       return { success: true, ready: true, tasks };
     } catch (error) {
@@ -138,6 +165,10 @@ export function registerScheduledTaskHandlers(deps: ScheduledTaskHandlerDeps): v
       console.debug('[ScheduledTask] create input:', JSON.stringify(normalizedInput, null, 2));
       await applyAnnounceDeliveryNormalization(normalizedInput, getIMGatewayManager);
 
+      if (normalizedInput.payload && typeof normalizedInput.payload === 'object') {
+        normalizedInput.payload.model = resolveFallbackModelForAuto(normalizedInput.payload.model);
+      }
+
       const task = await getCronJobService().addJob(normalizedInput);
       console.log('[IPC][scheduledTask:create] result task id:', task?.id, 'name:', task?.name);
       return { success: true, task };
@@ -158,6 +189,10 @@ export function registerScheduledTaskHandlers(deps: ScheduledTaskHandlerDeps): v
         JSON.stringify(normalizedInput, null, 2),
       );
       await applyAnnounceDeliveryNormalization(normalizedInput, getIMGatewayManager);
+
+      if (normalizedInput.payload && typeof normalizedInput.payload === 'object') {
+        normalizedInput.payload.model = resolveFallbackModelForAuto(normalizedInput.payload.model);
+      }
 
       const task = await getCronJobService().updateJob(id, normalizedInput);
       console.log('[IPC][scheduledTask:update] result task id:', task?.id, 'name:', task?.name);
@@ -253,9 +288,6 @@ export function registerScheduledTaskHandlers(deps: ScheduledTaskHandlerDeps): v
       filter?: import('../../../scheduledTask/types').RunFilter,
     ) => {
       try {
-        if (!getOpenClawRuntimeAdapter()?.getGatewayClient()) {
-          return { success: true, ready: false, runs: [] };
-        }
         const runs = await getCronJobService().listAllRuns(limit, offset, filter);
         return { success: true, ready: true, runs };
       } catch (error) {

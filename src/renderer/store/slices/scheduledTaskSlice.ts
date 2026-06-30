@@ -73,6 +73,11 @@ const scheduledTaskSlice = createSlice({
       state.tasks = action.payload;
       state.taskListStatus = ScheduledTaskDataStatus.Ready;
       state.taskListError = null;
+      // 如果当前选中的任务在刷新后不存在（如一次性任务执行后被删除），则退回列表视图
+      if (state.selectedTaskId && !action.payload.some(t => t.id === state.selectedTaskId)) {
+        state.selectedTaskId = null;
+        state.viewMode = 'list';
+      }
     },
     addTask(state, action: PayloadAction<ScheduledTask>) {
       state.tasks.unshift(action.payload);

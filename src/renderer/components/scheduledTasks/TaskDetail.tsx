@@ -1,11 +1,14 @@
+import { PlayIcon } from '@heroicons/react/24/outline';
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { PlayIcon } from '@heroicons/react/24/outline';
+
+import type { ScheduledTask } from '../../../scheduledTask/types';
+import { i18nService } from '../../services/i18n';
+import { scheduledTaskService } from '../../services/scheduledTask';
 import { RootState } from '../../store';
 import { setViewMode } from '../../store/slices/scheduledTaskSlice';
-import { scheduledTaskService } from '../../services/scheduledTask';
-import { i18nService } from '../../services/i18n';
-import type { ScheduledTask } from '../../../scheduledTask/types';
+import PencilIcon from '../icons/PencilIcon';
+import TrashIcon from '../icons/TrashIcon';
 import TaskRunHistory from './TaskRunHistory';
 import {
   formatDateTime,
@@ -15,8 +18,6 @@ import {
   getStatusLabelKey,
   getStatusTone,
 } from './utils';
-import PencilIcon from '../icons/PencilIcon';
-import TrashIcon from '../icons/TrashIcon';
 
 interface TaskDetailProps {
   task: ScheduledTask;
@@ -36,9 +37,10 @@ const TaskDetail: React.FC<TaskDetailProps> = ({ task, onRequestDelete }) => {
   const statusTone = getStatusTone(task.state.lastStatus);
   const promptText = task.payload.kind === 'systemEvent' ? task.payload.text : task.payload.message;
   const taskModelRef = task.payload.kind === 'agentTurn' ? task.payload.model : undefined;
-  const taskModelLabel = taskModelRef
+  const taskModelLabel = typeof taskModelRef === 'string' && taskModelRef.trim()
     ? (() => {
-        const bareId = taskModelRef.includes('/') ? taskModelRef.slice(taskModelRef.indexOf('/') + 1) : taskModelRef;
+        const trimmed = taskModelRef.trim();
+        const bareId = trimmed.includes('/') ? trimmed.slice(trimmed.indexOf('/') + 1) : trimmed;
         return availableModels.find((m) => m.id === bareId)?.name ?? bareId;
       })()
     : undefined;

@@ -314,6 +314,16 @@ function resolveMatchedProvider(appConfig: AppConfig): { matched: MatchedProvide
 
   const configuredModelId = appConfig.model?.defaultModel?.trim();
   let modelId = configuredModelId || '';
+  // 智能适配虚拟模型 ID 不是真实物理模型，需要在配置同步时映射为兜底的第一个可用物理模型。
+  // 实际动态路由在主进程 openclawRuntimeAdapter.ts 的 runTurn 阶段执行。
+  if (modelId === 'auto' || modelId === 'system/auto') {
+    const fallback = resolveFallbackModel();
+    if (fallback) {
+      modelId = fallback.modelId;
+    } else {
+      modelId = '';
+    }
+  }
   if (!modelId) {
     const fallback = resolveFallbackModel();
     if (!fallback) {

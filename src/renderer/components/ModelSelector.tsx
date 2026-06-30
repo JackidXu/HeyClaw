@@ -1,4 +1,4 @@
-import { CheckIcon, ChevronDownIcon, ChevronRightIcon, LockClosedIcon } from '@heroicons/react/24/outline';
+import { CheckIcon, ChevronDownIcon, ChevronRightIcon, LockClosedIcon, SparklesIcon } from '@heroicons/react/24/outline';
 import { ProviderName } from '@shared/providers';
 import React from 'react';
 import { createPortal } from 'react-dom';
@@ -8,7 +8,7 @@ import { getProviderIcon, ProviderIconId } from '../providers/uiRegistry';
 import { i18nService } from '../services/i18n';
 import { RootState } from '../store';
 import type { Model } from '../store/slices/modelSlice';
-import { getModelIdentityKey, isSameModelIdentity, setSelectedModel } from '../store/slices/modelSlice';
+import { AUTO_MODEL_ID, getModelIdentityKey, isSameModelIdentity, setSelectedModel } from '../store/slices/modelSlice';
 
 interface ModelSelectorProps {
   dropdownDirection?: 'up' | 'down' | 'auto';
@@ -322,6 +322,10 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
       ?? '';
   };
   const renderProviderIcon = (model: Model): React.ReactNode => {
+    // 智能适配虚拟模型使用金色星光图标区分
+    if (model.id === AUTO_MODEL_ID || model.isAutoModel) {
+      return <SparklesIcon className={`${MODEL_ICON_CLASS_NAME} text-amber-500`} />;
+    }
     const icon = getProviderIcon(resolveModelIconProviderKey(model));
     if (!React.isValidElement<{ className?: string }>(icon)) return icon;
 

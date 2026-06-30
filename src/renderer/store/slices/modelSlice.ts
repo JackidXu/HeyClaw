@@ -20,7 +20,24 @@ export interface Model {
   costMultiplier?: number; // 积分消耗倍率 (1.0=标准)
   accessible?: boolean; // false = 模型可见但用户无权使用（置灰）
   restrictionHint?: string; // 限制提示（如 "订阅套餐/购买加油包可用"）
+  isAutoModel?: boolean; // true = 智能适配虚拟模型，由主进程根据复杂度路由到实际物理模型
 }
+
+/** 智能适配虚拟模型 ID。选择此模型后，主进程会根据 Prompt 复杂度动态路由到合适的物理模型。 */
+export const AUTO_MODEL_ID = 'auto';
+
+/** 智能适配虚拟模型定义（始终显示在模型列表首位）。 */
+export const AUTO_MODEL: Model = {
+  id: AUTO_MODEL_ID,
+  name: '智能适配 (Auto)',
+  provider: '系统',
+  providerKey: 'system',
+  supportsImage: true,
+  supportsThinking: true,
+  accessible: true,
+  isAutoModel: true,
+  description: '自动根据任务复杂度选择最合适的模型：简单问答用轻量模型，复杂推理/编程用高性能模型',
+};
 
 function isServerModelIdentity(model: Pick<Model, 'providerKey' | 'isServerModel'>): boolean {
   return model.isServerModel === true || model.providerKey === ProviderName.LobsteraiServer;
@@ -80,7 +97,14 @@ function buildInitialModels(): Model[] {
       }
     });
   }
-  return models.length > 0 ? models : defaultConfig.model.availableModels;
+  const physicalModels = models.length > 0 ? models : defaultConfig.model.availableModels;
+  // 智能适配模型始终位于列表首位
+  return [AUTO_MODEL, ...physicalModels];
+}
+
+/** 将 AUTO_MODEL 强制插入列表首位（过滤掉旧的同 id 项后重新插入）。 */
+function withAutoModelAtHead(models: Model[]): Model[] {
+  return [AUTO_MODEL, ...models.filter(m => m.id !== AUTO_MODEL_ID)];
 }
 
 // 初始可用模型列表（会在运行时更新）
@@ -142,11 +166,13 @@ function syncSelectedModelByAgent(
 }
 
 const initialState: ModelState = {
-  // 使用 config 中的默认模型
-  defaultSelectedModel: availableModels.find(
-    model => model.id === defaultConfig.model.defaultModel
-      && (!defaultModelProvider || model.providerKey === defaultModelProvider)
-  ) || availableModels[0],
+  // 优先将默认模型设为智能适配 (Auto)，如找不到则回退到配置的物理默认模型
+  defaultSelectedModel: availableModels.find(model => model.id === AUTO_MODEL_ID)
+    || availableModels.find(
+      model => model.id === defaultConfig.model.defaultModel
+        && (!defaultModelProvider || model.providerKey === defaultModelProvider)
+    )
+    || availableModels[0],
   selectedModelByAgent: {},
   availableModels: availableModels,
 };
@@ -169,11 +195,12 @@ const modelSlice = createSlice({
     setAvailableModels: (state, action: PayloadAction<Model[]>) => {
       // 保留已有的服务端模型，只更新用户自配模型（与 setServerModels 对称）
       const serverModels = state.availableModels.filter(m => m.isServerModel);
-      state.availableModels = [...serverModels, ...action.payload];
+      const merged = [...serverModels, ...action.payload.filter(m => m.id !== AUTO_MODEL_ID)];
+      state.availableModels = withAutoModelAtHead(merged);
       // 更新导出的 availableModels
       availableModels = state.availableModels;
-      // 同步 defaultSelectedModel
-      if (state.availableModels.length > 0) {
+      // 同步 defaultSelectedModel（若当前为智能适配模型则保留）
+      if (state.availableModels.length > 0 && !state.defaultSelectedModel.isAutoModel) {
         state.defaultSelectedModel = selectPreferredAccessibleModel(
           state.availableModels,
           state.defaultSelectedModel,
@@ -183,12 +210,13 @@ const modelSlice = createSlice({
       syncSelectedModelByAgent(state.selectedModelByAgent, state.availableModels);
     },
     setServerModels: (state, action: PayloadAction<Model[]>) => {
-      // 服务端模型放前面，自配模型保留在后面
-      const userModels = state.availableModels.filter(m => !m.isServerModel);
-      state.availableModels = [...action.payload, ...userModels];
+      // 服务端模型放前面，自配模型保留在后面（过滤掉旧的 AUTO_MODEL 占位）
+      const userModels = state.availableModels.filter(m => !m.isServerModel && m.id !== AUTO_MODEL_ID);
+      const serverModels = action.payload.filter(m => m.id !== AUTO_MODEL_ID);
+      state.availableModels = withAutoModelAtHead([...serverModels, ...userModels]);
       availableModels = state.availableModels;
-      // 同步 defaultSelectedModel（优先选择 accessible 的模型）
-      if (state.availableModels.length > 0) {
+      // 同步 defaultSelectedModel（若当前为智能适配模型则保留）
+      if (state.availableModels.length > 0 && !state.defaultSelectedModel.isAutoModel) {
         state.defaultSelectedModel = selectPreferredAccessibleModel(
           state.availableModels,
           state.defaultSelectedModel,
@@ -198,11 +226,13 @@ const modelSlice = createSlice({
       syncSelectedModelByAgent(state.selectedModelByAgent, state.availableModels);
     },
     clearServerModels: (state) => {
-      state.availableModels = state.availableModels.filter(m => !m.isServerModel);
+      const nonServer = state.availableModels.filter(m => !m.isServerModel && m.id !== AUTO_MODEL_ID);
+      state.availableModels = withAutoModelAtHead(nonServer);
       availableModels = state.availableModels;
-      // 如果 defaultSelectedModel 是服务端模型，切换到第一个可用模型
+      // 如果 defaultSelectedModel 是服务端模型，切换到第一个可用物理模型（不切到 Auto）
       if (state.defaultSelectedModel.isServerModel && state.availableModels.length > 0) {
-        state.defaultSelectedModel = state.availableModels.find(isModelAccessible)
+        state.defaultSelectedModel = state.availableModels.find(m => isModelAccessible(m) && !m.isAutoModel)
+          ?? state.availableModels.find(isModelAccessible)
           ?? state.defaultSelectedModel;
       }
       // 同步 per-agent 选中模型
