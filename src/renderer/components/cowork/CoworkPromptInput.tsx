@@ -524,6 +524,7 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
   // ASR 服务暂不可用，保留变量定义以便未来快速恢复
   const _isAsrQuotaExhaustedToday = asrQuota.status === AsrQuotaStatus.Exhausted
     && asrQuota.dayKey === getLocalAsrQuotaDayKey();
+  void _isAsrQuotaExhaustedToday;
   const voiceInputLocksEditing = isVoiceRecording || isVoiceRecognizing;
 
   const ensureFreshAsrQuota = useCallback(() => {
@@ -558,6 +559,7 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
     }
     void handleVoiceInput();
   }, [asrQuota.dayKey, asrQuota.status, disabled, dispatch, handleVoiceInput, isLoggedIn, isVoiceRecording]);
+  void _handleVoiceInputClick;
 
   // Load skills on mount
   useEffect(() => {
