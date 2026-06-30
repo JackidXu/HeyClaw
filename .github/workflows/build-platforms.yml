@@ -198,6 +198,26 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine OSS Path
+        run: |
+          # 默认使用测试环境路径
+          OSS_PATH="heyclaw-dev/downloads"
+          
+          # 获取包含当前 HEAD 提交的远程分支列表
+          BRANCHES=$(git branch -r --contains HEAD)
+          echo "Branches containing current commit:"
+          echo "$BRANCHES"
+          
+          # 检查是否包含 origin/main。如果有，说明属于 main 分支的构建
+          if echo "$BRANCHES" | grep -qE "origin/main$|origin/main "; then
+            OSS_PATH="heyclaw/downloads"
+          fi
+          
+          echo "Determined OSS Path: $OSS_PATH"
+          echo "OSS_PATH=$OSS_PATH" >> $GITHUB_ENV
 
       - name: Download All Artifacts
         uses: actions/download-artifact@v4
@@ -226,10 +246,10 @@ jobs:
           if [ -n "$CDN_PREFIX" ]; then
             # 去除末尾斜杠
             CDN_PREFIX="${CDN_PREFIX%/}"
-            # 文件在 OSS 存储桶中的目录是 heyclaw/downloads/
-            WIN_URL="${CDN_PREFIX}/heyclaw/downloads/${WIN_FILE}"
-            MAC_ARM64_URL="${CDN_PREFIX}/heyclaw/downloads/${MAC_ARM64_FILE}"
-            MAC_X64_URL="${CDN_PREFIX}/heyclaw/downloads/${MAC_X64_FILE}"
+            # 使用动态决定的 OSS_PATH
+            WIN_URL="${CDN_PREFIX}/${{ env.OSS_PATH }}/${WIN_FILE}"
+            MAC_ARM64_URL="${CDN_PREFIX}/${{ env.OSS_PATH }}/${MAC_ARM64_FILE}"
+            MAC_X64_URL="${CDN_PREFIX}/${{ env.OSS_PATH }}/${MAC_X64_FILE}"
           else
             WIN_URL="${WIN_FILE}"
             MAC_ARM64_URL="${MAC_ARM64_FILE}"
@@ -261,4 +281,4 @@ jobs:
           access-key-secret: ${{ secrets.OSS_ACCESS_KEY_SECRET }}
 
       - name: Upload Artifacts to Aliyun OSS
-        run: ossutil cp -f -r oss-dist/ oss://${{ secrets.OSS_BUCKET }}/heyclaw/downloads/
+        run: ossutil cp -f -r oss-dist/ oss://${{ secrets.OSS_BUCKET }}/${{ env.OSS_PATH }}/
