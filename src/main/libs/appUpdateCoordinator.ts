@@ -892,9 +892,12 @@ export class AppUpdateCoordinator {
         `[AppUpdate] restoring persisted ready file, source=${source}, version=${storedReadyFile.version}, filePath=${storedReadyFile.filePath}`,
       );
 
-      if (this.compareVersions(storedReadyFile.version, this.resolveCurrentVersion()) <= 0) {
+      if (
+        storedReadyFile.version.startsWith('2026') ||
+        this.compareVersions(storedReadyFile.version, this.resolveCurrentVersion()) <= 0
+      ) {
         console.log(
-          `[AppUpdate] persisted ready file is not newer than current version, clearing it: source=${source}, storedVersion=${storedReadyFile.version}, currentVersion=${this.resolveCurrentVersion()}`,
+          `[AppUpdate] persisted ready file is obsolete or has legacy NetEase format, clearing it: source=${source}, storedVersion=${storedReadyFile.version}, currentVersion=${this.resolveCurrentVersion()}`,
         );
         this.clearStoredReadyFile(source);
         void this.pruneCachedInstallerFiles(source);
