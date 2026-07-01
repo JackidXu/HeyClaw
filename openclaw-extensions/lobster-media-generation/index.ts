@@ -252,7 +252,7 @@ const plugin = {
             api.logger.info(`[lobster-media-generation] image tool callback started: toolCallId=${id} args=${JSON.stringify(sanitizeArgsForLog(args))}`);
             const startedAt = Date.now();
             const result = await callMediaBridge(config, {
-              tool: 'lobsterai_image_generate',
+              tool: 'heyclaw_image_generate',
               args,
               context: { sessionKey, toolCallId: id },
             });
@@ -333,7 +333,7 @@ const plugin = {
 
                 try {
                   const statusResult = await callMediaBridge(statusConfig, {
-                    tool: 'lobsterai_video_generate',
+                    tool: 'heyclaw_video_generate',
                     args: { action: 'status', taskId },
                     context: { sessionKey, toolCallId: id },
                   });
@@ -399,7 +399,7 @@ const plugin = {
             api.logger.info(`[lobster-media-generation] video tool (${action}) started: toolCallId=${id} args=${JSON.stringify(sanitizeArgsForLog(args))}`);
             const startedAt = Date.now();
             const result = await callMediaBridge(config, {
-              tool: 'lobsterai_video_generate',
+              tool: 'heyclaw_video_generate',
               args,
               context: { sessionKey, toolCallId: id },
             });

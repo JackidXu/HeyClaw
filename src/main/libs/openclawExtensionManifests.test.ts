@@ -33,8 +33,8 @@ describe('OpenClaw extension manifests', () => {
 
   test('declares LobsterAI media generation agent tool contracts', () => {
     expect(readContractTools('lobster-media-generation')).toEqual([
-      'lobsterai_image_generate',
-      'lobsterai_video_generate',
+      'heyclaw_image_generate',
+      'heyclaw_video_generate',
     ]);
   });
 

@@ -4,8 +4,8 @@
   "description": "Image and video generation tools powered by LobsterAI server.",
   "contracts": {
     "tools": [
-      "lobsterai_image_generate",
-      "lobsterai_video_generate"
+      "heyclaw_image_generate",
+      "heyclaw_video_generate"
     ]
   },
   "configSchema": {

@@ -186,10 +186,10 @@ test('updateToolUseMediaStatus preserves the highest media poll count', () => {
     messages: [{
       id: 'tool-1',
       type: 'tool_use',
-      content: 'Using tool: lobsterai_video_generate',
+      content: 'Using tool: heyclaw_video_generate',
       timestamp: 1,
       metadata: {
-        toolName: 'lobsterai_video_generate',
+        toolName: 'heyclaw_video_generate',
         toolUseId: 'call-1',
         toolInput: { action: 'status', taskId: 'task-1' },
       },
@@ -219,10 +219,10 @@ test('updateToolUseMediaStatus drops single media poll counts', () => {
     messages: [{
       id: 'tool-1',
       type: 'tool_use',
-      content: 'Using tool: lobsterai_video_generate',
+      content: 'Using tool: heyclaw_video_generate',
       timestamp: 1,
       metadata: {
-        toolName: 'lobsterai_video_generate',
+        toolName: 'heyclaw_video_generate',
         toolUseId: 'call-1',
         toolInput: { action: 'status', taskId: 'task-1' },
       },
@@ -316,10 +316,10 @@ test('pending media status updates are applied when the tool use arrives', () =>
     message: {
       id: 'tool-1',
       type: 'tool_use',
-      content: 'Using tool: lobsterai_video_generate',
+      content: 'Using tool: heyclaw_video_generate',
       timestamp: 2,
       metadata: {
-        toolName: 'lobsterai_video_generate',
+        toolName: 'heyclaw_video_generate',
         toolUseId: 'call-1',
         toolInput: { action: 'status', taskId: 'task-1' },
       },
@@ -348,10 +348,10 @@ test('inactive media status updates are applied when returning to the session', 
     messages: [{
       id: 'tool-1',
       type: 'tool_use',
-      content: 'Using tool: lobsterai_video_generate',
+      content: 'Using tool: heyclaw_video_generate',
       timestamp: 2,
       metadata: {
-        toolName: 'lobsterai_video_generate',
+        toolName: 'heyclaw_video_generate',
         toolUseId: 'call-1',
         toolInput: { action: 'status', taskId: 'task-1' },
       },
@@ -370,10 +370,10 @@ test('retained media poll counts survive switching away and back', () => {
     messages: [{
       id: 'tool-1',
       type: 'tool_use',
-      content: 'Using tool: lobsterai_video_generate',
+      content: 'Using tool: heyclaw_video_generate',
       timestamp: 1,
       metadata: {
-        toolName: 'lobsterai_video_generate',
+        toolName: 'heyclaw_video_generate',
         toolUseId: 'call-1',
         toolInput: { action: 'status', taskId: 'task-1' },
       },
@@ -394,10 +394,10 @@ test('retained media poll counts survive switching away and back', () => {
     messages: [{
       id: 'tool-1-reloaded',
       type: 'tool_use',
-      content: 'Using tool: lobsterai_video_generate',
+      content: 'Using tool: heyclaw_video_generate',
       timestamp: 3,
       metadata: {
-        toolName: 'lobsterai_video_generate',
+        toolName: 'heyclaw_video_generate',
         toolUseId: 'call-1',
         toolInput: { action: 'status', taskId: 'task-1' },
       },
